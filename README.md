@@ -29,4 +29,8 @@ sudo mkdir -p /var/lib/dkms/iomemory-vsl/3.2.10/build
 sudo ln -s /usr/src/iomemory-vsl-3.2.10 /var/lib/dkms/iomemory-vsl/3.2.10/source
 sudo dkms build -m iomemory-vsl -v 3.2.10
 sudo dkms install -m iomemory-vsl -v 3.2.10
+sudo modprobe iomemory-vsl 
 
+## Other nots
+Installing the fio-util, fio-common, fio-preinstall and fio-sysvinit are recomended
+Also updating to fio firmware version 3.2.10.20150212 from 3.2.10 on...
