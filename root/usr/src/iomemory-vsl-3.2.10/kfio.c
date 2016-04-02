@@ -1048,7 +1048,7 @@ static void __kfio_bind_task_to_cpumask(struct task_struct *tsk, cpumask_t *mask
 {
     tsk->cpus_allowed = *mask;
 #if KFIOC_TASK_HAS_NR_CPUS_ALLOWED
-    tsk->rt.nr_cpus_allowed = cpus_weight(*mask);
+    tsk->rt.nr_cpus_allowed = cpumask_weight(mask);
 #endif
 #if KFIOC_TASK_HAS_BOUND_FLAG
     tsk->flags |= PF_THREAD_BOUND;
@@ -1066,7 +1066,7 @@ void kfio_bind_kthread_to_node(kfio_numa_node_t node)
     {
         cpumask_t *cpumask = (cpumask_t *) cpumask_of_node(node);
 
-        if (cpumask && cpus_weight(*cpumask))
+        if (cpumask && cpumask_weight(cpumask))
             __kfio_bind_task_to_cpumask(current, cpumask);
     }
 #endif

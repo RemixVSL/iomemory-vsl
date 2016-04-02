@@ -931,7 +931,7 @@ static void kfio_dump_bio(const char *msg, const struct bio * const bio)
 #endif
 
     infprint("%s: max_vecs: %x : cnt %x : io_vec %p : end_io: %p : private: %p",
-             msg, bio->bi_max_vecs, atomic_read(&bio->bi_cnt), bio->bi_io_vec,
+             msg, bio->bi_max_vecs, atomic_read(&bio->__bi_cnt), bio->bi_io_vec,
              bio->bi_end_io, bio->bi_private);
 #if KFIOC_BIO_HAS_DESTRUCTOR
     infprint("%s: destructor: %p", msg, bio->bi_destructor);

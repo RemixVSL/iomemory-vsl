@@ -144,5 +144,5 @@ usr/src/iomemory-vsl-3.2.10/port-internal.h
 usr/src/iomemory-vsl-3.2.10/sched.c
 usr/src/iomemory-vsl-3.2.10/state.c
 usr/src/iomemory-vsl-3.2.10/sysrq.c
-usr/src/iomemory-vsl-3.2.10/kfio/.x86_64_cc48_libkfio.o.cmd
-usr/src/iomemory-vsl-3.2.10/kfio/x86_64_cc48_libkfio.o_shipped
+usr/src/iomemory-vsl-3.2.10/kfio/.x86_64_cc52_libkfio.o.cmd
+usr/src/iomemory-vsl-3.2.10/kfio/x86_64_cc52_libkfio.o_shipped

@@ -34,7 +34,7 @@
 #include <fio/port/dbgset.h>
 
 #include <linux/version.h>
-#if defined(__PPC64__) || defined(__mips64)
+#if defined(__x86_64__) || defined(__PPC64__) || defined(__mips64)
 #include <linux/vmalloc.h>
 #endif
 
