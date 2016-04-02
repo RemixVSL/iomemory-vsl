@@ -1,0 +1,212 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+# Sample debian/rules that uses debhelper.
+#
+# This file was originally written by Joey Hess and Craig Small.
+# As a special exception, when this file is copied by dh-make into a
+# dh-make output file, you may use that output file without restriction.
+# This special exception was added by Craig Small in version 0.37 of dh-make.
+#
+# Modified to make a template file for a multi-binary package with separated
+# build-arch and build-indep targets  by Bill Allombert 2001
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+
+# This has to be exported to make some magic below work.
+export DH_OPTIONS
+
+ifneq (1,$(words $(CURDIR)))
+$(error Building from a directory that contains spaces in the path is not supported - please move this build tree appropriately)
+endif
+
+empty  :=
+space  := $(empty) $(empty)
+curdir := $(subst $(space),\$(space),$(CURDIR))
+
+include $(curdir)/debian/fio_values
+
+
+deb_kernel_version          ?= $(shell uname -r)
+deb_nice_kernel_version     := $(subst -,_,$(deb_kernel_version))
+
+ifdef fio_shipped_object
+firehose_shipped_object     := FIREHOSE_SHIPPED_OBJECT=$(fio_shipped_object)
+endif
+
+
+install.files = $(wildcard $(curdir)/debian/*.install)
+
+# NOTE: Here is some hackery that adds the kernel version to the driver
+# "Package:" name in the control file.  Even though dpkg-gencontrol allows
+# templating/substitution in the control file, it does not allow
+# substitution in Package, Source and Architecture since the substitutions
+# are not guaranteed to run *prior* to them being needed by other tools.
+# The next three rules have some "magic" to get around that limitation.
+#
+# Keep these in mind:
+#
+#   1) The control file must be generated before everything else - that is
+#   why it is a dependency to the "configure-stamp" target.
+#
+#   2) While it would be nice to use a debian/control.in with convenient
+#   keys that get replaced, that breaks the use of dpkg-buildpackage and
+#   debuild which check debian/control prior to actually invoking the
+#   build.  This means that we need debian/control te pre-exist so it gets
+#   modified in-place.  We depend on the behavior of dpkg-buildpackage of
+#   *not* caring about the "Package:" fields and that they get modified
+#   (this might not work if "Source:" or "Build-Depends:" needed to be
+#   modified).
+#
+#   3) Since the target of generating "debian/control" will be circularly
+#   dependent on itself, make will never fire the rule.  It must be forced
+#   to fire each time make is invoked.
+
+# The "FORCE" target causes anything that depends on it to build *every*
+# time.  That means *every* rule in this package will rebuild everytime.
+# Right now that is not too bad since this is a quick build.
+FORCE: ;
+
+# The in-place modification that adds the kernel version.
+debian/control: FORCE
+	sed -r -i -e 's/^Package: $(fio_driver_name)(-config)?(-[.0-9]+.*)*$$/Package: $(fio_driver_name)\1-$(deb_kernel_version)/;' $@
+	-set -e; \
+	for file in $(CURDIR)/debian/$(fio_driver_name).* $(CURDIR)/debian/$(fio_driver_name)-config.*; do \
+		new_file=$$(echo $$file | sed -r -e 's/$(fio_driver_name)(-config)?\./$(fio_driver_name)\1-$(deb_kernel_version)./;'); \
+		cp "$$file" "$$new_file"; \
+	done
+
+
+configure: configure-stamp
+configure-stamp: debian/control
+	dh_testdir
+	# Add here commands to configure the package.
+
+	touch configure-stamp
+
+
+#Architecture
+build: build-arch build-indep
+
+build-arch: build-arch-stamp
+build-arch-stamp: configure-stamp  
+
+	# Add here commands to compile the arch part of the package.
+	rsync -a --delete ./root$(fio_oem_sourcedir)/$(fio_driver_name)/ driver_source/
+	if ! $(MAKE) \
+		-C driver_source \
+		KERNELVER=$(deb_kernel_version) \
+		FIO_DRIVER_NAME=$(fio_driver_name) \
+		$(firehose_shipped_object) \
+		modules; then \
+		printf "ERROR:\n"; \
+		exit 1; \
+	fi
+	touch $@
+
+build-indep: build-indep-stamp
+build-indep-stamp: configure-stamp  
+
+	# Add here commands to compile the indep part of the package.
+	#$(MAKE) doc
+	touch $@
+
+clean: 
+	dh_testdir
+	dh_testroot
+	rm -f build-arch-stamp build-indep-stamp configure-stamp
+
+	# Add here commands to clean up after the build process.
+	#$(MAKE) clean
+	-rm -rf \
+		"$(CURDIR)driver_source" \
+		"$(CURDIR)/debian/fio" \
+		"$(CURDIR)/debian/$(fio_driver_name)-"2.6* \
+		"$(CURDIR)/debian/$(fio_driver_name)-config-"2.6*
+
+	sed -r -i -e 's/^Package: $(fio_driver_name)(-config)?(-[.0-9]+.*)*$$/Package: $(fio_driver_name)\1/;' debian/control
+
+	dh_clean 
+
+install: install-indep install-arch
+install-indep:
+	dh_testdir
+	dh_testroot
+	dh_clean -k -i 
+	dh_installdirs -i
+
+	# Add here commands to install the indep part of the package into
+	# debian/<package>-doc.
+	#INSTALLDOC#
+
+	dh_install -i
+
+install-arch: $(install.files)
+	dh_testdir
+	dh_testroot
+	dh_clean -k -s 
+	dh_installdirs -s
+
+	# Add here commands to install the arch part of the package into
+	# debian/tmp.
+
+	dh_install --sourcedir=root --fail-missing -X$(fio_docdir)/$(fio_driver_name)
+	dh_install --sourcedir=root --fail-missing $(fio_docdir)/$(fio_driver_name) \
+	                                           $(fio_docdir)/$(fio_driver_name)-$(deb_kernel_version)
+
+	mkdir -p "$(CURDIR)/debian/$(fio_driver_name)-$(deb_kernel_version)/lib/modules/$(deb_kernel_version)/extra/$(fio_oem_name_short)"
+	cp driver_source/$(fio_driver_name).ko \
+		"$(CURDIR)/debian/$(fio_driver_name)-$(deb_kernel_version)/lib/modules/$(deb_kernel_version)/extra/$(fio_oem_name_short)"
+
+	mkdir -p "$(CURDIR)/debian/$(fio_driver_name)-config-$(deb_kernel_version)$(fio_oem_sourcedir)/$(fio_driver_name)/include/fio/port/linux"
+
+	cp "driver_source/Module.symvers" \
+		"$(CURDIR)/debian/$(fio_driver_name)-config-$(deb_kernel_version)$(fio_oem_sourcedir)/$(fio_driver_name)/"
+
+	cp "driver_source/include/fio/port/linux/kfio_config.h" \
+		"$(CURDIR)/debian/$(fio_driver_name)-config-$(deb_kernel_version)$(fio_oem_sourcedir)/$(fio_driver_name)/include/fio/port/linux/"
+
+# Must not depend on anything. This is to be called by
+# binary-arch/binary-indep
+# in another 'make' thread.
+binary-common:
+	dh_testdir
+	dh_testroot
+	dh_installchangelogs 
+	dh_installdocs
+	dh_installexamples
+#	dh_installmenu
+#	dh_installdebconf	
+#	dh_installlogrotate	
+#	dh_installemacsen
+#	dh_installpam
+#	dh_installmime
+#	dh_python
+#	dh_installinit
+#	dh_installcron
+#	dh_installinfo
+	dh_installman
+	dh_link
+	dh_strip
+	dh_compress
+	dh_fixperms
+#	dh_perl
+	dh_makeshlibs
+	dh_installdeb
+	dh_shlibdeps
+
+	dh_installmodules
+
+	dh_gencontrol -- -Vfio-version=$(fio_version)
+	dh_md5sums
+	dh_builddeb
+# Build architecture independant packages using the common target.
+binary-indep: build-indep install-indep
+	$(MAKE) -f debian/rules DH_OPIONS=-i binary-common
+
+# Build architecture dependant packages using the common target.
+binary-arch: build-arch install-arch
+	$(MAKE) -f debian/rules DH_OPTIONS=-s binary-common
+
+binary: binary-arch binary-indep
+.PHONY: FORCE build clean binary-indep binary-arch binary install install-indep install-arch configure
