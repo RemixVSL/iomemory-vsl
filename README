@@ -25,7 +25,7 @@ Note: Make sure you have the right development download for your kernel.
       symlinks in this module directory.  These symlinks are "source" and
       "build" and should resolve to appropriate directories.
 
-1. Download current driver source and support packages from 
+1. Download current driver source and support packages from
    http://support.fusionio.com
 
    Note: The exact source package to download depends on your operating
@@ -36,7 +36,7 @@ Note: Make sure you have the right development download for your kernel.
 
 2. Change directory to wherever you downloaded the source package.
 
-3. Follow the instructions below in either Building from an .rpm Source 
+3. Follow the instructions below in either Building from an .rpm Source
    Package or Building from a Debian Source Package to create an
    installation package tailored to your needs.
 
@@ -48,7 +48,7 @@ To build a .rpm installation package:
 
 1. Remove prior versions of the ioDrive driver .rpm and utilities.
 
-       $ rpm -e iodrive-driver
+       $ rpm -e iomemory-vsl
 
 2. Install the prerequisite files for your kernel version.
 
@@ -58,7 +58,7 @@ To build a .rpm installation package:
 
        $ yum install kernel-devel-smp kernel-headers gcc rsync
 
-   On CentOS 5 or RHEL 5, you need kernel-devel, kernel-headers, (which 
+   On CentOS 5 or RHEL 5, you need kernel-devel, kernel-headers, (which
    may already be in the default OS installation) and GCC4.
 
        $ yum install kernel-devel kernel-headers gcc rsync
@@ -66,9 +66,9 @@ To build a .rpm installation package:
 3. To build an .rpm installation package for the current kernel from a
    .src.rpm, run this command:
 
-       $ rpmbuild --rebuild iomemory-vsl-2.1.0.236-1.0.src.rpm 
+       $ rpmbuild --rebuild iomemory-vsl-2.1.0.236-1.0.src.rpm
 
-   When using a .src.rpm source package for a non-running kernel, run this 
+   When using a .src.rpm source package for a non-running kernel, run this
    command:
 
        $ rpmbuild --rebuild --define 'rpm_kernel_version 2.6.24.4-64.fc8-x86_64'  iomemory-vsl-2.1.0.236-1.0.src.rpm
@@ -115,7 +115,7 @@ To build a Debian installation package:
 
        $ sudo apt-get install gcc rsync
 
-2. Download the driver source file for your target operating system at 
+2. Download the driver source file for your target operating system at
    http://support.fusionio.com
 
 3. Unpack the driver source file:
@@ -156,7 +156,7 @@ Building and Installing for Non-deb and Non-rpm Based Systems
 
 The ioMemory VSL driver can be built and installed on systems without using
 RPM and .deb packaging.  A .tar file is available from
-http://support.fusionio.com for manually unpackging, building and
+http://support.fusionio.com for manually unpackaging, building and
 installing.
 
 1. Ensure that kernel development files are installed.
@@ -192,4 +192,5 @@ installing.
 
 
 ========================================================================
-Copyright (c) 2010, Fusion-io, Inc. All rights reserved.
+Copyright (c) 2010, Fusion-io, Inc. (acquired by SanDisk Corp. 2014)
+Copyright (c) 2014 SanDisk Corp. and/or all its affiliates.

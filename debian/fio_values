@@ -1,6 +1,8 @@
 fio_oem_name            := fusionio
 fio_oem_name_short      := fio
-fio_oem_sourcedir       := /usr/src/fio
+fio_sourcedir           := /usr/src
 fio_driver_name         := iomemory-vsl
-fio_version	            := 2.3.11.183
+fio_version	            := 3.2.10.1509
+fio_short_version       := 3.2.10
 fio_docdir	            := /usr/share/doc
+kfio_scsi_device        := False

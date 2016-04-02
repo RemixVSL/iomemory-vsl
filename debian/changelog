@@ -1,5 +1,119 @@
-iomemory-vsl (2.3.11.183-1.0) unstable; urgency=low
+iomemory-vsl (3.2.10.1509-1.0) unstable; urgency=low
 
-  * Initial Release.
+  * Release.
+  * GENERAL CHANGES
+  * ---------------
+  * 
+  * General Improvements and Features
+  * 
+  *         * The fio-sure-erase utility now reports the device serial number upon
+  *           completion.
+  *         * The fio-status utility now provides the thresholds for when
+  *           performance throttling engages due to high temperature conditions at
+  *           the controller or NAND memory devices. These values can be used by
+  *           customer management processes to predict when high temperature
+  *           conditions will impact device performance or when additional cooling
+  *           measures need to be taken. Example
+  *           output:
+  *                 fio-status -fj
+  * 
+  *                         "controller_throttle_start_deg_c" : "78",
+  *                         "nand_throttle_start_deg_c" : "78",
+  * 
+  * Fixed General Issues
+  * 
+  *         ISSUE: Under specific workloads and in specific system environments a
+  *                customer may experience longer than expected latencies on
+  *                ioMemory devices.
+  *                The behavior has been reported with ioMemory VSL 3.2.x. The
+  *                frequency of occurrence is dependent on the workload and system
+  *                environment.
+  *         RESOLUTION: This release includes fixes that reduce the frequency of
+  *                     latency spikes in many scenarios.
+  * 
+  * 
+  * WINDOWS CHANGES
+  * ---------------
+  * 
+  * Fixed Windows Issues
+  * 
+  *         ISSUE: If your system is using a storage device in addition to an
+  *                ioMemory device, the system may show duplicate SCSI IDs causing
+  *                conflicts.
+  *         RESOLUTION: Use the fio-config utility and the WIN_SCSI_BUS_ID module
+  *                     parameter to set the device ID for all ioMemory devices to
+  *                     a SCSI ID number that doesn't conflict with other SCSI
+  *                     devices. See the fio-config section in the Command Utilities
+  *                     section of the ioMemory VSL User Guide for Windows for more
+  *                     information.
+  * 
+  *         ISSUE: When more than one process tries to access PCI device information
+  *                (for example running multiple instances of fio-pci-check in
+  *                parallel), the first process will erroneously return information
+  *                for a later process.
+  *         RESOLUTION: The configuration information is locked so only one process
+  *                     can access it at a time.
+  * 
+  * 
+  * LINUX CHANGES
+  * -------------
+  * 
+  * Linux Improvements and Features
+  * 
+  *         * Added DKMS support for Linux source packages. When you update the
+  *         system kernel and DKMS is installed and configured correctly, the
+  *         ioMemory VSL software will be configured for the new kernel. This
+  *         includes updates to ioMemory VSL driver loading configuration.
+  *         * Improved kernel configuration code for building from source.
+  * 
+  * Fixed Linux Issues
+  * 
+  *         ISSUE: When the Linux operating system issued an incorrectly formed
+  *                request the ioMemory VSL software would crash.
+  *         RESOLUTION: The ioMemory VSL software now rejects the invalid request.
+  * 
+  *         ISSUE: When building the software package from source, the 'make clean'
+  *                option would fail.
+  *         RESOLUTION: This option now works as expected.
+  * 
+  *         ISSUE: Updating the system kernel or ioMemory VSL software would insert
+  *                the ioMemory VSL software into the initrd and ignore the software
+  *                configuration file (/etc/modprobe.d/iomemory-vsl.conf). This
+  *                issue created software loading issues that required dracut to
+  *                fix.
+  *         RESOLUTION: Multiple solutions to this configuration issue:
+  *                 1) If DKMS is installed and configured the ioMemory VSL software
+  *                    is configured for the new kernel.
+  *                 2) If dracut is installed, the ioMemory VSL software uses that
+  *                    program to fix the configuration issue.
+  *                 3) If both the fio-sysvinit and fio-common packages are
+  *                    installed, the ioMemory VSL software is excluded from the
+  *                    initrd.
+  * 
+  * 
+  * VMWARE CHANGES
+  * --------------
+  * 
+  * Fixed VMware Issues
+  * 
+  *         ISSUE: An imbalance in process queue sizes would cause the ioMemory VSL
+  *                software for ESXi to become unresponsive and log errors that the
+  *                SCSILinuxQueueCommand had failed. This could cause caching
+  *                software to stop "due to internal errors."
+  *         RESOLUTION: The process queues for the ioMemory VSL software are now
+  *                     balanced.
+  * 
+  * 
+  * SOLARIS CHANGES
+  * ---------------
+  * 
+  * Fixed Solaris Issues
+  * 
+  *         ISSUE: The reported VSL software CPU consumption on Solaris was 100%.
+  *         RESOLUTION: CPU consumption on Solaris is now decreased.
+  * 
+  * 
+  * Copyright (c) 2014 SanDisk Corp. and/or all its affiliates. All rights reserved.
 
- -- Support <support@fusionio.com>  Mon, 07 Dec 2009 23:19:12 -0700
+
+ -- Support <support@fusionio.com>  Wed, 04 Feb 2015 17:42:11 +0000

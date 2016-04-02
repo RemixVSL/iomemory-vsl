@@ -71,7 +71,7 @@ FORCE: ;
 debian/control: FORCE
 	sed -r -i -e 's/^Package: $(fio_driver_name)(-config)?(-[.0-9]+.*)*$$/Package: $(fio_driver_name)\1-$(deb_kernel_version)/;' $@
 	-set -e; \
-	for file in $(CURDIR)/debian/$(fio_driver_name).* $(CURDIR)/debian/$(fio_driver_name)-config.*; do \
+	for file in $(CURDIR)/debian/$(fio_driver_name).*; do \
 		new_file=$$(echo $$file | sed -r -e 's/$(fio_driver_name)(-config)?\./$(fio_driver_name)\1-$(deb_kernel_version)./;'); \
 		cp "$$file" "$$new_file"; \
 	done
@@ -89,14 +89,15 @@ configure-stamp: debian/control
 build: build-arch build-indep
 
 build-arch: build-arch-stamp
-build-arch-stamp: configure-stamp  
+build-arch-stamp: configure-stamp
 
 	# Add here commands to compile the arch part of the package.
-	rsync -a --delete ./root$(fio_oem_sourcedir)/$(fio_driver_name)/ driver_source/
+	rsync -a --delete ./root$(fio_sourcedir)/$(fio_driver_name)-$(fio_short_version)/ driver_source/
 	if ! $(MAKE) \
 		-C driver_source \
 		KERNELVER=$(deb_kernel_version) \
 		FIO_DRIVER_NAME=$(fio_driver_name) \
+		FIO_SCSI_DEVICE=$(kfio_scsi_device) \
 		$(firehose_shipped_object) \
 		modules; then \
 		printf "ERROR:\n"; \
@@ -105,13 +106,13 @@ build-arch-stamp: configure-stamp
 	touch $@
 
 build-indep: build-indep-stamp
-build-indep-stamp: configure-stamp  
+build-indep-stamp: configure-stamp
 
 	# Add here commands to compile the indep part of the package.
 	#$(MAKE) doc
 	touch $@
 
-clean: 
+clean:
 	dh_testdir
 	dh_testroot
 	rm -f build-arch-stamp build-indep-stamp configure-stamp
@@ -126,13 +127,13 @@ clean:
 
 	sed -r -i -e 's/^Package: $(fio_driver_name)(-config)?(-[.0-9]+.*)*$$/Package: $(fio_driver_name)\1/;' debian/control
 
-	dh_clean 
+	dh_clean
 
 install: install-indep install-arch
 install-indep:
 	dh_testdir
 	dh_testroot
-	dh_clean -k -i 
+	dh_clean -k -i
 	dh_installdirs -i
 
 	# Add here commands to install the indep part of the package into
@@ -144,7 +145,7 @@ install-indep:
 install-arch: $(install.files)
 	dh_testdir
 	dh_testroot
-	dh_clean -k -s 
+	dh_clean -k -s
 	dh_installdirs -s
 
 	# Add here commands to install the arch part of the package into
@@ -158,13 +159,13 @@ install-arch: $(install.files)
 	cp driver_source/$(fio_driver_name).ko \
 		"$(CURDIR)/debian/$(fio_driver_name)-$(deb_kernel_version)/lib/modules/$(deb_kernel_version)/extra/$(fio_oem_name_short)"
 
-	mkdir -p "$(CURDIR)/debian/$(fio_driver_name)-config-$(deb_kernel_version)$(fio_oem_sourcedir)/$(fio_driver_name)/include/fio/port/linux"
+	mkdir -p "$(CURDIR)/debian/$(fio_driver_name)-config-$(deb_kernel_version)$(fio_sourcedir)/$(fio_driver_name)-$(fio_short_version)/include/fio/port/linux"
 
 	cp "driver_source/Module.symvers" \
-		"$(CURDIR)/debian/$(fio_driver_name)-config-$(deb_kernel_version)$(fio_oem_sourcedir)/$(fio_driver_name)/"
+		"$(CURDIR)/debian/$(fio_driver_name)-config-$(deb_kernel_version)$(fio_sourcedir)/$(fio_driver_name)-$(fio_short_version)/"
 
 	cp "driver_source/include/fio/port/linux/kfio_config.h" \
-		"$(CURDIR)/debian/$(fio_driver_name)-config-$(deb_kernel_version)$(fio_oem_sourcedir)/$(fio_driver_name)/include/fio/port/linux/"
+		"$(CURDIR)/debian/$(fio_driver_name)-config-$(deb_kernel_version)$(fio_sourcedir)/$(fio_driver_name)-$(fio_short_version)/include/fio/port/linux/"
 
 # Must not depend on anything. This is to be called by
 # binary-arch/binary-indep
@@ -172,12 +173,12 @@ install-arch: $(install.files)
 binary-common:
 	dh_testdir
 	dh_testroot
-	dh_installchangelogs 
+	dh_installchangelogs
 	dh_installdocs
 	dh_installexamples
 #	dh_installmenu
-#	dh_installdebconf	
-#	dh_installlogrotate	
+#	dh_installdebconf
+#	dh_installlogrotate
 #	dh_installemacsen
 #	dh_installpam
 #	dh_installmime

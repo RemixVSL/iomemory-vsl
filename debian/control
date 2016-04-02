@@ -26,5 +26,8 @@ Description: Configuration of iomemory-vsl for FIO drivers %{fio-version}
 Package: iomemory-vsl-source
 Architecture: amd64
 Depends: linux-headers, gcc, make, lsb-release
+Provides: iomemory-vsl,
+          iomemory-vsl-${fio-version},
+          libvsl
 Description: Source to build driver for FIO devices
  Source to build driver for FIO devices
