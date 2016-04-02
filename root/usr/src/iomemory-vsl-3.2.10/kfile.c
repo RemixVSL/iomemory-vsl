@@ -36,6 +36,7 @@
 #include <linux/proc_fs.h>
 #include <linux/signal.h>
 #include <linux/poll.h>
+#include <linux/version.h>
 
 #include <fio/port/common-linux/kfile.h>
 
@@ -48,7 +49,7 @@ C_ASSERT(sizeof(fusion_file_operations_t) >= sizeof(struct file_operations));
 */
 fusion_inode * noinline kfio_fs_inode(fusion_file *fp)
 {
-#if KFIOC_STRUCT_FILE_HAS_PATH
+#if KFIOC_STRUCT_FILE_HAS_PATH || LINUX_VERSION_CODE > KERNEL_VERSION(3,2,13)
     return (fusion_inode *) ((struct file *)fp)->f_path.dentry->d_inode;
 #else
     return (fusion_inode *) ((struct file *)fp)->f_dentry->d_inode;
