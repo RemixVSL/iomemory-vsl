@@ -64,6 +64,7 @@
 
 #include <linux/version.h>
 #include <linux/fs.h>
+#include <linux/blk_types.h>
 #if !defined(__VMKLNX__)
 #include <linux/buffer_head.h>
 #endif
@@ -344,7 +345,7 @@ static struct request_queue *kfio_alloc_queue(struct kfio_disk *dp, kfio_numa_no
 #if KFIOC_MAKE_REQUEST_FN_VOID
 static void kfio_make_request(struct request_queue *queue, struct bio *bio);
 #else
-static int kfio_make_request(struct request_queue *queue, struct bio *bio);
+static blk_qc_t kfio_make_request(struct request_queue *queue, struct bio *bio);
 #endif
 static void __kfio_bio_complete(struct bio *bio, uint32_t bytes_complete, int error);
 #endif
@@ -1687,7 +1688,7 @@ static struct bio *kfio_add_bio_to_plugged_list(void *data, struct bio *bio)
 static void kfio_make_request(struct request_queue *queue, struct bio *bio)
 #define FIO_MFN_RET
 #else
-static int kfio_make_request(struct request_queue *queue, struct bio *bio)
+static blk_qc_t kfio_make_request(struct request_queue *queue, struct bio *bio)
 #define FIO_MFN_RET 0
 #endif
 {
