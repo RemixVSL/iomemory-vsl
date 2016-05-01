@@ -911,7 +911,7 @@ static void kfio_dump_bio(const char *msg, const struct bio * const bio)
     // Use a local conversion to avoid printf format warnings on some platforms
     sector = (uint64_t)BI_SECTOR(bio);
 
-    infprint("%s: sector: %llx: flags: %lx : rw: %lx : vcnt: %x", msg,
+    infprint("%s: sector: %llx: flags: %x : rw: %lx : vcnt: %x", msg,
              sector, bio->bi_flags, bio->bi_rw, bio->bi_vcnt);
     infprint("%s : idx: %x : phys_segments: %x : size: %x",
              msg, BI_IDX(bio), bio->bi_phys_segments, BI_SIZE(bio));
@@ -2299,7 +2299,7 @@ static kfio_bio_t *kfio_request_to_bio(kfio_disk_t *disk, struct request *req,
                 int bv_i;
 #endif
 
-                errprint("\tbio %p sector %lu size 0x%08x flags 0x%08lx rw 0x%08lx\n", lbio,
+                errprint("\tbio %p sector %lu size 0x%08x flags 0x%08x rw 0x%08lx\n", lbio,
                          (unsigned long)BI_SECTOR(lbio), BI_SIZE(lbio), lbio->bi_flags, lbio->bi_rw);
                 errprint("\t\tvcnt %u idx %u\n", lbio->bi_vcnt, BI_IDX(lbio));
 
