@@ -971,11 +971,12 @@ static unsigned long __kfio_bio_sync(struct bio *bio)
 
 static void __kfio_bio_complete(struct bio *bio, uint32_t bytes_complete, int error)
 {
-    bio_endio(bio,
+    bio_endio(bio
 #if ! KFIOC_BIO_ENDIO_REMOVED_BYTES_DONE
-              bytes_complete,
+              ,bytes_complete,
+              error
 #endif /* ! KFIO_BIO_ENDIO_REMOVED_BYTES_DONE */
-              error);
+    );
 }
 
 static inline int fbio_need_dma_map(kfio_bio_t *fbio)

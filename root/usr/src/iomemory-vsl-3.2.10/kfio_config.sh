@@ -732,7 +732,7 @@ KFIOC_BIO_ENDIO_REMOVED_BYTES_DONE()
 #include <linux/bio.h>
     
 void kfioc_test_bio_endio(void) {
-    bio_endio(NULL, 0);
+    bio_endio(NULL);
 }
 '
     
