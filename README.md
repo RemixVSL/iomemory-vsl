@@ -18,6 +18,7 @@ Only the version branches are tested, nothing else. The driver may
 in fact work with older or newer kernels but none have been tested. The
 latest reliable tested versions are from 3.19 and upwards. Testing and
 running with the kernel module has solely been done on Ubuntu.
+*** the untested branch has only been compiled and loaded not device tested ***
 
 ## Building
 Module building can be done according to the original README.
