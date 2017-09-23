@@ -486,7 +486,11 @@ int kfio_create_disk(struct fio_device *dev, kfio_pci_dev_t *pdev, uint32_t sect
 # endif
 #endif
 
+#if LINUX_VERSION_CODE > KERNEL_VERSION(4, 5, 0)
+    blk_queue_max_segment_size(rq, PAGE_SIZE);
+#else
     blk_queue_max_segment_size(rq, PAGE_CACHE_SIZE);
+#endif
 
 #if KFIOC_HAS_BLK_QUEUE_HARDSECT_SIZE
     blk_queue_hardsect_size(rq, sector_size);
@@ -887,9 +891,11 @@ static int kfio_bio_is_discard(struct bio *bio)
      * exists, then that is used on the bio.
      */
 #if KFIOC_HAS_UNIFIED_BLKTYPES
-#if KFIOC_HAS_BIO_RW_DISCARD
+#if KFIOC_HAS_BIO_BI_OPF
+    return bio->bi_opf & REQ_OP_DISCARD;
+#elif KFIOC_HAS_BIO_RW_DISCARD
     return bio->bi_rw & (1 << BIO_RW_DISCARD);
-#else
+#else 
     return bio->bi_rw & REQ_DISCARD;
 #endif
 #else
@@ -912,8 +918,13 @@ static void kfio_dump_bio(const char *msg, const struct bio * const bio)
     // Use a local conversion to avoid printf format warnings on some platforms
     sector = (uint64_t)BI_SECTOR(bio);
 
+#if KFIOC_HAS_BIO_BI_OPF
+    infprint("%s: sector: %llx: flags: %x : opf: %x : vcnt: %x", msg,
+             sector, bio->bi_flags, bio->bi_opf, bio->bi_vcnt);
+#else
     infprint("%s: sector: %llx: flags: %x : rw: %lx : vcnt: %x", msg,
              sector, bio->bi_flags, bio->bi_rw, bio->bi_vcnt);
+#endif
     infprint("%s : idx: %x : phys_segments: %x : size: %x",
              msg, BI_IDX(bio), bio->bi_phys_segments, BI_SIZE(bio));
 #if KFIOC_BIO_HAS_HW_SEGMENTS
@@ -962,7 +973,11 @@ static inline void kfio_set_comp_cpu(kfio_bio_t *fbio, struct bio *bio)
 static unsigned long __kfio_bio_sync(struct bio *bio)
 {
 #if KFIOC_HAS_UNIFIED_BLKTYPES
+#if KFIOC_HAS_BIO_BI_OPF
+    return bio->bi_opf & REQ_SYNC;
+#else
     return bio->bi_rw & REQ_SYNC;
+#endif
 #elif KFIOC_HAS_BIO_RW_FLAGGED
     return bio_rw_flagged(bio, BIO_RW_SYNCIO);
 #else
@@ -1086,7 +1101,11 @@ static kfio_bio_t *kfio_map_to_fbio(struct request_queue *queue, struct bio *bio
         ((BI_SIZE(bio) & disk->sector_mask) != 0))
     {
         engprint("Rejecting malformed bio %p sector %lu size 0x%08x flags 0x%08lx rw 0x%08lx\n", bio,
+#if KFIOC_HAS_BIO_BI_OPF
+                 (unsigned long)BI_SECTOR(bio), BI_SIZE(bio), bio->bi_flags, bio->bi_opf);
+#else
                  (unsigned long)BI_SECTOR(bio), BI_SIZE(bio), bio->bi_flags, bio->bi_rw);
+#endif
         return NULL;
     }
 
@@ -2236,7 +2255,7 @@ static kfio_bio_t *kfio_request_to_bio(kfio_disk_t *disk, struct request *req,
     else
 #if KFIOC_DISCARD == 1
     /* Detect trim requests. */
-    if (enable_discard && (req->cmd_flags & REQ_DISCARD))
+    if (enable_discard && (req->cmd_flags & REQ_OP_DISCARD))
     {
         fbio->fbio_cmd = KBIO_CMD_DISCARD;
     }
@@ -2300,8 +2319,13 @@ static kfio_bio_t *kfio_request_to_bio(kfio_disk_t *disk, struct request *req,
                 int bv_i;
 #endif
 
+#if KFIOC_HAS_BIO_BI_OPF
+                errprint("\tbio %p sector %lu size 0x%08x flags 0x%08x opf 0x%08x\n", lbio,
+                         (unsigned long)BI_SECTOR(lbio), BI_SIZE(lbio), lbio->bi_flags, lbio->bi_opf);
+#else
                 errprint("\tbio %p sector %lu size 0x%08x flags 0x%08x rw 0x%08lx\n", lbio,
                          (unsigned long)BI_SECTOR(lbio), BI_SIZE(lbio), lbio->bi_flags, lbio->bi_rw);
+#endif
                 errprint("\t\tvcnt %u idx %u\n", lbio->bi_vcnt, BI_IDX(lbio));
 
                 bio_for_each_segment(vec, lbio, bv_i)

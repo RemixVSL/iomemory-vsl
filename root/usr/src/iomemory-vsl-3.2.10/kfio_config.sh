@@ -117,6 +117,7 @@ KFIOC_HAS_BLK_LIMITS_IO_OPT
 KFIOC_HAS_BLK_QUEUE_MAX_SEGMENTS
 KFIOC_HAS_UNIFIED_BLKTYPES
 KFIOC_HAS_BIO_RW_DISCARD
+KFIOC_HAS_BIO_BI_OPF
 KFIOC_SYSRQ_HANDLER_NEEDS_TTY_STRUCT
 KFIOC_PCI_REQUEST_REGIONS_CONST_CHAR
 KFIOC_FOPS_USE_LOCKED_IOCTL
@@ -1387,7 +1388,7 @@ KFIOC_MODULE_PARAM_ARRAY_NUMP()
 {
     local test_flag="$1"
     local test_code='
-const char *test[10];
+char *test[10];
 
 module_param_array(test, charp, NULL, 0);
 '
@@ -1705,6 +1706,23 @@ void foo(void)
     kfioc_test "$test_code" "$test_flag" 1
 }
 
+# flag:           KFIOC_HAS_BIO_BI_OPF
+#                 1     if the kernel supports has a bio bi_rw
+#                 0     if the kernel does not
+KFIOC_HAS_BIO_BI_OPF()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/bio.h>
+void foo(void)
+{
+     struct bio bio;
+     bio.bi_opf= 1;
+}
+'
+
+    kfioc_test "$test_code" "$test_flag" 1
+}
 
 # flag:           KFIOC_SYSRQ_HANDLER_NEEDS_TTY_STRUCT
 # usage:          undef for automatic selection by kernel version

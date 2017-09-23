@@ -38,6 +38,10 @@
 #include <linux/vmalloc.h>
 #endif
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
+    unsigned int flags = FOLL_FORCE;
+#endif
+
 #if defined(__VMKLNX__)
 extern void *dlmalloc(size_t bytes);
 extern void dlfree(void *mem);
@@ -750,7 +754,15 @@ int kfio_get_user_pages(fusion_user_page_t *pages, int nr_pages, fio_uintptr_t s
     int retval;
 
     down_read(&current->mm->mmap_sem);
+#if LINUX_VERSION_CODE > KERNEL_VERSION(4, 5, 0) && LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0)
+    retval =  get_user_pages_remote(current, current->mm, start, nr_pages, write, 0, (struct page **) pages, NULL);
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
+    if (write)
+      flags |= FOLL_WRITE;
+    retval =  get_user_pages_remote(current, current->mm, start, nr_pages, write, (struct page **) pages, NULL);
+#else
     retval =  get_user_pages(current, current->mm, start, nr_pages, write, 0, (struct page **) pages, NULL);
+#endif
     up_read(&current->mm->mmap_sem);
     return retval;
 }
@@ -772,7 +784,11 @@ void kfio_put_user_pages(fusion_user_page_t *pages, int nr_pages)
         {
             break;
         }
+#if LINUX_VERSION_CODE > KERNEL_VERSION(4, 5, 0)
+        put_page((struct page *)pages[i]);
+#else
         page_cache_release((struct page *)pages[i]);
+#endif
     }
 }
 
