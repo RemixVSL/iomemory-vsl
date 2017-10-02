@@ -157,6 +157,13 @@ KFIOC_BIO_HAS_DESTRUCTOR
 KFIOC_BIO_HAS_ATOMIC_REMAINING
 KFIOC_BIO_HAS_INTEGRITY
 KFIOC_BIO_HAS_SPECIAL
+KFIOC_HAS_FILE_INODE_HELPER
+KFIOC_HAS_CPUMASK_WEIGHT
+KFIOC_BIO_HAS_USCORE_BI_CNT
+KFIOC_BIO_ENDIO_REMOVED_ERROR
+KFIOC_MAKE_REQUEST_FN_UINT
+KFIOC_GET_USER_PAGES_REQUIRES_TASK
+KFIOC_BARRIER_USES_QUEUE_FLAGS
 "
 
 
@@ -2391,6 +2398,141 @@ void *test = &(bio.bi_special);
 '
     kfioc_test "$test_code" "$test_flag" 1 -Werror-implicit-function-declaration
 }
+
+# flag:           KFIOC_HAS_FILE_INODE_HELPER
+# usage:          undef for automatic selection by kernel version
+#                 0     if the kernel does not have file_inode() helper
+#                 1     if the kernel has file_inode() helper
+KFIOC_HAS_FILE_INODE_HELPER()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/fs.h>
+
+void kfioc_test_file_inode(void) {
+        struct file f;
+        struct inode *test = file_inode(&f);
+        (void)test;
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1 -Werror-implicit-function-declaration
+}
+
+# flag:           KFIOC_HAS_CPUMASK_WEIGHT
+# usage:          1 if cpumask_weight(const struct cpumask *srcp) is defined
+#                 0 otherwise
+# git commit:     2d3854a37e8b767a51aba38ed6d22817b0631e33 introduces cpumask_weight in v2.6.28-rc4
+#                 2f0f267ea0720ec6adbe9cf7386450425fac8258 removes deprecated cpus_weight in v4.1-rc1
+KFIOC_HAS_CPUMASK_WEIGHT()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/cpumask.h>
+
+void kfioc_has_cpumask_weight(void) {
+    cpumask_weight(NULL);
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1 -Werror-implicit-function-declaration
+}
+
+
+# flag:           KFIOC_BIO_HAS_USCORE_BI_CNT
+# usage:          1 if bio.__bi_cnt, 0 if bio.bi_cnt
+# git commit:     dac56212e8127dbc0bff7be35c508bc280213309
+# kernel version: v4.2-rc1
+KFIOC_BIO_HAS_USCORE_BI_CNT()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/bio.h>
+
+void kfioc_bio_has_uscore_bi_cnt(void) {
+    struct bio test_bio;
+    (void) test_bio.__bi_cnt;
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1
+}
+
+# flag:           KFIOC_BIO_ENDIO_REMOVED_ERROR
+# usage:          1 if bio.bi_error exists, 0 if instead bio_endio has error parameter
+#                 assumes KFIOC_BIO_ENDIO_HAS_BYTES_DONE == 0 as bytes_done arg removed prior to error arg
+# git commit:     4246a0b63bd8f56a1469b12eafeb875b1041a451
+# kernel version: v4.3-rc1
+KFIOC_BIO_ENDIO_REMOVED_ERROR()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/bio.h>
+
+void kfioc_bio_endio_removed_error(void) {
+    bio_endio(NULL);
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1
+}
+
+# flag:          KFIOC_MAKE_REQUEST_FN_UINT
+# usage:         1   make_request_fn returns unsigned int
+#                0   It returns 0/1 for done/remap
+KFIOC_MAKE_REQUEST_FN_UINT()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/blkdev.h>
+static unsigned int my_make_request_fn(struct request_queue *q, struct bio *bio)
+{
+   return 1;
+}
+void test_make_request_fn(void)
+{
+    blk_queue_make_request(NULL, my_make_request_fn);
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1 -Werror
+}
+
+# flag:           KFIOC_GET_USER_PAGES_REQUIRES_TASK
+# usage:          1   get_user_pages has `struct task_struct *tsk, struct mm_struct *mm` params
+#                 0   these params are deprecated
+# git commit:     c12d2da56d0e07d230968ee2305aaa86b93a6832 <- removed "old" API
+#                 cde70140fed8429acf7a14e2e2cbd3e329036653 <- started the API switch
+# kernel version: v4.6-rc2
+KFIOC_GET_USER_PAGES_REQUIRES_TASK()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/mm.h>
+
+void test_get_user_pages(void)
+{
+    get_user_pages(NULL, NULL, 0, 1, 1, 0, NULL, NULL);
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1 -Werror
+}
+
+# flags:         KFIOC_BARRIER_USES_QUEUE_FLAGS
+# usage:         1   Kernel uses queue_flags field
+#                0   It does not
+KFIOC_BARRIER_USES_QUEUE_FLAGS()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/blkdev.h>
+void kfioc_barrier_uses_queue_flags(void)
+{
+    struct request_queue *q = NULL;
+
+    if (test_bit(QUEUE_FLAG_WC, &q->queue_flags))
+    {
+    }
+}
+'
+    kfioc_test "$test_code" KFIOC_BARRIER_USES_QUEUE_FLAGS 1 -Werror
+}
+
 
 ###############################################################################
 

@@ -739,6 +739,12 @@ fusion_page_t noinline kfio_alloc_0_page(kfio_maa_t flags)
     return page;
 }
 
+#if KFIOC_GET_USER_PAGES_REQUIRES_TASK
+    #define GET_USER_PAGES_TASK current, current->mm,
+#else
+    #define GET_USER_PAGES_TASK
+#endif
+
 #if PORT_SUPPORTS_USER_PAGES
 /// @brief Pin the user pages in memory.
 /// Note:  This needs to be called from within a process
@@ -754,14 +760,14 @@ int kfio_get_user_pages(fusion_user_page_t *pages, int nr_pages, fio_uintptr_t s
     int retval;
 
     down_read(&current->mm->mmap_sem);
-#if LINUX_VERSION_CODE > KERNEL_VERSION(4, 5, 0) && LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0)
-    retval =  get_user_pages_remote(current, current->mm, start, nr_pages, write, 0, (struct page **) pages, NULL);
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
-    if (write)
-      flags |= FOLL_WRITE;
-    retval =  get_user_pages_remote(current, current->mm, start, nr_pages, write, (struct page **) pages, NULL);
+// #if LINUX_VERSION_CODE > KERNEL_VERSION(4, 5, 0) && LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0)
+//     retval =  get_user_pages_remote(current, current->mm, start, nr_pages, write, 0, (struct page **) pages, NULL);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
+    // if (write)
+    //  flags |= FOLL_WRITE;
+    retval =  get_user_pages(GET_USER_PAGES_TASK start, nr_pages, write, (struct page **) pages, NULL);
 #else
-    retval =  get_user_pages(current, current->mm, start, nr_pages, write, 0, (struct page **) pages, NULL);
+    retval =  get_user_pages(GET_USER_PAGES_TASK start, nr_pages, write, 0, (struct page **) pages, NULL);
 #endif
     up_read(&current->mm->mmap_sem);
     return retval;

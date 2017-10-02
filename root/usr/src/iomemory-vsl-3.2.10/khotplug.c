@@ -34,6 +34,7 @@
 #include <linux/cpu.h>
 #include <linux/list.h>
 #include <linux/notifier.h>
+#include <linux/version.h>
 
 #if defined CONFIG_SMP && PORT_SUPPORTS_PER_CPU
 
@@ -62,6 +63,7 @@ static void send_event_all(int online_flag, kfio_cpu_t cpu)
         spin_unlock_irq(&hotplug_lock);
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,10,0)
 static int notify_fn(struct notifier_block *self, unsigned long action,
                      void *hcpu)
 {
@@ -88,6 +90,20 @@ static int notify_fn(struct notifier_block *self, unsigned long action,
 static struct notifier_block kfio_linux_cpu_notifier = {
     .notifier_call = notify_fn,
 };
+#else
+static int kfio_hotcpu_online(unsigned int hcpu)
+{
+    send_event_all(1, (kfio_cpu_t) (unsigned long) hcpu);
+
+    return 0;
+}
+static int kfio_hotcpu_down_prep(unsigned int hcpu)
+{
+    send_event_all(0, (kfio_cpu_t) (unsigned long) hcpu);
+
+    return 0;
+}
+#endif
 #endif
 
 #if PORT_SUPPORTS_PER_CPU
@@ -114,7 +130,14 @@ int kfio_register_cpu_notifier(kfio_cpu_notify_fn *func)
 
     if (do_register)
     {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,10,0)
         register_cpu_notifier(&kfio_linux_cpu_notifier);
+#else
+        cpuhp_setup_state(CPUHP_AP_ONLINE_DYN,
+                          "kfio/sandisk:online",
+                          kfio_hotcpu_online,
+                          kfio_hotcpu_down_prep);
+#endif
     }
 #endif
     return 0;
@@ -151,7 +174,11 @@ void kfio_unregister_cpu_notifier(kfio_cpu_notify_fn *func)
      */
     if (do_unregister != 0)
     {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,10,0)
         unregister_cpu_notifier(&kfio_linux_cpu_notifier);
+#else
+        cpuhp_remove_state_nocalls(CPUHP_AP_ONLINE_DYN);
+#endif
     }
 
 #endif
