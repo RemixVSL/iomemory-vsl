@@ -165,6 +165,7 @@ KFIOC_BIO_ENDIO_REMOVED_ERROR
 KFIOC_MAKE_REQUEST_FN_UINT
 KFIOC_GET_USER_PAGES_REQUIRES_TASK
 KFIOC_BARRIER_USES_QUEUE_FLAGS
+KFIOC_HAS_BLK_RQ_IS_PASSTHROUGH
 "
 
 
@@ -1397,6 +1398,22 @@ int kfioc_has_blk_fs_request(struct request *req)
 }
 '
     kfioc_test "$test_code" KFIOC_HAS_BLK_FS_REQUEST 1 -Werror
+}
+
+# flag:          KFIOC_HAS_BLK_RQ_IS_PASSTHROUGH
+# usage:         1   Kernel has blk_rq_is_passthrough instead of req->cmd_type == REQ_TYPE_FS
+#                0   It does not
+KFIOC_HAS_BLK_RQ_IS_PASSTHROUGH()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/blkdev.h>
+bool kfioc_has_blk_rq_is_passthrough(struct request *req)
+{
+    return blk_rq_is_passthrough(req);
+}
+'
+    kfioc_test "$test_code" KFIOC_HAS_BLK_RQ_IS_PASSTHROUGH 1 -Werror
 }
 
 

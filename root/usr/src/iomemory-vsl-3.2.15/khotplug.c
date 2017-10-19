@@ -100,15 +100,15 @@ static struct notifier_block kfio_linux_cpu_notifier = {
 #else
 static int kfio_hotcpu_online(unsigned int hcpu)
 {
-    send_event_all(1, (kfio_cpu_t) (unsigned long) hcpu);
+   send_event_all(1, (kfio_cpu_t) (unsigned long) hcpu);
 
-    return 0;
+   return 0;
 }
 static int kfio_hotcpu_down_prep(unsigned int hcpu)
 {
-    send_event_all(0, (kfio_cpu_t) (unsigned long) hcpu);
+   send_event_all(0, (kfio_cpu_t) (unsigned long) hcpu);
 
-    return 0;
+   return 0;
 }
 #endif
 #endif
@@ -189,7 +189,6 @@ void kfio_unregister_cpu_notifier(kfio_cpu_notify_fn *func)
         unregister_cpu_notifier(&kfio_linux_cpu_notifier);
 #else
         cpuhp_remove_state_nocalls(CPUHP_AP_ONLINE_DYN);
-        printcpus();
 #endif
     }
 
