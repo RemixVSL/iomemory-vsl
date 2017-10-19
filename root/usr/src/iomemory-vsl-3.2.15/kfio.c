@@ -31,6 +31,7 @@
 #endif
 
 #include <linux/types.h>
+#include <linux/version.h>
 #include <linux/module.h>
 #include <fio/port/dbgset.h>
 #include <fio/port/fio-port.h>
@@ -506,7 +507,11 @@ unsigned int kfio_pci_enable_msix(kfio_pci_dev_t *__pdev,
         msi[i].entry = i;
     }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,12,0)
     err = pci_enable_msix(pdev, msi, nr_vecs);
+#else
+    err = pci_enable_msix_exact(pdev, msi, nr_vecs);
+#endif
     if (err)
     {
         return 0;

@@ -1927,9 +1927,11 @@ static int kfio_has_pending_requests(struct request_queue *q)
 static int complete_list_entries(struct request_queue *q, struct kfio_disk *dp)
 {
     struct request *req;
+    struct bio *bio;
     struct fio_atomic_list list;
     struct fio_atomic_list *entry, *tmp;
     int completed = 0;
+    int error = 0;
 
     fusion_atomic_list_init(&list);
     fusion_atomic_list_splice(&dp->comp_list, &list);
@@ -1939,7 +1941,9 @@ static int complete_list_entries(struct request_queue *q, struct kfio_disk *dp)
     fusion_atomic_list_for_each(entry, tmp, &list)
     {
         req = void_container(entry, struct request, special);
-        kfio_end_request(req, req->errors < 0 ? req->errors : 1);
+        bio = req->bio;
+        error = bio->bi_error;
+        kfio_end_request(req, error < 0 ? error : 1);
         completed++;
     }
 
@@ -2037,12 +2041,16 @@ static void kfio_blk_do_softirq(struct request *req)
 {
     struct request_queue *rq;
     struct kfio_disk     *dp;
+    struct bio		 *bi;
+    int errors = 0;
 
     rq = req->q;
     dp = rq->queuedata;
+    bi = req->bio;
+    error = bi->bi_error;
 
     fusion_spin_lock_irqsave(dp->queue_lock);
-    kfio_end_request(req, req->errors < 0 ? req->errors : 1);
+    kfio_end_request(req, error < 0 ? error : 1);
     fusion_spin_unlock_irqrestore(dp->queue_lock);
 }
 
@@ -2213,11 +2221,12 @@ static struct request *kfio_blk_fetch_request(struct request_queue *q)
 static void kfio_req_completor(kfio_bio_t *fbio, uint64_t bytes_done, int error)
 {
     struct request *req = (struct request *)fbio->fbio_parameter;
+    struct bio *bio = req->bio;
 
     if (fbio->fbio_cmd == KBIO_CMD_READ || fbio->fbio_cmd == KBIO_CMD_WRITE)
         kfio_sgl_dma_unmap(fbio->fbio_sgl);
 
-    req->errors = error;
+    bio->bi_error = error;
 
     if (unlikely(fbio->fbio_flags & KBIO_FLG_DUMP))
     {
@@ -2691,7 +2700,7 @@ kfio_bio_t *kfio_fetch_next_bio(struct kfio_disk *disk)
             fbio = kfio_request_to_bio(disk, creq, true);
             if (fbio == NULL)
             {
-                creq->errors = -EIO;
+                fbio->fbio_error = -EIO;
                 kfio_blk_complete_request(creq);
             }
             return fbio;
