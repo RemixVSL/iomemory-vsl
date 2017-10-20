@@ -54,7 +54,7 @@ struct kfio_cpu_notify {
 void printcpus(void) {
     int cpu;
     for_each_online_cpu(cpu) {
-         errprint("CPU online: %i\b", cpu);
+         infprint("CPU online: %i\b", cpu);
     }   
 }
 
@@ -161,10 +161,10 @@ void kfio_unregister_cpu_notifier(kfio_cpu_notify_fn *func)
 
     list_for_each_entry(kcn, &notify_list, list)
     {
-        errprint("%p ? %p\n", &kcn->func, &func);
+        infrint("%p ? %p\n", &kcn->func, &func);
         if (kcn->func == func)
         {
-            errprint("deleteing %p\n", &func);
+            infprint("deleteing %p\n", &func);
             list_del(&kcn->list);
             kfree(kcn);
             break;
@@ -182,7 +182,7 @@ void kfio_unregister_cpu_notifier(kfio_cpu_notify_fn *func)
      * The call below aquires sleep mutex, so we need to
      * call it after unlocking hotplug_lock spinlock.
      */
-    errprint("do_unregister: %i", do_unregister);
+    infprint("do_unregister: %i", do_unregister);
     if (do_unregister != 0)
     {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4,10,0)
