@@ -161,7 +161,7 @@ void kfio_unregister_cpu_notifier(kfio_cpu_notify_fn *func)
 
     list_for_each_entry(kcn, &notify_list, list)
     {
-        infrint("%p ? %p\n", &kcn->func, &func);
+        infprint("%p ? %p\n", &kcn->func, &func);
         if (kcn->func == func)
         {
             infprint("deleteing %p\n", &func);
