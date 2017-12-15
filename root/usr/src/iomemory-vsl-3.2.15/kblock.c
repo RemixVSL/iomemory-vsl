@@ -83,6 +83,20 @@ static int fio_major;
 #define KFIOC_BARRIER   0
 #endif
 
+#if KFIOC_REQ_HAS_ERRORS
+#define KFIOC_ERROR req->errors
+#elif KFIOC_REQ_HAS_ERROR_COUNT
+#define KFIOC_ERROR req->error_count
+#elif KFIOC_BIO_HAS_ERROR
+#define KFIOC_ERROR bio->errors
+#endif
+
+/*
+ * 4.14-rc4 is missing bounce.h... split of from highmem
+ */
+void blk_queue_bounce(struct request_queue *q, struct bio **bio_orig);
+
+
 /*
  * Enable tag flush barriers by default, and default to safer mode of
  * operation on cards that don't have powercut support. Barrier mode can
@@ -1016,22 +1030,21 @@ static unsigned long __kfio_bio_sync(struct bio *bio)
 #endif
 }
 
+/* Rethink whole block, too messy now! */
 static void __kfio_bio_complete(struct bio *bio, uint32_t bytes_complete, int error)
 {
-
-#if KFIOC_BIO_ENDIO_REMOVED_ERROR
+#if KFIOC_BIO_HAS_ERROR
     /* now a member of the bio struct */
     bio->bi_error = error;
-#endif /* !KFIOC_BIO_ENDIO_HAS_ERROR */
-
+#endif /* KFIOC_BIO_HAS_ERROR*/
     bio_endio(bio
 #if KFIOC_BIO_ENDIO_HAS_BYTES_DONE
-              , bytes_complete
+             , bytes_complete
 #endif /* ! KFIO_BIO_ENDIO_HAS_BYTES_DONE */
 #if !KFIOC_BIO_ENDIO_REMOVED_ERROR
-              , error
-#endif /* KFIOC_BIO_ENDIO_REMOVED_ERROR */
-              );
+             , error
+#endif /* KFIOC_BIO_ENDIO_REMOVED_ERROR*/
+           );
 }
 
 static inline int fbio_need_dma_map(kfio_bio_t *fbio)
@@ -1927,11 +1940,9 @@ static int kfio_has_pending_requests(struct request_queue *q)
 static int complete_list_entries(struct request_queue *q, struct kfio_disk *dp)
 {
     struct request *req;
-    struct bio *bio;
     struct fio_atomic_list list;
     struct fio_atomic_list *entry, *tmp;
     int completed = 0;
-    int error = 0;
 
     fusion_atomic_list_init(&list);
     fusion_atomic_list_splice(&dp->comp_list, &list);
@@ -1941,9 +1952,7 @@ static int complete_list_entries(struct request_queue *q, struct kfio_disk *dp)
     fusion_atomic_list_for_each(entry, tmp, &list)
     {
         req = void_container(entry, struct request, special);
-        bio = req->bio;
-        error = bio->bi_error;
-        kfio_end_request(req, error < 0 ? error : 1);
+        kfio_end_request(req, KFIOC_ERROR < 0 ? KFIOC_ERROR : 1);
         completed++;
     }
 
@@ -2041,16 +2050,13 @@ static void kfio_blk_do_softirq(struct request *req)
 {
     struct request_queue *rq;
     struct kfio_disk     *dp;
-    struct bio		 *bi;
-    int errors = 0;
 
     rq = req->q;
     dp = rq->queuedata;
     bi = req->bio;
-    error = bi->bi_error;
 
     fusion_spin_lock_irqsave(dp->queue_lock);
-    kfio_end_request(req, error < 0 ? error : 1);
+    kfio_end_request(req, KFIOC_ERROR < 0 ? KFIOC_ERROR : 1);
     fusion_spin_unlock_irqrestore(dp->queue_lock);
 }
 
@@ -2221,12 +2227,13 @@ static struct request *kfio_blk_fetch_request(struct request_queue *q)
 static void kfio_req_completor(kfio_bio_t *fbio, uint64_t bytes_done, int error)
 {
     struct request *req = (struct request *)fbio->fbio_parameter;
-    struct bio *bio = req->bio;
+    // struct bio *bio = req->bio;
 
     if (fbio->fbio_cmd == KBIO_CMD_READ || fbio->fbio_cmd == KBIO_CMD_WRITE)
         kfio_sgl_dma_unmap(fbio->fbio_sgl);
 
-    bio->bi_error = error;
+    // bio->bi_error = error;
+    KFIOC_ERROR = error;
 
     if (unlikely(fbio->fbio_flags & KBIO_FLG_DUMP))
     {

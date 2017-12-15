@@ -166,6 +166,10 @@ KFIOC_MAKE_REQUEST_FN_UINT
 KFIOC_GET_USER_PAGES_REQUIRES_TASK
 KFIOC_BARRIER_USES_QUEUE_FLAGS
 KFIOC_HAS_BLK_RQ_IS_PASSTHROUGH
+KFIOC_BIO_HAS_ERROR
+KFIOC_REQ_HAS_ERRORS
+KFIOC_REQ_HAS_ERROR_COUNT
+KFIOC_BOUNCE_H
 "
 
 
@@ -1298,7 +1302,6 @@ KFIOC_DISCARD_GRANULARITY_IN_LIMITS()
 void kfioc_test_blk_queue_discard_granularity(void)
 {
     struct request_queue q;
-
     q.limits.discard_granularity = 0;
 }
 '
@@ -1339,7 +1342,6 @@ KFIOC_NEW_BARRIER_SCHEME()
 void kfioc_hew_barrier_scheme(void)
 {
     struct request_queue q;
-
     q.flush_flags = REQ_FLUSH | REQ_FUA;
 }
 '
@@ -1357,7 +1359,6 @@ KFIOC_NEWER_BARRIER_SCHEME()
 void kfioc_hew_barrier_scheme(void)
 {
     struct request_queue q;
-
     q.queue_flags = REQ_PREFLUSH | REQ_FUA;
 }
 '
@@ -1375,7 +1376,6 @@ KFIOC_BARRIER_USES_QUEUE_FLAGS()
 void kfioc_barrier_uses_queue_flags(void)
 {
     struct request_queue *q = NULL;
-
     if (test_bit(QUEUE_FLAG_WC, &q->queue_flags))
     {
     }
@@ -2537,6 +2537,79 @@ KFIOC_BIO_ENDIO_REMOVED_ERROR()
 
 void kfioc_bio_endio_removed_error(void) {
     bio_endio(NULL);
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1
+}
+
+# flag:           KFIOC_BIO_HAS_ERROR
+# usage:          1 if bio.bi_error does not exist, 0 if instead 
+# git commit:     
+# kernel version: v4.14-rc4
+KFIOC_BIO_HAS_ERROR()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/bio.h>
+
+void kfioc_bio_has_error(void) {
+    struct bio test_bio;
+    (void) test_bio.error;
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1
+}
+
+# flag:           KFIOC_REQ_HAS_ERRORS
+# usage:          1 if req.errors does not exist, 0 if instead 
+# git commit:     
+# kernel version: v4.10
+KFIOC_REQ_HAS_ERRORS()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/blkdev.h>
+
+void kfioc_req_has_errors(void) {
+    struct request *req;
+    req->errors = 1;
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1
+}
+
+# flag:           KFIOC_REQ_HAS_ERROR_COUNT
+# usage:          1 if req.error_count does not exist, 0 if instead  
+# git commit:
+# kernel version: v4.14-rc4
+KFIOC_REQ_HAS_ERROR_COUNT()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/blkdev.h>
+
+void kfioc_req_has_error_count(void) {
+    struct request *req;
+    req->error_count = 1;
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1
+}
+
+# flag:           KFIOC_BOUNCE_H
+# usage:          1 if no bounce.h, 0 has bounce.h
+#                 bounce was seperated out from highmem
+# git commit:     
+# kernel version: v4.14-rc4
+KFIOC_BOUNCE_H()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/bounce.h>
+
+void kfioc_bio_has_error(void) {
+    struct bio test_bio;
+    (void) test_bio.error;
 }
 '
     kfioc_test "$test_code" "$test_flag" 1

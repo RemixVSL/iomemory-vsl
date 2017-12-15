@@ -27,7 +27,8 @@ else
 KERNELVER ?= $(shell uname -r)
 endif
 
-KERNEL_SRC = /lib/modules/$(KERNELVER)/build
+# allow to build for other headers
+KERNEL_SRC ?= /lib/modules/$(KERNELVER)/build
 CFLAGS = -I$(shell pwd)/include -DBUILDING_MODULE -DLINUX_IO_SCHED
 
 # Set PORT_WERROR=0 to disable treating warnings as errors
