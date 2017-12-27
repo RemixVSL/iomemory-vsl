@@ -92,12 +92,6 @@ static int fio_major;
 #endif
 
 /*
- * 4.14-rc4 is missing bounce.h... split of from highmem
- */
-void blk_queue_bounce(struct request_queue *q, struct bio **bio_orig);
-
-
-/*
  * Enable tag flush barriers by default, and default to safer mode of
  * operation on cards that don't have powercut support. Barrier mode can
  * also be QUEUE_ORDERED_TAG, or QUEUE_ORDERED_NONE for no barrier support.
@@ -1788,7 +1782,10 @@ static int kfio_make_request(struct request_queue *queue, struct bio *bio)
     }
 #endif
 
+#if LINUX_VERSION_CODE =< KERNEL_VERSION(4,13,0)
     blk_queue_bounce(queue, &bio);
+#endif
+    // blk_queue_bounce_limit(queue, BLK_BOUNCE_ANY);
 
     plug_data = kfio_should_plug(queue);
     if (!plug_data)
