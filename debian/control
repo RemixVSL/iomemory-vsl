@@ -1,10 +1,10 @@
 Source: iomemory-vsl
 Section: non-free
 Priority: extra
-Maintainer: Support <support@fusionio.com>
-Build-Depends: debhelper (>= 5), linux-headers, gcc, make, rsync
-Standards-Version: 3.7.3
-Homepage: http://support.fusionio.com
+Maintainer: snuf
+Build-Depends: debhelper (>= 10), linux-headers, gcc, make, rsync
+Standards-Version: 3.7.3.x
+Homepage: https://github.com/snuf/iomemory-vsl
 
 Package: iomemory-vsl
 Architecture: amd64
@@ -12,8 +12,8 @@ Provides: iomemory-vsl,
           iomemory-vsl-${fio-version}
 Conflicts: iodrive-driver, fio-driver
 Replaces: iodrive-driver, fio-driver
-Description: Driver for FIO devices
- Driver for FIO devices
+Description: Modified driver for FIO devices
+ Modified driver for FIO devices
 
 Package: iomemory-vsl-config
 Architecture: amd64
@@ -29,5 +29,5 @@ Depends: linux-headers, gcc, make, lsb-release
 Provides: iomemory-vsl,
           iomemory-vsl-${fio-version},
           libvsl
-Description: Source to build driver for FIO devices
- Source to build driver for FIO devices
+Description: Modified source to build driver for FIO devices
+ Modified source to build driver for FIO devices
