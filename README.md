@@ -1,10 +1,8 @@
-# IOMemory-VSL for IoDrive/IoDrive2/IoFX
+# IOMemory-VSL
 
 This is an unsupported update of the original driver source for FusionIO
 cards. It comes with no warranty, it may cause DATA LOSS or CORRUPTION.
 Therefore it is NOT meant for production use, just for testing purposes.
-
-Mind you the driver is only intended for IoDrive/IoDrive2/IoFX cards!
 
 ## Background
 Driver support for FusionIO cards has been lagging behind kernel
