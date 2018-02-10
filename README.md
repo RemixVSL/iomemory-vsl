@@ -1,8 +1,10 @@
-# IOMemory-VSL
+# IOMemory-VSL for IoDrive/IoDrive2/IoFX
 
 This is an unsupported update of the original driver source for FusionIO
 cards. It comes with no warranty, it may cause DATA LOSS or CORRUPTION.
 Therefore it is NOT meant for production use, just for testing purposes.
+
+Mind you the driver is only intended for IoDrive/IoDrive2/IoFX cards!
 
 ## Background
 Driver support for FusionIO cards has been lagging behind kernel
@@ -10,8 +12,8 @@ releases, effectively making the cards an expensive paperweight
 when running a distribution like Ubuntu which supplies newer kernels.
 Deemed a trivial task to update the drivers and actually make them work
 with said newer kernels, and putting the expensive paperweight to use again
-so I could access my data..., set forking and fixing the code in motion quite
-a while ago.
+so I could access my data..., set forking and fixing the code in motion 
+quite a while ago.
 
 ## Important note!!!
 Only the version branches are tested, nothing else. The driver may
@@ -31,7 +33,7 @@ A dkms.conf file is supplied, so it should be plug and play:
 ```
 sudo cp -r iomemory-vsl/root/usr/src/iomemory-vsl-3.2.15 /usr/src/
 sudo mkdir -p /var/lib/dkms/iomemory-vsl/3.2.15/build
-sudo ln -s /usr/src/iomemory-vsl-3.2.15 /var/lib/dkms/iomemory-vsl/3.2.10/source
+sudo ln -s /usr/src/iomemory-vsl-3.2.15 /var/lib/dkms/iomemory-vsl/3.2.15/source
 sudo dkms build -m iomemory-vsl -v 3.2.15
 sudo dkms install -m iomemory-vsl -v 3.2.15
 sudo modprobe iomemory-vsl
