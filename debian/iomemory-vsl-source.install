@@ -97,6 +97,7 @@ usr/src/iomemory-vsl-3.2.15/kmisc.c
 usr/src/iomemory-vsl-3.2.15/state.c
 usr/src/iomemory-vsl-3.2.15/errno.c
 usr/src/iomemory-vsl-3.2.15/khotplug.c
+usr/src/iomemory-vsl-3.2.15/kfio/x86_64_cc72_libkfio.o_shipped
 usr/src/iomemory-vsl-3.2.15/kfio/x86_64_cc43_libkfio.o_shipped
 usr/src/iomemory-vsl-3.2.15/kfio/x86_64_cc63_libkfio.o_shipped
 usr/src/iomemory-vsl-3.2.15/kfio/x86_64_cc51_libkfio.o_shipped

@@ -170,6 +170,7 @@ KFIOC_BIO_HAS_ERROR
 KFIOC_REQ_HAS_ERRORS
 KFIOC_REQ_HAS_ERROR_COUNT
 KFIOC_BOUNCE_H
+KFIOC_HAS_TIMER_SETUP
 "
 
 
@@ -2655,6 +2656,27 @@ void test_get_user_pages(void)
     kfioc_test "$test_code" "$test_flag" 1 -Werror
 }
 
+# flag:           KFIOC_HAS_TIMER_SETUP
+# usage:          1   linux/time.h has `timer_setup((struct timer_list *)  timer, fusion_timer_callback, 0)
+#                 0   not timer_setup, use function and data of timer instead
+# git commit:     
+# kernel version: v4.15
+KFIOC_HAS_TIMER_SETUP() {
+    local test_flag="$1"
+    local test_code='
+#include <linux/time.h>
+
+static void timer_callback(struct timer_list *t) {
+}
+
+void kfioc_has_timer_setup(void) {
+    struct timer_list *timer;
+    timer_setup((struct timer_list *)  timer, timer_callback, 0);
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1
+
+}
 
 ###############################################################################
 
