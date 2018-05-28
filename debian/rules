@@ -11,7 +11,7 @@
 # build-arch and build-indep targets  by Bill Allombert 2001
 
 # Uncomment this to turn on verbose mode.
-#export DH_VERBOSE=1
+export DH_VERBOSE=1
 
 # This has to be exported to make some magic below work.
 export DH_OPTIONS
@@ -122,8 +122,10 @@ clean:
 	-rm -rf \
 		"$(CURDIR)driver_source" \
 		"$(CURDIR)/debian/fio" \
-		"$(CURDIR)/debian/$(fio_driver_name)-"2.6* \
-		"$(CURDIR)/debian/$(fio_driver_name)-config-"2.6*
+		$(CURDIR)/debian/$(fio_driver_name)-$(deb_kernel_version) \
+		$(CURDIR)/debian/$(fio_driver_name)-config-$(deb_kernel_version) \
+		$(CURDIR)/debian/$(fio_driver_name)-$(deb_kernel_version).* \
+		$(CURDIR)/debian/$(fio_driver_name)-config-$(deb_kernel_version).* 
 
 	sed -r -i -e 's/^Package: $(fio_driver_name)(-config)?(-[.0-9]+.*)*$$/Package: $(fio_driver_name)\1/;' debian/control
 
@@ -133,7 +135,7 @@ install: install-indep install-arch
 install-indep:
 	dh_testdir
 	dh_testroot
-	dh_clean -k -i
+	dh_clean
 	dh_installdirs -i
 
 	# Add here commands to install the indep part of the package into
@@ -145,14 +147,15 @@ install-indep:
 install-arch: $(install.files)
 	dh_testdir
 	dh_testroot
-	dh_clean -k -s
-	dh_installdirs -s
+	dh_clean
+	dh_prep
+	dh_installdirs -a
 
 	# Add here commands to install the arch part of the package into
 	# debian/tmp.
 
-	dh_install --sourcedir=root --fail-missing -X$(fio_docdir)/$(fio_driver_name)
-	dh_install --sourcedir=root --fail-missing $(fio_docdir)/$(fio_driver_name) \
+	dh_missing --sourcedir=root --list-missing -X$(fio_docdir)/$(fio_driver_name)
+	dh_missing --sourcedir=root --list-missing $(fio_docdir)/$(fio_driver_name) \
 	                                           $(fio_docdir)/$(fio_driver_name)-$(deb_kernel_version)
 
 	mkdir -p "$(CURDIR)/debian/$(fio_driver_name)-$(deb_kernel_version)/lib/modules/$(deb_kernel_version)/extra/$(fio_oem_name_short)"

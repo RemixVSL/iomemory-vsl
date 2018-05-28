@@ -55,6 +55,12 @@ NCPUS:=$(shell grep -c ^processor /proc/cpuinfo)
 
 all: modules
 
+gpl: fake_license modules
+
+.PHONY: fake_license
+fake_license:
+	sed -i 's/Proprietary/GPL/g' license.c
+
 .PHONY: check_n_fix_kfio_ccver
 check_n_fix_kfio_ccver:
 	if [ "${CCVER}" -gt "${LAST_CCVER}" ];then \
@@ -75,6 +81,7 @@ clean modules_clean:
 		KFIO_LIB=$(KFIO_LIB) \
 		clean
 	rm -rf include/fio/port/linux/kfio_config.h kfio_config
+	sed -i 's/GPL/Proprietary/g' license.c
 
 include/fio/port/linux/kfio_config.h: kfio_config.sh
 	./$< -a $(FIOARCH) -o $@ -k $(KERNEL_SRC) -p -d $(CURDIR)/kfio_config -l $(FUSION_DEBUG)
@@ -89,8 +96,6 @@ check_target_kernel:
 		echo "" ; \
 		$(MAKE) clean ; \
 	fi
-
-fix_ccver: check_n_fix_kfio_ccver
 
 modules modules_install: check_n_fix_kfio_ccver check_target_kernel include/fio/port/linux/kfio_config.h
 	$(MAKE) \
