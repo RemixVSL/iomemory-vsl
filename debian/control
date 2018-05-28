@@ -6,7 +6,7 @@ Build-Depends: debhelper (>= 10), linux-headers, gcc, make, rsync
 Standards-Version: 3.7.3.x
 Homepage: https://github.com/snuf/iomemory-vsl
 
-Package: iomemory-vsl
+Package: iomemory-vsl-4.15.0-22-generic
 Architecture: amd64
 Provides: iomemory-vsl,
           iomemory-vsl-${fio-version}
@@ -15,7 +15,7 @@ Replaces: iodrive-driver, fio-driver
 Description: Modified driver for FIO devices
  Modified driver for FIO devices
 
-Package: iomemory-vsl-config
+Package: iomemory-vsl-config-4.15.0-22-generic
 Architecture: amd64
 Provides: iomemory-vsl-config,
           iomemory-vsl-config-${fio-version}

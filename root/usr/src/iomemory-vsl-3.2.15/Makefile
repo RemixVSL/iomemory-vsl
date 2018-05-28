@@ -56,8 +56,8 @@ NCPUS:=$(shell grep -c ^processor /proc/cpuinfo)
 all: modules
 
 .PHONY: check_n_fix_kfio_ccver
-check_kfio_ccver:
-	echo if [ "${CCVER}" > "${LAST_CCVER}" ];then \
+check_n_fix_kfio_ccver:
+	if [ "${CCVER}" -gt "${LAST_CCVER}" ];then \
 		if [ ! -f "${KFIO_LIB}" ];then \
 			cp kfio/${LAST_KFIO_LIB} ${KFIO_LIB}; \
 		fi \
@@ -89,6 +89,8 @@ check_target_kernel:
 		echo "" ; \
 		$(MAKE) clean ; \
 	fi
+
+fix_ccver: check_n_fix_kfio_ccver
 
 modules modules_install: check_n_fix_kfio_ccver check_target_kernel include/fio/port/linux/kfio_config.h
 	$(MAKE) \
