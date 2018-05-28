@@ -328,26 +328,8 @@ Source to build driver for SanDisk Fusion ioMemory devices
 /usr/src/iomemory-vsl-3.2.15/include/fio/port/linux/ktypes.h
 /usr/src/iomemory-vsl-3.2.15/include/fio/port/linux/utypes.h
 /usr/src/iomemory-vsl-3.2.15/include/fio/port/gcc/align.h
-/usr/src/iomemory-vsl-3.2.15/kfio/.x86_64_cc43_libkfio.o.cmd
-/usr/src/iomemory-vsl-3.2.15/kfio/.x86_64_cc49_libkfio.o.cmd
-/usr/src/iomemory-vsl-3.2.15/kfio/.x86_64_cc51_libkfio.o.cmd
-/usr/src/iomemory-vsl-3.2.15/kfio/.x86_64_cc54_libkfio.o.cmd
-/usr/src/iomemory-vsl-3.2.15/kfio/.x86_64_cc46_libkfio.o.cmd
-/usr/src/iomemory-vsl-3.2.15/kfio/.x86_64_cc53_libkfio.o.cmd
-/usr/src/iomemory-vsl-3.2.15/kfio/.x86_64_cc41_libkfio.o.cmd
-/usr/src/iomemory-vsl-3.2.15/kfio/.x86_64_cc47_libkfio.o.cmd
-/usr/src/iomemory-vsl-3.2.15/kfio/.x86_64_cc44_libkfio.o.cmd
-/usr/src/iomemory-vsl-3.2.15/kfio/.x86_64_cc48_libkfio.o.cmd
-/usr/src/iomemory-vsl-3.2.15/kfio/x86_64_cc46_libkfio.o_shipped
-/usr/src/iomemory-vsl-3.2.15/kfio/x86_64_cc54_libkfio.o_shipped
-/usr/src/iomemory-vsl-3.2.15/kfio/x86_64_cc43_libkfio.o_shipped
-/usr/src/iomemory-vsl-3.2.15/kfio/x86_64_cc51_libkfio.o_shipped
-/usr/src/iomemory-vsl-3.2.15/kfio/x86_64_cc53_libkfio.o_shipped
-/usr/src/iomemory-vsl-3.2.15/kfio/x86_64_cc41_libkfio.o_shipped
-/usr/src/iomemory-vsl-3.2.15/kfio/x86_64_cc48_libkfio.o_shipped
-/usr/src/iomemory-vsl-3.2.15/kfio/x86_64_cc47_libkfio.o_shipped
-/usr/src/iomemory-vsl-3.2.15/kfio/x86_64_cc44_libkfio.o_shipped
-/usr/src/iomemory-vsl-3.2.15/kfio/x86_64_cc49_libkfio.o_shipped
+/usr/src/iomemory-vsl-3.2.15/kfio/.x86_64_cc*
+/usr/src/iomemory-vsl-3.2.15/kfio/x86_64_cc*
 
 
 %changelog

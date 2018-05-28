@@ -44,13 +44,24 @@ FIOARCH ?= $(shell uname -m)
 CCMAJOR ?= $(shell echo __GNUC__ | $(FIOCC) -E -xc - | tail -n 1)
 CCMINOR ?= $(shell echo __GNUC_MINOR__ | $(FIOCC) -E -xc - | tail -n 1)
 CCVER=$(CCMAJOR)$(CCMINOR)
+LAST_CCVER := $(shell ls -1 kfio | sed -n 's/.*_cc\([0-9][0-9]*\)_.*/\1/p' | tail -1)
+
 TARGET ?= $(FIOARCH)_cc$(CCMAJOR)$(CCMINOR)
 
 KFIO_LIB ?= kfio/$(TARGET)_libkfio.o_shipped
+LAST_KFIO_LIB := $(shell ls -1 kfio | sort | tail -1)
 
 NCPUS:=$(shell grep -c ^processor /proc/cpuinfo)
 
 all: modules
+
+.PHONY: check_n_fix_kfio_ccver
+check_kfio_ccver:
+	echo if [ "${CCVER}" > "${LAST_CCVER}" ];then \
+		if [ ! -f "${KFIO_LIB}" ];then \
+			cp kfio/${LAST_KFIO_LIB} ${KFIO_LIB}; \
+		fi \
+	fi
 
 clean modules_clean:
 	$(MAKE) \
@@ -79,7 +90,7 @@ check_target_kernel:
 		$(MAKE) clean ; \
 	fi
 
-modules modules_install: check_target_kernel include/fio/port/linux/kfio_config.h
+modules modules_install: check_n_fix_kfio_ccver check_target_kernel include/fio/port/linux/kfio_config.h
 	$(MAKE) \
     -j$(NCPUS) \
 	-C $(KERNEL_SRC) \
