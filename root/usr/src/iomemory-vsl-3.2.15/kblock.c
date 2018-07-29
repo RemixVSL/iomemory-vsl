@@ -165,7 +165,10 @@ extern int enable_discard;
 #endif
 
 extern int kfio_sgl_map_bio(kfio_sg_list_t *sgl, struct bio *bio);
+
 static void kfio_blk_complete_request(struct request *req);
+static kfio_bio_t *kfio_request_to_bio(kfio_disk_t *disk, struct request *req,
+                                       bool can_block);
 
 static int kfio_bio_cnt(const struct bio * const bio)
 {
@@ -245,6 +248,27 @@ int kfio_unregister_esx_blkdev(unsigned int major, const char *name)
 /******************************************************************************
  *   Block device open, close and ioctl handlers                              *
  ******************************************************************************/
+static inline int fbio_need_dma_map(kfio_bio_t *fbio)
+{
+    if (!fbio->fbio_size)
+    {
+        return IODRIVE_DMA_DIR_INVALID;
+    }
+    else if (fbio->fbio_cmd == KBIO_CMD_READ)
+    {
+        return IODRIVE_DMA_DIR_READ;
+    }
+    else if (fbio->fbio_cmd == KBIO_CMD_WRITE)
+    {
+        return IODRIVE_DMA_DIR_WRITE;
+    }
+    else
+    {
+        return IODRIVE_DMA_DIR_INVALID;
+    }
+}
+
+static kfio_bio_t *kfio_convert_bio(struct request_queue *queue, struct bio *bio);
 
 #if KFIOC_HAS_NEW_BLOCK_METHODS
 
@@ -1109,26 +1133,6 @@ static void __kfio_bio_complete(struct bio *bio, uint32_t bytes_complete, int er
              , error
 #endif /* KFIOC_BIO_ENDIO_REMOVED_ERROR*/
            );
-}
-
-static inline int fbio_need_dma_map(kfio_bio_t *fbio)
-{
-    if (!fbio->fbio_size)
-    {
-        return IODRIVE_DMA_DIR_INVALID;
-    }
-    else if (fbio->fbio_cmd == KBIO_CMD_READ)
-    {
-        return IODRIVE_DMA_DIR_READ;
-    }
-    else if (fbio->fbio_cmd == KBIO_CMD_WRITE)
-    {
-        return IODRIVE_DMA_DIR_WRITE;
-    }
-    else
-    {
-        return IODRIVE_DMA_DIR_INVALID;
-    }
 }
 
 static void kfio_bio_completor(kfio_bio_t *fbio, uint64_t bytes_complete, int error)
