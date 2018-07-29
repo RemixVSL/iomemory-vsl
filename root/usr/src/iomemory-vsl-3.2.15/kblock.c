@@ -26,7 +26,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //-----------------------------------------------------------------------------
 #if !defined (__linux__)
-#error This file supports linux only
+#error "This file supports Linux only"
 #endif
 
 #if defined(__VMKLNX__)
@@ -72,6 +72,51 @@ extern int use_workqueue;
 #if !defined(__VMKLNX__)
 static int fio_major;
 #endif
+
+#if KFIOC_HAS_BIOVEC_ITERATORS
+#define BI_SIZE(bio) (bio->bi_iter.bi_size)
+#define BI_SECTOR(bio) (bio->bi_iter.bi_sector)
+#define BI_IDX(bio) (bio->bi_iter.bi_idx)
+#else
+#define BI_SIZE(bio) (bio->bi_size)
+#define BI_SECTOR(bio) (bio->bi_sector)
+#define BI_IDX(bio) (bio->bi_idx)
+#endif
+
+/******************************************************************************
+ *   Block request and bio processing methods.                                *
+ ******************************************************************************/
+
+struct kfio_disk
+{
+    struct fio_device    *dev;
+    struct gendisk       *gd;
+    struct request_queue *rq;
+    kfio_pci_dev_t       *pdev;
+    fusion_spinlock_t    *queue_lock;
+    struct bio           *bio_head;
+    struct bio           *bio_tail;
+    fusion_bits_t         disk_state;
+    fusion_condvar_t      state_cv;
+    fusion_cv_lock_t      state_lk;
+    uint32_t              maxiosize;
+    struct fio_atomic_list  comp_list;
+    unsigned int          pending;
+    int                   last_dispatch_rw;
+    sector_t              last_dispatch;
+    atomic_t              lock_pending;
+    uint32_t              sector_mask;
+    int                   in_do_request;
+    struct list_head      retry_list;
+    unsigned int          retry_cnt;
+
+    make_request_fn       *make_request_fn;
+};
+
+enum {
+    KFIO_DISK_HOLDOFF_BIT   = 0,
+    KFIO_DISK_COMPLETION    = 1,
+};
 
 /*
  * RHEL6.1 will trigger both old and new scheme due to their backport,
@@ -124,10 +169,11 @@ static void kfio_blk_complete_request(struct request *req);
 
 static int kfio_bio_cnt(const struct bio * const bio)
 {
+    return
 #if KFIOC_BIO_HAS_USCORE_BI_CNT
-    return atomic_read(&bio->__bi_cnt);
+    atomic_read(&bio->__bi_cnt);
 #else
-    return atomic_read(&bio->bi_cnt);
+    atomic_read(&bio->bi_cnt);
 #endif
 }
 
@@ -238,10 +284,12 @@ static int kfio_compat_ioctl(struct block_device *bdev, fmode_t mode, unsigned c
     int rc;
 
     rc = fio_ioctl(dev, cmd, arg);
+
     if (rc == -ENOTTY)
     {
         return -ENOIOCTLCMD;
     }
+
     return rc;
 }
 
@@ -297,10 +345,12 @@ static int kfio_compat_ioctl(struct file *filp, unsigned int cmd, unsigned long 
     }
 
     rc = fio_ioctl(dev, cmd, arg);
+
     if (rc == -ENOTTY)
     {
         return -ENOIOCTLCMD;
     }
+
     return rc;
  }
 #endif
@@ -318,50 +368,6 @@ static struct block_device_operations fio_bdev_ops =
 };
 
 
-#if KFIOC_HAS_BIOVEC_ITERATORS
-#define BI_SIZE(bio) (bio->bi_iter.bi_size)
-#define BI_SECTOR(bio) (bio->bi_iter.bi_sector)
-#define BI_IDX(bio) (bio->bi_iter.bi_idx)
-#else
-#define BI_SIZE(bio) (bio->bi_size)
-#define BI_SECTOR(bio) (bio->bi_sector)
-#define BI_IDX(bio) (bio->bi_idx)
-#endif
-
-/******************************************************************************
- *   Block request and bio processing methods.                                *
- ******************************************************************************/
-
-struct kfio_disk
-{
-    struct fio_device    *dev;
-    struct gendisk       *gd;
-    struct request_queue *rq;
-    kfio_pci_dev_t       *pdev;
-    fusion_spinlock_t    *queue_lock;
-    struct bio           *bio_head;
-    struct bio           *bio_tail;
-    fusion_bits_t         disk_state;
-    fusion_condvar_t      state_cv;
-    fusion_cv_lock_t      state_lk;
-    uint32_t              maxiosize;
-    struct fio_atomic_list  comp_list;
-    unsigned int          pending;
-    int                   last_dispatch_rw;
-    sector_t              last_dispatch;
-    atomic_t              lock_pending;
-    uint32_t              sector_mask;
-    int                   in_do_request;
-    struct list_head      retry_list;
-    unsigned int          retry_cnt;
-
-    make_request_fn       *make_request_fn;
-};
-
-enum {
-    KFIO_DISK_HOLDOFF_BIT   = 0,
-    KFIO_DISK_COMPLETION    = 1,
-};
 
 #if !defined(__VMKLNX__)
 static struct request_queue *kfio_alloc_queue(struct kfio_disk *dp, kfio_numa_node_t node);
@@ -392,6 +398,68 @@ static void kfio_prepare_flush(struct request_queue *q, struct request *rq);
 #endif
 
 static void kfio_invalidate_bdev(struct block_device *bdev);
+
+
+kfio_bio_t *kfio_fetch_next_bio(struct kfio_disk *disk)
+{
+    struct request_queue *q;
+
+    q = disk->rq;
+
+#if !defined(__VMKLNX__)
+    if (use_workqueue != USE_QUEUE_RQ)
+    {
+        struct bio *bio;
+
+        spin_lock_irq(q->queue_lock);
+        if ((bio = disk->bio_head) != NULL)
+        {
+            disk->bio_head = bio->bi_next;
+            if (disk->bio_head == NULL)
+                disk->bio_tail = NULL;
+        }
+        spin_unlock_irq(q->queue_lock);
+
+        if (bio != NULL)
+        {
+            kfio_bio_t *fbio;
+
+            fbio = kfio_convert_bio(q, bio);
+            if (fbio == NULL)
+            {
+                __kfio_bio_complete(bio,  0, -EIO);
+            }
+            return fbio;
+        }
+    }
+#endif
+
+# if KFIOC_USE_IO_SCHED
+    if (use_workqueue == USE_QUEUE_RQ)
+    {
+        struct request *creq;
+
+        spin_lock_irq(q->queue_lock);
+        creq = kfio_blk_fetch_request(q);
+        spin_unlock_irq(q->queue_lock);
+
+        if (creq != NULL)
+        {
+            kfio_bio_t *fbio;
+
+            fbio = kfio_request_to_bio(disk, creq, true);
+            if (fbio == NULL)
+            {
+                fbio->fbio_error = -EIO;
+                kfio_blk_complete_request(creq);
+            }
+            return fbio;
+        }
+    }
+#endif
+    return NULL;
+}
+
 static void kfio_bdput(struct block_device *bdev);
 
 #if !defined(__VMKLNX__)
@@ -421,6 +489,7 @@ static void kfio_blk_add_disk(fusion_work_struct_t *work)
     fusion_cv_unlock_irq(&disk->state_lk);
 }
 #endif /* defined(__VMKLNX__) */
+
 
 int kfio_create_disk(struct fio_device *dev, kfio_pci_dev_t *pdev, uint32_t sector_size,
                      uint32_t max_sectors_per_request, uint32_t max_sg_elements_per_request,
@@ -489,6 +558,7 @@ int kfio_create_disk(struct fio_device *dev, kfio_pci_dev_t *pdev, uint32_t sect
 #endif
 
 #if KFIOC_HAS_BLK_QUEUE_MAX_SEGMENTS
+
     blk_queue_max_hw_sectors(rq, max_sectors_per_request);
     blk_queue_max_segments(rq, max_sg_elements_per_request);
 #else
@@ -1612,6 +1682,7 @@ void kfio_unmark_lock_pending(kfio_disk_t *fgd)
 #endif
 }
 
+
 #if !defined(__VMKLNX__)
 static int holdoff_writes_under_pressure(struct kfio_disk *disk)
 {
@@ -1701,7 +1772,7 @@ static void *kfio_should_plug(struct request_queue *q)
 
     /* this might be -1, 0, or 1 */
     if (dangerous_plugging_callback == 1)
-    return NULL;
+        return NULL;
 
     plug = current->plug;
     if (!plug)
@@ -2654,66 +2725,6 @@ static void kfio_do_request(struct request_queue *q)
 
 #endif /* KFIOC_USE_IO_SCHED */
 
-kfio_bio_t *kfio_fetch_next_bio(struct kfio_disk *disk)
-{
-    struct request_queue *q;
-
-    q = disk->rq;
-
-#if !defined(__VMKLNX__)
-    if (use_workqueue != USE_QUEUE_RQ)
-    {
-        struct bio *bio;
-
-        spin_lock_irq(q->queue_lock);
-        if ((bio = disk->bio_head) != NULL)
-        {
-            disk->bio_head = bio->bi_next;
-            if (disk->bio_head == NULL)
-                disk->bio_tail = NULL;
-        }
-        spin_unlock_irq(q->queue_lock);
-
-        if (bio != NULL)
-        {
-            kfio_bio_t *fbio;
-
-            fbio = kfio_convert_bio(q, bio);
-            if (fbio == NULL)
-            {
-                __kfio_bio_complete(bio,  0, -EIO);
-            }
-            return fbio;
-        }
-    }
-#endif
-
-# if KFIOC_USE_IO_SCHED
-    if (use_workqueue == USE_QUEUE_RQ)
-    {
-        struct request *creq;
-
-        spin_lock_irq(q->queue_lock);
-        creq = kfio_blk_fetch_request(q);
-        spin_unlock_irq(q->queue_lock);
-
-        if (creq != NULL)
-        {
-            kfio_bio_t *fbio;
-
-            fbio = kfio_request_to_bio(disk, creq, true);
-            if (fbio == NULL)
-            {
-                fbio->fbio_error = -EIO;
-                kfio_blk_complete_request(creq);
-            }
-            return fbio;
-        }
-    }
-#endif
-    return NULL;
-}
-
 /******************************************************************************
  *   Kernel Atomic Write API
  *
@@ -2726,9 +2737,9 @@ int kfio_vectored_atomic(struct block_device *bdev,
                          uint32_t iovcnt,
                          bool user_pages)
 {
-    int retval;
     uint32_t bytes_written;
     struct fio_device *dev;
+    int retval;
 
     if (!bdev || !iov)
     {
