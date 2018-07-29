@@ -166,6 +166,7 @@ extern int enable_discard;
 
 extern int kfio_sgl_map_bio(kfio_sg_list_t *sgl, struct bio *bio);
 
+
 static void kfio_blk_complete_request(struct request *req);
 static kfio_bio_t *kfio_request_to_bio(kfio_disk_t *disk, struct request *req,
                                        bool can_block);
@@ -1050,7 +1051,6 @@ static void kfio_dump_bio(const char *msg, const struct bio * const bio)
 
     // Use a local conversion to avoid printf format warnings on some platforms
     sector = (uint64_t)BI_SECTOR(bio);
-
 #if KFIOC_HAS_SEPARATE_OP_FLAGS
     infprint("%s: sector: %llx: flags: %lx : op: %x, op_flags: %x : vcnt: %x", msg,
              sector, (unsigned long)bio->bi_flags, bio_op(bio), bio_flags(bio), bio->bi_vcnt);
@@ -1060,6 +1060,7 @@ static void kfio_dump_bio(const char *msg, const struct bio * const bio)
 #endif
     infprint("%s : idx: %x : phys_segments: %x : size: %x",
              msg, BI_IDX(bio), bio->bi_phys_segments, BI_SIZE(bio));
+
 #if KFIOC_BIO_HAS_HW_SEGMENTS
     infprint("%s: hw_segments: %x : hw_front_size: %x : hw_back_size %x", msg,
              bio->bi_hw_segments, bio->bi_hw_front_size, bio->bi_hw_back_size);
@@ -2733,7 +2734,6 @@ static void kfio_do_request(struct request_queue *q)
  *   Kernel Atomic Write API
  *
  ******************************************************************************/
-
 /// @brief extracts fio_device pointer and passes control to kfio_handle_atomic
 ///
 int kfio_vectored_atomic(struct block_device *bdev,
