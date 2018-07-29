@@ -893,7 +893,7 @@ void kfio_disk_stat_write_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t 
         part_stat_add(cpu, &gd->part0, sectors[1], totalsize >> 9);
         part_stat_add(cpu, &gd->part0, ticks[1],   kfio_div64_64(duration * HZ, 1000000));
         part_stat_unlock();
-# endif /* KFIOC_CONFIG_PREEMPT_RT */
+# endif /* defined(KFIOC_CONFIG_PREEMPT_RT) */
 # else /* KFIOC_PARTITION_STATS */
 
 #  if KFIOC_HAS_DISK_STATS_READ_WRITE_ARRAYS
@@ -954,6 +954,7 @@ void kfio_disk_stat_read_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t d
 #endif /* !defined(__VMKLNX__) */
 }
 
+
 int kfio_get_gd_in_flight(kfio_disk_t *fgd, int rw)
 {
     struct gendisk *gd = fgd->gd;
@@ -984,6 +985,7 @@ int kfio_get_gd_in_flight(kfio_disk_t *fgd, int rw)
 void kfio_set_gd_in_flight(kfio_disk_t *fgd, int rw, int in_flight)
 {
     struct gendisk *gd = fgd->gd;
+
 
     if (use_workqueue != USE_QUEUE_RQ)
     {
@@ -1084,7 +1086,7 @@ static void kfio_dump_bio(const char *msg, const struct bio * const bio)
 #endif
 #if KFIOC_BIO_HAS_INTEGRITY
     // Note that we don't use KFIOC_BIO_HAS_SPECIAL as yet.
-    infprint("%s: integrity: %p", msg, bio_integrity(bio));
+    infprint("%s: integrity: %p", msg, bio_integrity(bio) );
 #endif
 }
 #endif // !__VMKLNX__
@@ -1960,6 +1962,7 @@ static void kfio_end_that_request_last(struct request *req, int uptodate)
 
 static void kfio_end_request(struct request *req, int uptodate)
 {
+
     if (kfio_end_that_request_first(req, uptodate, kfio_get_req_hard_nr_sectors(req)))
     {
         kfail();
@@ -2398,12 +2401,13 @@ static kfio_bio_t *kfio_request_to_bio(kfio_disk_t *disk, struct request *req,
         fbio->fbio_flags |= KBIO_FLG_SYNC;
     }
     else
-#if KFIOC_DISCARD == 1
     /* Detect trim requests. */
+#if KFIOC_DISCARD == 1
+    if (enable_discard &&
 #if KFIOC_HAS_SEPARATE_OP_FLAGS
-    if (enable_discard && (req_op(req) == REQ_OP_DISCARD))
+        (req_op(req) == REQ_OP_DISCARD))
 #else
-    if (enable_discard && (req->cmd_flags & REQ_DISCARD))
+        (req->cmd_flags & REQ_DISCARD))
 #endif
     {
         fbio->fbio_cmd = KBIO_CMD_DISCARD;
@@ -2456,7 +2460,7 @@ static kfio_bio_t *kfio_request_to_bio(kfio_disk_t *disk, struct request *req,
             errprint("Request size mismatch. Request size %u dma size %u\n",
                      (unsigned)fbio->fbio_size, kfio_sgl_size(fbio->fbio_sgl));
 #if KFIOC_DISCARD == 1
-            errprint("Request cmd 0x%016llx\n", (uint64_t)req->cmd_flags);
+            infprint("Request cmd 0x%016llx\n", (uint64_t)req->cmd_flags);
 #endif
             __rq_for_each_bio(lbio, req)
             {
@@ -2467,29 +2471,28 @@ static kfio_bio_t *kfio_request_to_bio(kfio_disk_t *disk, struct request *req,
                 struct bio_vec *vec;
                 int bv_i;
 #endif
-
 #if KFIOC_HAS_SEPARATE_OP_FLAGS
-                errprint("\tbio %p sector %lu size 0x%08x flags 0x%08lx op 0x%04x op_flags 0x%04x\n", lbio,
+                infprint("\tbio %p sector %lu size 0x%08x flags 0x%08lx op 0x%04x op_flags 0x%04x\n", lbio,
                          (unsigned long)BI_SECTOR(lbio), BI_SIZE(lbio), (unsigned long)lbio->bi_flags,
                          bio_op(lbio), bio_flags(lbio));
 #else
-                errprint("\tbio %p sector %lu size 0x%08x flags 0x%08lx rw 0x%08lx\n", lbio,
+                infprint("\tbio %p sector %lu size 0x%08x flags 0x%08lx rw 0x%08lx\n", lbio,
                          (unsigned long)BI_SECTOR(lbio), BI_SIZE(lbio), (unsigned long)lbio->bi_flags, lbio->bi_rw);
 #endif
-                errprint("\t\tvcnt %u idx %u\n", lbio->bi_vcnt, BI_IDX(lbio));
+                infprint("\t\tvcnt %u idx %u\n", lbio->bi_vcnt, BI_IDX(lbio));
 
                 bio_for_each_segment(vec, lbio, bv_i)
                 {
 #if KFIOC_HAS_BIOVEC_ITERATORS
-                    errprint("vec %d: page %p offset %u len %u\n", bv_i.bi_idx, vec.bv_page,
+                    infprint("vec %d: page %p offset %u len %u\n", bv_i.bi_idx, vec.bv_page,
                              vec.bv_offset, vec.bv_len);
 #else
-                    errprint("vec %d: page %p offset %u len %u\n", bv_i, vec->bv_page,
+                    infprint("vec %d: page %p offset %u len %u\n", bv_i, vec->bv_page,
                              vec->bv_offset, vec->bv_len);
 #endif
                 }
             }
-            errprint("SGL content:\n");
+            infprint("SGL content:\n");
             kfio_sgl_dump(fbio->fbio_sgl, NULL, "\t", 0);
             error = -EIO; /* Any non-zero value will serve. */
         }
@@ -2741,6 +2744,7 @@ int kfio_vectored_atomic(struct block_device *bdev,
                          uint32_t iovcnt,
                          bool user_pages)
 {
+
     uint32_t bytes_written;
     struct fio_device *dev;
     int retval;
@@ -2749,6 +2753,7 @@ int kfio_vectored_atomic(struct block_device *bdev,
     {
         return -EFAULT;
     }
+
     dev = bdev->bd_disk->private_data;
     if (!dev)
     {
