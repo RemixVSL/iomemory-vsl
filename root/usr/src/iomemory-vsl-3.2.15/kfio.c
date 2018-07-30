@@ -61,6 +61,10 @@
 #include <linux/scatterlist.h>
 #endif
 
+#if !defined KFIOC_DISCARD
+#error kfioconfig not included
+#endif
+
 kfio_cpu_t kfio_current_cpu(void)
 {
     return raw_smp_processor_id();
@@ -101,80 +105,6 @@ typedef struct FUSION_STRUCT_ALIGN(8) _linux_spinlock
     unsigned long flags;
 } linux_spinlock_t;
 #define FUSION_SPINLOCK_NOT_IRQSAVED ~0UL
-
-void kfio_free_irq(kfio_pci_dev_t *pd, void *dev)
-{
-    unsigned int irqn = ((struct pci_dev *)pd)->irq;
-    free_irq(irqn, dev);
-}
-
-C_ASSERT(sizeof(kfio_msix_t) >= sizeof(struct msix_entry));
-
-void kfio_free_msix(kfio_msix_t *msix, unsigned int vector, void *dev)
-{
-    struct msix_entry *msi = (struct msix_entry *) msix;
-
-    free_irq(msi[vector].vector, dev);
-}
-
-irqreturn_t kfio_handle_irq_wrapper(int irq, void *dev_id
-#if !KFIOC_HAS_GLOBAL_REGS_POINTER
-                                    , struct pt_regs *regs
-#endif
-    )
-{
-    (void)iodrive_intr_fast(irq, dev_id);
-
-    // Because hardware cannot lower the IRQ line fast enough
-    // We often get called with nothing to do.
-    // So, we have to lie to Linux so it doesn't shut off the IRQ
-    return FIO_IRQ_HANDLED;
-}
-
-irqreturn_t kfio_handle_irqx_wrapper(int irq, void *dev_id
-#if !KFIOC_HAS_GLOBAL_REGS_POINTER
-                                    , struct pt_regs *regs
-#endif
-    )
-{
-    return iodrive_intr_fast_pipeline(irq, dev_id);
-}
-
-int kfio_request_msix(kfio_pci_dev_t *pd, const char *devname, void *dev_id,
-                      kfio_msix_t *msix, unsigned int vector)
-{
-    struct msix_entry *msi = (struct msix_entry *) msix;
-
-    return request_irq(msi[vector].vector, kfio_handle_irqx_wrapper, 0, devname, dev_id);
-}
-
-int kfio_request_irq(kfio_pci_dev_t *pd, const char *devname, void *dev_id,
-                     int msi_enabled)
-{
-    unsigned long interrupt_flags = 0;
-    unsigned int irqn = ((struct pci_dev *)pd)->irq;
-
-#ifdef IRQF_SHARED
-    interrupt_flags |= IRQF_SHARED;
-#else
-    interrupt_flags |= SA_SHIRQ;
-#endif
-
-    return request_irq(irqn, kfio_handle_irq_wrapper, interrupt_flags, devname, dev_id);
-}
-
-int kfio_get_irq_number(kfio_pci_dev_t *pd, uint32_t *irq)
-{
-    *irq = (uint32_t)((struct pci_dev *)pd)->irq;
-    return 0;
-}
-
-int kfio_get_msix_number(void *msix, uint32_t vec_ix, uint32_t *irq)
-{
-    struct msix_entry *linux_msix = msix;
-    *irq = linux_msix[vec_ix].vector;
-    return 0;
-}
 
 void *kfio_ioremap_nocache (unsigned long offset, unsigned long size)
 {
@@ -347,86 +277,6 @@ long int kfio_strtol(const char *nptr, char **endptr, int base)
 }
 KFIO_EXPORT_SYMBOL(kfio_strtol);
 
-kfio_pci_bus_t *kfio_bus_from_pci_dev(kfio_pci_dev_t *pdev)
-{
-    return (kfio_pci_bus_t *)((struct pci_dev *)pdev)->bus;
-}
-
-kfio_pci_bus_t *kfio_pci_bus_parent(kfio_pci_bus_t *bus)
-{
-    return (kfio_pci_bus_t *)((struct pci_bus *)bus)->parent;
-}
-
-int kfio_pci_bus_istop(kfio_pci_bus_t *bus)
-{
-    // The root device doesn't have a self link
-    return !((struct pci_bus *)bus)->self;
-}
-
-kfio_pci_dev_t *kfio_pci_bus_self(kfio_pci_bus_t *bus)
-{
-    return (kfio_pci_dev_t *)((struct pci_bus *)bus)->self;
-}
-
-uint8_t kfio_pci_bus_number(kfio_pci_bus_t *bus)
-{
-    return ((struct pci_bus *)bus)->number;
-}
-
-#if PORT_SUPPORTS_PCI_NUMA_INFO
-kfio_numa_node_t kfio_pci_get_node(kfio_pci_dev_t *pci_dev)
-{
-#if KFIOC_PCI_HAS_NUMA_INFO
-    struct pci_dev *pdev = (struct pci_dev *) pci_dev;
-
-    return dev_to_node(&pdev->dev);
-#else
-    return FIO_NUMA_NODE_NONE;
-#endif
-}
-#endif
-
-int kfio_pci_read_config_byte(kfio_pci_dev_t *pdev, int where, uint8_t *val)
-{
-    return pci_read_config_byte((struct pci_dev *)pdev, where, val);
-}
-
-
-int kfio_pci_read_config_word(kfio_pci_dev_t *pdev, int where, uint16_t *val)
-{
-    return pci_read_config_word((struct pci_dev *)pdev, where, val);
-}
-
-
-int kfio_pci_read_config_dword(kfio_pci_dev_t *pdev, int where, uint32_t *val)
-{
-    return pci_read_config_dword((struct pci_dev *)pdev, where, val);
-}
-
-
-int kfio_pci_write_config_byte(kfio_pci_dev_t *pdev, int where, uint8_t val)
-{
-    return pci_write_config_byte((struct pci_dev *)pdev, where, val);
-}
-
-
-int kfio_pci_write_config_word(kfio_pci_dev_t *pdev, int where, uint16_t val)
-{
-    return pci_write_config_word((struct pci_dev *)pdev, where, val);
-}
-
-
-int kfio_pci_write_config_dword(kfio_pci_dev_t *pdev, int where, uint32_t val)
-{
-    return pci_write_config_dword((struct pci_dev *)pdev, where, val);
-}
-
-
-const char *kfio_pci_name(kfio_pci_dev_t *pdev)
-{
-    return (char *)pci_name((struct pci_dev *)pdev);
-}
-
 void kfio_pci_dev_put(kfio_pci_dev_t *pdev)
 {
     pci_dev_put((struct pci_dev *)pdev);
@@ -436,170 +286,6 @@ void kfio_pci_dev_put(kfio_pci_dev_t *pdev)
 kfio_pci_dev_t *kfio_pci_get_device(unsigned int vendor, unsigned int device, kfio_pci_dev_t *from)
 {
     return (kfio_pci_dev_t *)pci_get_device(vendor, device, (struct pci_dev *)from);
-}
-
-
-uint16_t kfio_pci_get_vendor(kfio_pci_dev_t *pdev)
-{
-    return ((struct pci_dev *)pdev)->vendor;
-}
-
-uint32_t kfio_pci_get_devnum(kfio_pci_dev_t *pdev)
-{
-    return ((struct pci_dev *)pdev)->device;
-}
-
-void kfio_pci_disable_device(kfio_pci_dev_t *pdev)
-{
-    struct pci_dev *dev = (struct pci_dev *)pdev;
-    u16 cmd, old;
-
-    /* Save old  BAR decode enable flags. */
-    pci_read_config_word(dev, PCI_COMMAND, &old);
-    old &= (PCI_COMMAND_IO | PCI_COMMAND_MEMORY);
-
-    pci_disable_device(dev);
-
-    /*
-     * Older Linux kernel prior to 2.6.19 used to disable IO and MEM
-     * BAR decode on disable, which later was reverted due to it being
-     * just as bad idea as it sounds. The code below is a NOOP for
-     * newer kernels, but undoes the mistake on older kernels.
-     */
-    pci_read_config_word(dev, PCI_COMMAND, &cmd);
-    if ((cmd & old) != old)
-    {
-        cmd |= old;
-        pci_write_config_word(dev, PCI_COMMAND, cmd);
-    }
-}
-
-void kfio_pci_disable_msix(kfio_pci_dev_t *pdev)
-{
-    pci_disable_msix((struct pci_dev *)pdev);
-}
-
-void kfio_pci_disable_msi(kfio_pci_dev_t *pdev)
-{
-    pci_disable_msi((struct pci_dev *)pdev);
-}
-
-int kfio_pci_enable_device(kfio_pci_dev_t *pdev)
-{
-    return pci_enable_device((struct pci_dev *)pdev);
-}
-
-unsigned int kfio_pci_enable_msix(kfio_pci_dev_t *__pdev,
-                                  kfio_msix_t *msix, unsigned int nr_vecs)
-{
-    struct pci_dev *pdev = (struct pci_dev *) __pdev;
-    struct msix_entry *msi = (struct msix_entry *) msix;
-    int err, i;
-
-    if (!pci_find_capability(pdev, PCI_CAP_ID_MSIX))
-    {
-        return 0;
-    }
-
-    for (i = 0; i < nr_vecs; i++)
-    {
-        msi[i].vector = 0;
-        msi[i].entry = i;
-    }
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,12,0)
-    err = pci_enable_msix(pdev, msi, nr_vecs);
-#else
-    err = pci_enable_msix_exact(pdev, msi, nr_vecs);
-#endif
-    if (err)
-    {
-        return 0;
-    }
-
-    return nr_vecs;
-}
-
-int kfio_pci_enable_msi(kfio_pci_dev_t *pdev)
-{
-    return pci_enable_msi((struct pci_dev *)pdev);
-}
-
-void kfio_pci_release_regions(kfio_pci_dev_t *pdev)
-{
-    pci_release_regions((struct pci_dev *)pdev);
-}
-
-int kfio_pci_request_regions(kfio_pci_dev_t *pdev, const char *res_name)
-{
-    return pci_request_regions((struct pci_dev *)pdev,
-#if KFIOC_PCI_REQUEST_REGIONS_CONST_CHAR
-        res_name);
-#else
-        (char *)res_name);
-#endif
-}
-
-
-int kfio_pci_set_dma_mask(kfio_pci_dev_t *pdev, uint64_t mask)
-{
-    return pci_set_dma_mask((struct pci_dev *)pdev, mask);
-}
-
-
-void kfio_pci_set_master(kfio_pci_dev_t *pdev)
-{
-    pci_set_master((struct pci_dev *)pdev);
-}
-
-uint16_t kfio_pci_get_subsystem_vendor(kfio_pci_dev_t *pdev)
-{
-    return ((struct pci_dev *)pdev)->subsystem_vendor;
-}
-
-uint16_t kfio_pci_get_subsystem_device(kfio_pci_dev_t *pdev)
-{
-    return ((struct pci_dev *)pdev)->subsystem_device;
-}
-
-void *kfio_pci_get_drvdata(kfio_pci_dev_t *pdev)
-{
-    return pci_get_drvdata((struct pci_dev *)pdev);
-}
-
-void kfio_pci_set_drvdata(kfio_pci_dev_t *pdev, void *data)
-{
-    pci_set_drvdata((struct pci_dev *)pdev, data);
-}
-
-uint64_t kfio_pci_resource_start(kfio_pci_dev_t *pdev, uint16_t bar)
-{
-    return pci_resource_start((struct pci_dev *)pdev, bar);
-}
-
-uint32_t kfio_pci_resource_len(kfio_pci_dev_t *pdev, uint16_t bar)
-{
-    return pci_resource_len((struct pci_dev *)pdev, bar);
-}
-
-uint8_t kfio_pci_get_bus(kfio_pci_dev_t *pdev)
-{
-    return ((struct pci_dev *)pdev)->bus->number;
-}
-
-uint16_t kfio_pci_get_domain(kfio_pci_dev_t *pdev)
-{
-    return pci_domain_nr(((struct pci_dev *)pdev)->bus);
-}
-
-uint8_t kfio_pci_get_devicenum(kfio_pci_dev_t *pdev)
-{
-    return (PCI_SLOT(((struct pci_dev *)pdev)->devfn));
-}
-
-uint8_t kfio_pci_get_function(kfio_pci_dev_t *pdev)
-{
-    return (PCI_FUNC(((struct pci_dev *)pdev)->devfn));
 }
 
 #if IODRIVE_DISABLE_PCIE_RELAXED_ORDERING
@@ -623,27 +309,6 @@ void kfio_pci_disable_relaxed_ordering(kfio_pci_dev_t *pdev)
     }
 }
 #endif
-
-void kfio_iodrive_intx (kfio_pci_dev_t *pci_dev, int enable)
-{
-    uint16_t c, n;
-
-    kfio_pci_read_config_word (pci_dev, PCI_COMMAND, &c);
-
-    if (enable)
-    {
-        n = c & ~PCI_COMMAND_INTX_DISABLE;
-    }
-    else
-    {
-        n = c | PCI_COMMAND_INTX_DISABLE;
-    }
-
-    if (n != c)
-    {
-        kfio_pci_write_config_word (pci_dev, PCI_COMMAND, n);
-    }
-}
 
 /*
  * Spinlock wrappers
