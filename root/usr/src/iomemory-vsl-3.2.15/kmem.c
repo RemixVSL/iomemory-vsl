@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------
 // Copyright (c) 2006-2014, Fusion-io, Inc.(acquired by SanDisk Corp. 2014)
-// Copyright (c) 2014-2015 SanDisk Corp. and/or all its affiliates. All rights reserved.
+// Copyright (c) 2014-2015, SanDisk Corp. and/or all its affiliates. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -24,7 +24,7 @@
 // WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 
 #if !defined (__linux__)
 #error This file supports linux only
@@ -34,6 +34,16 @@
 #include <fio/port/dbgset.h>
 #include <linux/vmalloc.h>
 #include <linux/version.h>
+
+#if !defined KFIOC_DISCARD
+#error kfioconfig not included
+#endif
+
+
+/**
+ * @ingroup PORT_LINUX
+ * @{
+ */
 
 #if defined(__VMKLNX__)
 extern void *dlmalloc(size_t bytes);
@@ -458,8 +468,9 @@ static vmk_MachPage vmklnx_alloc_page(gfp_t flags)
 
         if (retval != VMK_OK) /* we will still attempt to get a page */
         {
-            errprint("Error 0x%x, tried to increase mem pool to %u, g_pages_used=%lld\n",
-                 (unsigned) retval, pages_to_reserve, g_pages_used);
+            errprint(
+                         "Error 0x%x, tried to increase mem pool to %u, g_pages_used=%lld\n",
+                         (unsigned) retval, pages_to_reserve, g_pages_used);
         }
         else
         {
@@ -479,7 +490,8 @@ static vmk_MachPage vmklnx_alloc_page(gfp_t flags)
         fusion_spin_unlock(&g_memory_lock);
         if (unlikely(retval != VMK_MEM_ADMIT_FAILED))
         {
-            errprint("Unexpected vmk_MemPoolAlloc() return code 0x%x\n", (unsigned) retval);
+            errprint(
+                         "Unexpected vmk_MemPoolAlloc() return code 0x%x\n", (unsigned) retval);
         }
         return VMK_INVALID_MACH_PAGE;
     }
@@ -519,38 +531,6 @@ static void vmklnx_free_page(vmk_MachPage page)
     fusion_spin_unlock(&g_memory_lock);
 }
 #endif /* #if defined(__VMKLNX__) */
-
-/**
- *  @brief allocates locked down memory suitable for DMA transfers.
- *  @param pdev - pointer to device handle
- *      Solaris  (struct _kfio_solaris_pci_dev *)
- *  @param size - size of allocation
- *  @param dma_handle - member .phys_addr of struct will be set to the
- *  physical addr on successful return.  The remainder of the structure is opaque.
- *  @return virtual address of allocated memory or NULL on failure.
- *
- *  The current io-drive has 64 bit restrictions on alignment and buffer length,
- *  and no restrictions on address ranges with DMA.
- */
-void noinline *kfio_dma_alloc_coherent(kfio_pci_dev_t *pdev, unsigned int size,
-                                       struct fusion_dma_t *dma_handle)
-{
-    FUSION_ALLOCATION_TRIPWIRE_TEST();
-
-    return dma_alloc_coherent(&((struct pci_dev *)pdev)->dev, size,
-                              (dma_addr_t *) &dma_handle->phys_addr, GFP_KERNEL);
-}
-
-/**
- * @brief frees memory allocated by kfio_dma_alloc_coherent().
- *
- */
-void noinline kfio_dma_free_coherent(kfio_pci_dev_t *pdev, unsigned int size,
-                                     void *vaddr, struct fusion_dma_t *dma_handle)
-{
-    dma_free_coherent(&((struct pci_dev *)pdev)->dev, size, vaddr,
-                      (dma_addr_t) dma_handle->phys_addr);
-}
 
 /**
  * @brief allocates physically contiguous memory.
@@ -709,7 +689,7 @@ fusion_page_t noinline kfio_alloc_0_page(kfio_maa_t flags)
     if (flags & KFIO_MAA_NOIO)
         lflags |= GFP_NOIO;
     if (flags & KFIO_MAA_NOWAIT)
-        lflags |= GFP_NOWAIT;
+        lflags |= (GFP_NOWAIT | __GFP_NOWARN);
 /** linux-2.6.11 introduced __GFP_ZERO
  * We don't have a KFIOC_ for this because defines are trivially detectable.
  */
@@ -787,9 +767,6 @@ KFIO_EXPORT_SYMBOL(kfio_get_user_pages);
 KFIO_EXPORT_SYMBOL(kfio_put_user_pages);
 #endif
 
-/*---------------------------------------------------------------------------*/
-
-int kfio_dma_sync(struct fusion_dma_t *dma_hdl, uint64_t offset, size_t length, unsigned type)
-{
-    return 0;
-}
+/**
+ * @}
+ */
