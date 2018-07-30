@@ -2,30 +2,31 @@
 
 #-----------------------------------------------------------------------------
 # Copyright (c) 2006-2014, Fusion-io, Inc.(acquired by SanDisk Corp. 2014)
-# Copyright (c) 2014-2017 SanDisk Corp. and/or all its affiliates. All rights reserved.
+# Copyright (c) 2014-2018 SanDisk Corp. and/or all its affiliates. (acquired by Western Digital Corp. 2016)
+# Copyright (c) 2016-2017 Western Digital Technologies, Inc. All rights reserved.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-# * Redistributions of source code must retain the above copyright notice,
-#   this list of conditions and the following disclaimer.
-# * Redistributions in binary form must reproduce the above copyright notice,
-#   this list of conditions and the following disclaimer in the documentation
-#   and/or other materials provided with the distribution.
-# * Neither the name of the SanDisk Corp. nor the names of its contributors
-#   may be used to endorse or promote products derived from this software
-#   without specific prior written permission.
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-# THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED.
-# IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
-# OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
-# OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+#  * Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
+#  * Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
+#  * Neither the name of the SanDisk Corp. nor the names of its contributors
+#    may be used to endorse or promote products derived from this software
+#    without specific prior written permission.
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+#  THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+#  A PARTICULAR PURPOSE ARE DISCLAIMED.
+#  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+#  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
+#  OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+#  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+#  OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+#  WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+#  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+#  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #-----------------------------------------------------------------------------
 
 set -e
@@ -61,6 +62,14 @@ EX_OSFILE=72
 # capitalized function names, the test flags and the test functions
 # have identical names so that a look-up-table is not needed (it just
 # makes a few things simpler).
+
+# Several of the compile time tests include linux/slab.h, which eventually include
+# linux/types.h.  This has the side effect of including kernel space definitions
+# of integral types which may cause issues with print format specifiers.  Later
+# Linux kernels include asm-generic/int-ll64.h unconditionally for kernel space
+# integral type definitions, while the Linux porting layer stdint.h conditionally
+# defines 64 bit integral types with one or two "long" statements dependent on
+# architecture.
 
 KFIOC_TEST_LIST="
 KFIOC_MISSING_WORK_FUNC_T
@@ -575,7 +584,7 @@ void kfio_test_work_func_t(void) {
     fn = NULL;
 }
 '
-    
+
     kfioc_test "$test_code" "$test_flag" 0
 }
 
@@ -751,12 +760,12 @@ KFIOC_BIO_ENDIO_HAS_BYTES_DONE()
     local test_flag="$1"
     local test_code='
 #include <linux/bio.h>
-    
+
 void kfioc_test_bio_endio(void) {
     bio_endio(NULL, 0, 0);
 }
 '
-    
+
     kfioc_test "$test_code" "$test_flag" 1
 }
 
@@ -896,6 +905,7 @@ void kfioc_test_request_queue_unplug_param(blk_plug_cb_fn cb) {
 
     kfioc_test "$test_code" "$test_flag" 1
 }
+
 
 # flag:           KFIOC_BACKING_DEV_INFO_HAS_UNPLUG_IO_FN
 # values:
@@ -1303,6 +1313,7 @@ KFIOC_DISCARD_GRANULARITY_IN_LIMITS()
 void kfioc_test_blk_queue_discard_granularity(void)
 {
     struct request_queue q;
+
     q.limits.discard_granularity = 0;
 }
 '
@@ -1343,6 +1354,7 @@ KFIOC_NEW_BARRIER_SCHEME()
 void kfioc_hew_barrier_scheme(void)
 {
     struct request_queue q;
+
     q.flush_flags = REQ_FLUSH | REQ_FUA;
 }
 '
@@ -1366,7 +1378,7 @@ void kfioc_hew_barrier_scheme(void)
     kfioc_test "$test_code" KFIOC_NEWER_BARRIER_SCHEME 1 -Werror
 }
 
-# flags:         KFIOC_BARRIER_USES_QUEUE_FLAGS
+# flag:          KFIOC_BARRIER_USES_QUEUE_FLAGS
 # usage:         1   Kernel uses queue_flags field
 #                0   It does not
 KFIOC_BARRIER_USES_QUEUE_FLAGS()
@@ -1377,6 +1389,7 @@ KFIOC_BARRIER_USES_QUEUE_FLAGS()
 void kfioc_barrier_uses_queue_flags(void)
 {
     struct request_queue *q = NULL;
+
     if (test_bit(QUEUE_FLAG_WC, &q->queue_flags))
     {
     }
@@ -1385,9 +1398,11 @@ void kfioc_barrier_uses_queue_flags(void)
     kfioc_test "$test_code" KFIOC_BARRIER_USES_QUEUE_FLAGS 1 -Werror
 }
 
+
 # flag:          KFIOC_HAS_BLK_FS_REQUEST
 # usage:         1   Kernel has obsolete blk_fs_request macro
 #                0   It does not
+# kernel version 2.6.36 removed macro.
 KFIOC_HAS_BLK_FS_REQUEST()
 {
     local test_flag="$1"
@@ -1458,7 +1473,7 @@ KFIOC_MODULE_PARAM_ARRAY_NUMP()
 {
     local test_flag="$1"
     local test_code='
-static char *test[10];
+char *test[10];
 
 module_param_array(test, charp, NULL, 0);
 '
@@ -1548,7 +1563,7 @@ void kfioc_has_blk_queue_hardsect_size(void){
 
 # flag:           KFIOC_HAS_END_REQUEST
 # usage:          undef for automatic selection by kernel version
-#                 0     if the kernel does not have the blk_queue_hardsect_size function
+#                 0     if the kernel does not have the end_that_request() function
 #                 1     if the kernel has the function
 # git commit: f0f0052069989b80d2a3e50c9cd2f2a650bc1aea
 #             This interface was changed and no longer exists on 2.6.25 or later
@@ -1569,7 +1584,8 @@ void kfioc_has_end_request(void){
 
 # flag:           KFIOC_USE_IO_SCHED
 # usage:          undef for automatic selection by kernel version
-#                 0     if the kernel does not have the blk_queue_hardsect_size function
+#                 0     if the kernel version is between 2.5.24 and 2.6.31
+#                           OR the blk_complete_request() function does not exist exactly as specified below.
 #                 1     if the kernel has the function
 # git commit:     
 # kernel version: > 2.6.24 and < 2.6.31
@@ -2426,8 +2442,8 @@ KFIOC_BIO_HAS_ATOMIC_REMAINING()
 #include <linux/bio.h>
 
 void kfioc_test_bio_remaining(void) {
-struct bio bio;
-atomic_set(&(bio.bi_remaining),0);
+	struct bio bio;
+	atomic_set(&(bio.bi_remaining),0);
 }
 '
     kfioc_test "$test_code" "$test_flag" 1 -Werror-implicit-function-declaration
@@ -2444,8 +2460,8 @@ KFIOC_BIO_HAS_INTEGRITY()
 #include <linux/bio.h>
 
 void kfioc_test_bio_remaining(void) {
-struct bio bio;
-bio_integrity(bio) = NULL;
+	struct bio bio;
+	bio_integrity(bio) = NULL;
 }
 '
     kfioc_test "$test_code" "$test_flag" 1 -Werror-implicit-function-declaration
@@ -2462,8 +2478,8 @@ KFIOC_BIO_HAS_SPECIAL()
 #include <linux/bio.h>
 
 void kfioc_test_bio_remaining(void) {
-struct bio bio;
-void *test = &(bio.bi_special);
+	struct bio bio;
+	void *test = &(bio.bi_special);
 }
 '
     kfioc_test "$test_code" "$test_flag" 1 -Werror-implicit-function-declaration
@@ -2789,7 +2805,6 @@ EOF
 
     return $rc
 }
-
 
 if [ "$#" -gt 0 ]; then
     main "$@"
