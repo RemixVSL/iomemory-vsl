@@ -35,11 +35,6 @@
 #include <linux/vmalloc.h>
 #include <linux/version.h>
 
-#if !defined KFIOC_DISCARD
-#error kfioconfig not included
-#endif
-
-
 /**
  * @ingroup PORT_LINUX
  * @{

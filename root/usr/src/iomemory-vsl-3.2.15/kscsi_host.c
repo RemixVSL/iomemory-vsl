@@ -46,11 +46,6 @@
 #include <linux/pci.h>
 #include <linux/blkdev.h>   // for BLK_EH_NOT_HANDLED
 
-#if !defined KFIOC_DISCARD
-#error kfioconfig not included
-#endif
-
-
 // See CRT-23. ESX asserts on DID_BAD_TARGET; it expects DID_NO_CONNECT.
 #if defined(__VMKLNX__)
 #undef DID_BAD_TARGET

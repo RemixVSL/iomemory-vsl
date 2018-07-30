@@ -41,11 +41,6 @@
 #include <fio/port/port_config.h>
 #include <fio/port/kfio.h>
 
-#if !defined KFIOC_DISCARD
-#error kfioconfig not included
-#endif
-
-
 /*************************************************************************************/
 /*   Legacy and MSI interrupts.                                                      */
 /*************************************************************************************/

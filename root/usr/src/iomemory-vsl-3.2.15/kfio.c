@@ -61,10 +61,6 @@
 #include <linux/scatterlist.h>
 #endif
 
-#if !defined KFIOC_DISCARD
-#error kfioconfig not included
-#endif
-
 kfio_cpu_t kfio_current_cpu(void)
 {
     return raw_smp_processor_id();
