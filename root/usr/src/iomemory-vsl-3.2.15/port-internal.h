@@ -24,10 +24,11 @@
 // WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 /** @file
- * OS-specific includes and references for unse in the porting layer only.
- * Do not include this file directly or indirectly in the driver
+ * This file contains OS-specific includes and references for use in the
+ * porting layer only.  Do not include this file directly or indirectly in the
+ * driver.
  *
  */
 

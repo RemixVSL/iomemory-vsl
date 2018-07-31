@@ -32,6 +32,11 @@
 #include <fio/port/utypes.h>
 #include <fio/port/ufio.h>
 
+/**
+ * @ingroup PORT_COMMON_LINUX
+ * @{
+ */
+
 #define __raw_readl(addr) (*(volatile uint32_t *)(addr))
 #define __raw_writel(val, addr) (*(volatile uint32_t *)(addr) = (val))
 
@@ -89,3 +94,6 @@ void kfio_csr_write_64(uint64_t val, volatile void *addr, void *hdl)
 #endif
 }
 
+/**
+ * @}
+ */
