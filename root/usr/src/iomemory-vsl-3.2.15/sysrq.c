@@ -34,6 +34,11 @@
 #include <fio/port/ktypes.h>
 #include <fio/port/dbgset.h>
 
+/**
+ * @ingroup PORT_COMMON_LINUX
+ * @{
+ */
+
 extern void fio_pcicheck_handle_sysrq(void);
 extern void iodrive_dump_all(void);
 extern void iodrive_dump_all_software_state(void);
@@ -91,3 +96,6 @@ void kfio_iodrive_unreg_sysrq_keys(void)
     unregister_sysrq_key(SYSRQ_SOFTWARE, &software_key_op);
 }
 
+/**
+ * @}
+ */

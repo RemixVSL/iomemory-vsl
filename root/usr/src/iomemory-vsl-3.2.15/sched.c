@@ -26,6 +26,13 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //-----------------------------------------------------------------------------
 #include "port-internal.h"
+#include <fio/port/sched.h>
+#include <fio/port/ktime.h>
+
+/**
+ * @ingroup PORT_COMMON_LINUX
+ * @{
+ */
 
 /* XXX work_func_t undefined in early kernels:
  * the func member of work_struct is   void (*func)(void *)
@@ -141,3 +148,7 @@ void noinline fusion_might_sleep(void)
     might_sleep();
 }
 KFIO_EXPORT_SYMBOL(fusion_might_sleep);
+
+/**
+ * @}
+ */

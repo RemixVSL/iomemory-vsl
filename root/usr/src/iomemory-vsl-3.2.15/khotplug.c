@@ -36,7 +36,6 @@
 #include <linux/cpu.h>
 #include <linux/list.h>
 #include <linux/notifier.h>
-#include <linux/version.h>
 
 /**
  * @ingroup PORT_LINUX
@@ -75,7 +74,7 @@ static void send_event_all(int online_flag, kfio_cpu_t cpu)
 
 // Kernel 4.8 introduced the hotplug state machine, but without the callback state for offline,
 // Kernel 4.10 has hotplug state machine with callback states for both online and offline.
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,10,0)
+#if !KFIOC_HAS_HOTPLUG_STATE_MACHINE || (KFIOC_HAS_HOTPLUG_STATE_MACHINE && !KFIOC_HAS_HOTPLUG_BP_PREPARE_DYN_STATES)
 static int notify_fn(struct notifier_block *self, unsigned long action, void *hcpu)
 {
     switch (action)
@@ -87,12 +86,14 @@ static int notify_fn(struct notifier_block *self, unsigned long action, void *hc
             send_event_all(0, (kfio_cpu_t)(unsigned long)hcpu);
             break;
 
+#if !KFIOC_HAS_HOTPLUG_STATE_MACHINE    // Make sure 'online' notifier is enabled only if state machine does not exist.
         case CPU_ONLINE:
 #ifdef CPU_ONLINE_FROZEN
         case CPU_ONLINE_FROZEN:
 #endif
             send_event_all(1, (kfio_cpu_t)(unsigned long)hcpu);
             break;
+#endif  /* KFIOC_HAS_HOTPLUG_STATE_MACHINE */
     }
 
     return NOTIFY_OK;
@@ -102,19 +103,46 @@ static struct notifier_block kfio_linux_cpu_notifier =
 {
     .notifier_call = notify_fn,
 };
-#else
+#endif  /* !KFIOC_HAS_HOTPLUG_STATE_MACHINE || (KFIOC_HAS_HOTPLUG_STATE_MACHINE && !KFIOC_HAS_HOTPLUG_BP_PREPARE_DYN_STATES) */
+
+#if KFIOC_HAS_HOTPLUG_STATE_MACHINE
+#if KFIOC_HAS_HOTPLUG_BP_PREPARE_DYN_STATES
+static int cpuhp_offline_dyn_state; // Global, so we can release the state callback.
 static int kfio_cpu_notify_offline(unsigned int cpu)
 {
     send_event_all(0, (kfio_cpu_t)cpu);
     return 0;
 }
+#endif  /* KFIOC_HAS_HOTPLUG_BP_PREPARE_DYN_STATES */
+
+#if KFIOC_HAS_HOTPLUG_AP_ONLINE_DYN_STATES
+static int cpuhp_online_dyn_state;  // Global, so can release the state callback.
 static int kfio_cpu_notify_online(unsigned int cpu)
 {
     send_event_all(1, (kfio_cpu_t)cpu);
     return 0;
 }
-#endif
-#endif
+#endif  /* KFIOC_HAS_HOTPLUG_AP_ONLINE_DYN_STATES */
+#endif  /* KFIOC_HAS_HOTPLUG_STATE_MACHINE */
+
+#if KFIOC_HAS_HOTPLUG_STATES_REMOVAL_BUG
+// A function that adds a hotplug dyn state, then removes it iff the state is NOT the first state in the dyn array.
+// This is to avoid the kernel bug that prevents removal of the first state.
+void setup_first_hotplug_dyn_state(enum cpuhp_state desired_state)
+{
+    int reserved_state =
+    cpuhp_setup_state_nocalls(desired_state,
+                               "block/iomemory_vsl4:first_state",
+                               NULL,
+                               NULL);
+    if (reserved_state != desired_state)
+    {
+        // Returned state is _not_ the first in the array, so remove it so that we only take up one step.
+        cpuhp_remove_state_nocalls(reserved_state);
+    }
+}
+#endif  /* KFIOC_HAS_HOTPLUG_STATES_REMOVAL_BUG */
+#endif  /* CONFIG_SMP && PORT_SUPPORTS_PER_CPU */
 
 #if PORT_SUPPORTS_PER_CPU
 int kfio_register_cpu_notifier(kfio_cpu_notify_fn *func)
@@ -148,7 +176,7 @@ int kfio_register_cpu_notifier(kfio_cpu_notify_fn *func)
         //  So we use cpuhp_setup_state() for setting an 'online' callback but use the old register_cpu_notifier()
         //  for 'offline'.
         // Kernel 4.10 and above have symmetrical CPUHP_..._DYN states for online and offline callbacks.
-
+#if KFIOC_HAS_HOTPLUG_BP_PREPARE_DYN_STATES
 
         // Unfortunately, in kernels 4.8 through 4.12 the cpuhp_remove_state() function does not properly remove the
         //  first callback state in either DYN callback array. We apparently are the only one using the
@@ -159,24 +187,32 @@ int kfio_register_cpu_notifier(kfio_cpu_notify_fn *func)
         //  If our state _is_ the first item in the array and this kernel has the bug then leave the NULL callbacks
         //  entry in the array and _also_ add another state with the real callbacks.
         // When removing the callbacks states just remove the non-NULL state. The NULL callbacks simply won't be called.
-
+#if KFIOC_HAS_HOTPLUG_STATES_REMOVAL_BUG
+        setup_first_hotplug_dyn_state(CPUHP_BP_PREPARE_DYN);
+#endif
         // Whether kernel has states removal bug or not, now setup our real callback.
-
+        cpuhp_offline_dyn_state =
+        cpuhp_setup_state_nocalls(CPUHP_BP_PREPARE_DYN,
+                                   "block/iomemory_vsl3:offline",
+                                   NULL,
+                                   kfio_cpu_notify_offline);
+#endif  /* KFIOC_HAS_HOTPLUG_BP_PREPARE_DYN_STATES */
+#if KFIOC_HAS_HOTPLUG_AP_ONLINE_DYN_STATES
         // My (enb) testing didn't show the AP state having the same last-state-removal problem...but that's because
         //  my AP state wasn't the first AP state in the array.
         // So for safety we must do the same dance as with the BP DYN.
-
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,10,0)
-
-        cpuhp_setup_state(CPUHP_AP_ONLINE_DYN,
-                          "kfio/sandisk:online",
-                          kfio_cpu_notify_online,
-                          kfio_cpu_notify_offline);
-        
+#if KFIOC_HAS_HOTPLUG_STATES_REMOVAL_BUG
+        setup_first_hotplug_dyn_state(CPUHP_AP_ONLINE_DYN);
+#endif
+        cpuhp_online_dyn_state =
+        cpuhp_setup_state_nocalls(CPUHP_AP_ONLINE_DYN,
+                                  "block/iomemory_vsl3:online",
+                                  kfio_cpu_notify_online,
+                                  NULL);
+#endif  /* KFIOC_HAS_HOTPLUG_AP_ONLINE_DYN_STATES */
         // If kernel is < 4.8 then must always use notifer.
         // If kernel == 4.8 then our functions require use of notifier only for offline.
-#else 
+#if !KFIOC_HAS_HOTPLUG_STATE_MACHINE || (KFIOC_HAS_HOTPLUG_STATE_MACHINE && !KFIOC_HAS_HOTPLUG_BP_PREPARE_DYN_STATES)
         register_cpu_notifier(&kfio_linux_cpu_notifier);
 #endif
     }
@@ -215,9 +251,13 @@ void kfio_unregister_cpu_notifier(kfio_cpu_notify_fn *func)
      */
     if (do_unregister != 0)
     {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,10,0)
-        cpuhp_remove_state_nocalls(CPUHP_AP_ONLINE_DYN);
-#else
+#if KFIOC_HAS_HOTPLUG_AP_ONLINE_DYN_STATES
+        cpuhp_remove_state_nocalls(cpuhp_online_dyn_state);
+#endif
+#if KFIOC_HAS_HOTPLUG_BP_PREPARE_DYN_STATES
+        cpuhp_remove_state_nocalls(cpuhp_offline_dyn_state);
+#endif
+#if !KFIOC_HAS_HOTPLUG_STATE_MACHINE || (KFIOC_HAS_HOTPLUG_STATE_MACHINE && !KFIOC_HAS_HOTPLUG_BP_PREPARE_DYN_STATES)
         unregister_cpu_notifier(&kfio_linux_cpu_notifier);
 #endif
     }
@@ -225,7 +265,7 @@ void kfio_unregister_cpu_notifier(kfio_cpu_notify_fn *func)
 #endif  /* CONFIG_SMP */
 }
 
-#endif
+#endif /* PORT_SUPPORTS_PER_CPU */
 
 /**
  * @}

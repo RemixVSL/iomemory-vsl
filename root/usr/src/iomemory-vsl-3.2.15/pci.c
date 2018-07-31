@@ -27,6 +27,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //-----------------------------------------------------------------------------
 #include <linux/types.h>
+#include <linux/interrupt.h>
 #include <linux/pci.h>
 #include <linux/version.h>
 #include <linux/module.h>
@@ -136,7 +137,7 @@ void kfio_free_msix(kfio_msix_t *msix, unsigned int vector, void *dev)
 
 irqreturn_t kfio_handle_irqx_wrapper(int irq, void *dev_id
 #if !KFIOC_HAS_GLOBAL_REGS_POINTER
-                                    , struct pt_regs *regs
+                        , struct pt_regs *regs
 #endif
     )
 {
@@ -153,13 +154,12 @@ int kfio_request_msix(kfio_pci_dev_t *pd, const char *devname, void *dev_id,
 
 int kfio_get_msix_number(void *msix, uint32_t vec_ix, uint32_t *irq)
 {
-    struct msix_entry *linux_msix = msix;
+    struct msix_entry *linux_msix = (struct msix_entry *)msix;
     *irq = linux_msix[vec_ix].vector;
     return 0;
 }
 
-unsigned int kfio_pci_enable_msix(kfio_pci_dev_t *__pdev,
-                                  kfio_msix_t *msix, unsigned int nr_vecs)
+unsigned int kfio_pci_enable_msix(kfio_pci_dev_t *__pdev, kfio_msix_t *msix, unsigned int nr_vecs)
 {
     struct pci_dev *pdev = (struct pci_dev *) __pdev;
     struct msix_entry *msi = (struct msix_entry *) msix;
@@ -176,7 +176,7 @@ unsigned int kfio_pci_enable_msix(kfio_pci_dev_t *__pdev,
         msi[i].entry = i;
     }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,12,0)
+#if KFIOC_HAS_PCI_ENABLE_MSIX_EXACT
     err = pci_enable_msix_exact(pdev, msi, nr_vecs);
 #else
     err = pci_enable_msix(pdev, msi, nr_vecs);

@@ -61,39 +61,10 @@
 #include <linux/scatterlist.h>
 #endif
 
-kfio_cpu_t kfio_current_cpu(void)
-{
-    return raw_smp_processor_id();
-}
-
-kfio_cpu_t kfio_get_cpu(kfio_get_cpu_t *flags)
-{
-    local_irq_save(*flags);
-    return smp_processor_id();
-}
-
-void kfio_put_cpu(kfio_get_cpu_t *flags)
-{
-    local_irq_restore(*flags);
-}
-
-unsigned int kfio_max_cpus(void)
-{
-#if !defined(__VMKLNX__)
-    return num_possible_cpus();
-#else
-    return 1;
-#endif
-}
-
-int kfio_cpu_online(kfio_cpu_t cpu)
-{
-#if !defined(__VMKLNX__)
-    return cpu_online(cpu);
-#else
-    return 1;
-#endif
-}
+/**
+ * @ingroup PORT_LINUX
+ * @{
+ */
 
 typedef struct FUSION_STRUCT_ALIGN(8) _linux_spinlock
 {
@@ -112,172 +83,10 @@ void  kfio_iounmap(void *addr)
     iounmap(addr);
 }
 
-int kfio_print(const char *format, ...)
-{
-    va_list ap;
-    int rc;
-
-    va_start(ap, format);
-    rc = kfio_vprint(format, ap);
-    va_end(ap);
-
-    return rc;
-}
-KFIO_EXPORT_SYMBOL(kfio_print);
-
-
-int kfio_vprint(const char *format, va_list ap)
-{
-#if !defined(__VMKLNX__)
-    return vprintk(format, ap);
-#else
-    va_list argsCopy;
-    int printedLen;
-
-    va_copy(argsCopy, ap);
-
-    vmk_vLogNoLevel(VMK_LOG_URGENCY_NORMAL, format, ap);
-    printedLen = vmk_Vsnprintf(NULL, 0, format, argsCopy);
-
-    va_end(argsCopy);
-    va_end(ap);
-
-    return printedLen;
-#endif
-}
-
-
-int kfio_snprintf(char *buffer, fio_size_t n, const char *format, ...)
-{
-    va_list ap;
-    int rc;
-
-    va_start(ap, format);
-    rc = kfio_vsnprintf(buffer, n, format, ap);
-    va_end(ap);
-
-    return rc;
-}
-KFIO_EXPORT_SYMBOL(kfio_snprintf);
-
-int kfio_vsnprintf(char *buffer, fio_size_t n, const char *format, va_list ap)
-{
-    return vsnprintf(buffer, n, format, ap);
-}
-KFIO_EXPORT_SYMBOL(kfio_vsnprintf);
-
-//int kfio_sscanf(const char *buf, const char *fmt, ...)
-//{
-//    va_list args;
-//    int i;
-
-//    va_start(args,fmt);
-//    i = vsscanf(buf,fmt,args);
-//    va_end(args);
-//    return i;
-//}
-
-int kfio_strcmp(const char *s1, const char *s2)
-{
-    return strcmp(s1, s2);
-}
-
-fio_size_t kfio_strlen(const char *s1)
-{
-    return strlen(s1);
-}
-KFIO_EXPORT_SYMBOL(kfio_strlen);
-
-int kfio_strncmp(const char *s1, const char *s2, fio_size_t n)
-{
-    return strncmp(s1, s2, n);
-}
-KFIO_EXPORT_SYMBOL(kfio_strncmp);
-
-char *kfio_strncpy(char *dst, const char *src, fio_size_t n)
-{
-    return strncpy(dst, src, n);
-}
-KFIO_EXPORT_SYMBOL(kfio_strncpy);
-
-char *kfio_strcat(char *dst, const char *src)
-{
-    return strcat(dst, src);
-}
-
-char *kfio_strncat(char *dst, const char *src, int size)
-{
-    return strncat(dst, src, size);
-}
-
-void *kfio_memset(void *dst, int c, fio_size_t n)
-{
-    return memset(dst, c, n);
-}
-KFIO_EXPORT_SYMBOL(kfio_memset);
-
-int kfio_memcmp(const void *m1, const void *m2, fio_size_t n)
-{
-    return memcmp(m1, m2, n);
-}
-KFIO_EXPORT_SYMBOL(kfio_memcmp);
-
-void *kfio_memcpy(void *dst, const void *src, fio_size_t n)
-{
-    return memcpy(dst, src, n);
-}
-KFIO_EXPORT_SYMBOL(kfio_memcpy);
-
-void *kfio_memmove(void *dst, const void *src, fio_size_t n)
-{
-#if !defined(__VMKLNX__)
-    return memmove(dst, src, n);
-#else
-    char *tmp;
-    const char *s;
-    char *dest = dst;
-    size_t count = n;
-
-    if (dest <= (char *)src) {
-        tmp = dest;
-        s = src;
-        while (count--)
-            *tmp++ = *s++;
-    } else {
-        tmp = dest;
-        tmp += count;
-        s = src;
-        s += count;
-        while (count--)
-            *--tmp = *--s;
-    }
-    return dest;
-#endif
-}
-
-unsigned long long kfio_strtoull(const char *nptr, char **endptr, int base)
-{
-    return simple_strtoull(nptr, endptr, base);
-}
-KFIO_EXPORT_SYMBOL(kfio_strtoull);
-
-unsigned long int kfio_strtoul(const char *nptr, char **endptr, int base)
-{
-    return simple_strtoul(nptr, endptr, base);
-}
-KFIO_EXPORT_SYMBOL(kfio_strtoul);
-
-long int kfio_strtol(const char *nptr, char **endptr, int base)
-{
-    return simple_strtol(nptr, endptr, base);
-}
-KFIO_EXPORT_SYMBOL(kfio_strtol);
-
 void kfio_pci_dev_put(kfio_pci_dev_t *pdev)
 {
     pci_dev_put((struct pci_dev *)pdev);
 }
-
 
 kfio_pci_dev_t *kfio_pci_get_device(unsigned int vendor, unsigned int device, kfio_pci_dev_t *from)
 {
@@ -465,44 +274,6 @@ void noinline fusion_spin_lock_irqsave_nested(fusion_spinlock_t *s, int subclass
 }
 
 /*
- * RW spinlock wrappers
- */
-
-void fusion_init_rw_spin(fusion_rw_spinlock_t *s, const char *name)
-{
-    rwlock_init((rwlock_t *)s);
-}
-
-void fusion_destroy_rw_spin(fusion_rw_spinlock_t *s)
-{
-    (void)s;
-}
-
-void fusion_spin_read_lock(fusion_rw_spinlock_t *s)
-{
-#if FUSION_DEBUG && !KFIOC_CONFIG_PREEMPT_RT && !defined(__VMKLNX__)
-    kassert(!irqs_disabled());
-#endif
-    read_lock((rwlock_t *)s);
-}
-void fusion_spin_write_lock(fusion_rw_spinlock_t *s)
-{
-#if FUSION_DEBUG && !KFIOC_CONFIG_PREEMPT_RT && !defined(__VMKLNX__)
-    kassert(!irqs_disabled());
-#endif
-    write_lock((rwlock_t *)s);
-}
-
-void fusion_spin_read_unlock(fusion_rw_spinlock_t *s)
-{
-    read_unlock((rwlock_t *)s);
-}
-void fusion_spin_write_unlock(fusion_rw_spinlock_t *s)
-{
-    write_unlock((rwlock_t *)s);
-}
-
-/*
  * Mutex wrappers
  */
 
@@ -635,19 +406,6 @@ int fusion_rwsem_down_read_trylock(fusion_rwsem_t *x)
 }
 #endif
 
-void fusion_create_kthread(fusion_kthread_func_t func, void *data, void *fusion_nand_device,
-                           const char *fmt, ...)
-{
-    va_list ap;
-    char buffer[MAX_KTHREAD_NAME_LENGTH];
-
-    va_start(ap, fmt);
-    vsnprintf(buffer, sizeof(buffer), fmt, ap);
-    va_end(ap);
-
-    kthread_run(func, data, "%s", buffer);
-}
-
 #if defined(__VMKLNX__)
 // Version of fusion_create_kthread() that returns the thread task_struct pointer
 struct task_struct *fusion_esx_create_kthread(fusion_kthread_func_t func, void *data,
@@ -669,74 +427,6 @@ struct task_struct *fusion_esx_create_kthread(fusion_kthread_func_t func, void *
 void fusion_esx_wakeup_thread(struct task_struct *ts)
 {
     wake_up_process(ts);
-}
-#endif
-
-#if PORT_SUPPORTS_PER_CPU
-void kfio_create_kthread_on_cpu(fusion_kthread_func_t func, void *data,
-                                void *fusion_nand_device, kfio_cpu_t cpu,
-                                const char *fmt, ...)
-{
-    struct task_struct *task;
-    va_list ap;
-    char buffer[40];
-
-    if (!cpu_online(cpu))
-    {
-        return;
-    }
-
-    va_start(ap, fmt);
-    vsnprintf(buffer, sizeof(buffer), fmt, ap);
-    va_end(ap);
-
-    task = kthread_create(func, data, "%s", buffer);
-    if (!IS_ERR(task) && task)
-    {
-        kthread_bind(task, cpu);
-        wake_up_process(task);
-    }
-}
-#endif
-
-#if PORT_SUPPORTS_PCI_NUMA_INFO
-#if KFIOC_NUMA_MAPS
-static void __kfio_bind_task_to_cpumask(struct task_struct *tsk, cpumask_t *mask)
-{
-    tsk->cpus_allowed = *mask;
-#if KFIOC_TASK_HAS_NR_CPUS_ALLOWED
-#if KFIOC_HAS_CPUMASK_WEIGHT
-    tsk->rt.nr_cpus_allowed = cpumask_weight(mask);
-#else
-    tsk->rt.nr_cpus_allowed = cpus_weight(*mask);
-#endif
-#endif
-#if KFIOC_TASK_HAS_BOUND_FLAG
-    tsk->flags |= PF_THREAD_BOUND;
-#endif
-}
-#endif
-
-/*
- * Will take effect on next schedule event
- */
-void kfio_bind_kthread_to_node(kfio_numa_node_t node)
-{
-#if KFIOC_NUMA_MAPS
-    if (node != FIO_NUMA_NODE_NONE)
-    {
-        cpumask_t *cpumask = (cpumask_t *) cpumask_of_node(node);
-
-        if (cpumask &&
-#if KFIOC_HAS_CPUMASK_WEIGHT
-            cpumask_weight(cpumask)
-#else
-            cpus_weight(*cpumask)
-#endif
-           )
-            __kfio_bind_task_to_cpumask(current, cpumask);
-    }
-#endif
 }
 #endif
 
@@ -764,23 +454,6 @@ kfio_cpu_t kfio_next_cpu_in_node(kfio_cpu_t last_cpu, kfio_numa_node_t node)
 }
 #endif  /* PORT_SUPPORTS_PER_CPU */
 
-/*
- * Userspace <-> Kernelspace routines
- * XXX: all the kfio_[put\get]_user_*() routines are superfluous
- * and ought be replaced with kfio_copy_[to|from]_user()
- */
-int kfio_copy_from_user(void *to, const void *from, unsigned len)
-{
-    return copy_from_user(to, from, len);
-}
-KFIO_EXPORT_SYMBOL(kfio_copy_from_user);
-
-int kfio_copy_to_user(void *to, const void *from, unsigned len)
-{
-    return copy_to_user(to, from, len);
-}
-KFIO_EXPORT_SYMBOL(kfio_copy_to_user);
-
 int kfio_put_user_8(int x, uint8_t *arg)
 {
     return put_user(x, arg);
@@ -799,11 +472,6 @@ int kfio_put_user_32(int x, uint32_t *arg)
 int kfio_put_user_64(int x, uint64_t *arg)
 {
     return put_user(x, arg);
-}
-
-void kfio_dump_stack()
-{
-    dump_stack();
 }
 
 /*
@@ -915,29 +583,6 @@ int __init kfio_checkstructs(void)
     return rc;
 }
 
-#if FIO_BITS_PER_LONG == 32
-/* 64bit divisor, dividend and result. dynamic precision */
-uint64_t kfio_div64_64(uint64_t dividend, uint64_t divisor)
-{
-    uint32_t tmp_divisor = divisor;
-    uint32_t upper = divisor >> 32;
-    uint32_t shift;
-
-    if(upper)
-    {
-        shift = fls(upper);
-        dividend = dividend >> shift;
-        tmp_divisor = divisor >> shift;
-    }
-
-    do_div(dividend, tmp_divisor);
-
-    return dividend;
-}
-
-uint64_t kfio_mod64_64(uint64_t dividend, uint64_t divisor)
-{
-    return do_div(dividend, divisor);
-}
-
-#endif
+/**
+ * @}
+ */

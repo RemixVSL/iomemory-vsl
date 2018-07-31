@@ -729,7 +729,7 @@ int kfio_get_user_pages(fusion_user_page_t *pages, int nr_pages, fio_uintptr_t s
     int retval;
 
     down_read(&current->mm->mmap_sem);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,9,0)
+#if KFIOC_GET_USER_PAGES_HAS_GUP_FLAGS
     retval = get_user_pages(GET_USER_PAGES_TASK start, nr_pages, write, (struct page **) pages, NULL);
 #else
     retval = get_user_pages(GET_USER_PAGES_TASK start, nr_pages, write, 0, (struct page **) pages, NULL);

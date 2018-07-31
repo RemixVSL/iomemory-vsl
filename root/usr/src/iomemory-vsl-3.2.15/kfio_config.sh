@@ -171,10 +171,20 @@ KFIOC_HAS_FILE_INODE_HELPER
 KFIOC_HAS_CPUMASK_WEIGHT
 KFIOC_BIO_HAS_USCORE_BI_CNT
 KFIOC_BIO_ENDIO_REMOVED_ERROR
+KFIOC_BIO_ERROR_CHANGED_TO_STATUS
 KFIOC_MAKE_REQUEST_FN_UINT
 KFIOC_GET_USER_PAGES_REQUIRES_TASK
 KFIOC_BARRIER_USES_QUEUE_FLAGS
+KFIOC_GET_USER_PAGES_HAS_GUP_FLAGS
+KFIOC_HAS_HOTPLUG_STATE_MACHINE
+KFIOC_HAS_HOTPLUG_BP_PREPARE_DYN_STATES
+KFIOC_HAS_HOTPLUG_AP_ONLINE_DYN_STATES
+KFIOC_HAS_HOTPLUG_STATES_REMOVAL_BUG
+KFIOC_HAS_PCI_ENABLE_MSIX_EXACT
+KFIOC_ELEVATOR_EXIT_HAS_REQQ_PARAM
 KFIOC_HAS_BLK_RQ_IS_PASSTHROUGH
+KFIOC_HAS_BLK_QUEUE_BOUNCE
+KFIOC_HAS_BLK_QUEUE_SPLIT2
 KFIOC_BIO_HAS_ERROR
 KFIOC_REQ_HAS_ERRORS
 KFIOC_REQ_HAS_ERROR_COUNT
@@ -1416,22 +1426,6 @@ int kfioc_has_blk_fs_request(struct request *req)
     kfioc_test "$test_code" KFIOC_HAS_BLK_FS_REQUEST 1 -Werror
 }
 
-# flag:          KFIOC_HAS_BLK_RQ_IS_PASSTHROUGH
-# usage:         1   Kernel has blk_rq_is_passthrough instead of req->cmd_type == REQ_TYPE_FS
-#                0   It does not
-KFIOC_HAS_BLK_RQ_IS_PASSTHROUGH()
-{
-    local test_flag="$1"
-    local test_code='
-#include <linux/blkdev.h>
-bool kfioc_has_blk_rq_is_passthrough(struct request *req)
-{
-    return blk_rq_is_passthrough(req);
-}
-'
-    kfioc_test "$test_code" KFIOC_HAS_BLK_RQ_IS_PASSTHROUGH 1 -Werror
-}
-
 
 # flag:           KFIOC_USE_LINUX_UACCESS_H
 # values:
@@ -2559,6 +2553,26 @@ void kfioc_bio_endio_removed_error(void) {
     kfioc_test "$test_code" "$test_flag" 1
 }
 
+
+# flag:           KFIOC_BIO_ERROR_CHANGED_TO_STATUS
+# usage:          1 if bio.bi_error was removed and replaced with bi_status. 0 otherwise.
+#                 Note that bi_status is type blk_status_t, not int with errno's.
+# kernel version: v4.13
+KFIOC_BIO_ERROR_CHANGED_TO_STATUS()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/blk_types.h>
+
+void kfioc_bio_error_changed_to_status(struct bio* bi)
+{
+    bi->bi_status = BLK_STS_OK;
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1
+}
+
+
 # flag:           KFIOC_BIO_HAS_ERROR
 # usage:          1 if bio.bi_error does not exist, 0 if instead 
 # git commit:     
@@ -2672,6 +2686,123 @@ void test_get_user_pages(void)
     kfioc_test "$test_code" "$test_flag" 1 -Werror
 }
 
+# flag:            KFIOC_GET_USER_PAGES_HAS_GUP_FLAGS
+# usage:           1 get_user_pages has a combined gup_flags parameter
+#                  0 get_user_pages has separate write and force parameters
+# git commit:      c164154f66f0c9b02673f07aa4f044f1d9c70274 <- changed API
+#
+# kernel version: v4.10
+KFIOC_GET_USER_PAGES_HAS_GUP_FLAGS()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/mm.h>
+#include <linux/version.h>
+
+void test_get_user_pages(void)
+{
+    int start = 0;
+    int num_pages = 1;
+    int flags = FOLL_WRITE | FOLL_FORCE;
+
+    get_user_pages(start, num_pages, flags, NULL, NULL);
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1 -Werror
+}
+
+
+# flag:            KFIOC_HAS_HOTPLUG_STATE_MACHINE
+# usage:           1 cpuhp_setup_state() exists
+#                  0 use older cpu hotplug register/unregister notifier functions
+# git commit:      5b7aa87e0482be768486e0c2277aa4122487eb9d <- added new API
+#                  530e9b76ae8f863dfdef4a6ad0b38613d32e8c3f <- removed old API
+# kernel version: Starting with v4.8
+KFIOC_HAS_HOTPLUG_STATE_MACHINE()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/cpuhotplug.h>
+
+static int test_cpu_online(unsigned int cpu)
+{
+    return 0;
+}
+
+static int test_cpu_offline(unsigned int cpu)
+{
+    return 0;
+}
+
+void test_cpuhp(void)
+{
+    cpuhp_setup_state(CPUHP_AP_ONLINE_DYN, "block/iomemory_vsl4:online",
+                      test_cpu_online, test_cpu_offline);
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1 -Werror
+}
+
+
+# flag:            KFIOC_HAS_HOTPLUG_BP_PREPARE_DYN_STATES
+# usage:           1 CPUHP_BP_PREPARE_DYN exists
+#                  0 use older cpu hotplug unregister notifier function
+# kernel version: v4.10
+KFIOC_HAS_HOTPLUG_BP_PREPARE_DYN_STATES()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/cpuhotplug.h>
+
+void test_cpuhp_bp_states(void)
+{
+    cpuhp_setup_state(CPUHP_BP_PREPARE_DYN, "block/iomemory_vsl4:offline", NULL, NULL);
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1 -Werror
+}
+
+
+# NOTE: This test implies that the state machine is implemented.
+# flag:            KFIOC_HAS_HOTPLUG_AP_ONLINE_DYN_STATES
+# usage:           1 CPUHP_AP_ONLINE_DYN exists
+#                  0 use older cpu hotplug unregister notifier function
+# kernel version: v4.8
+KFIOC_HAS_HOTPLUG_AP_ONLINE_DYN_STATES()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/cpuhotplug.h>
+
+void test_cpuhp_ap_states(void)
+{
+    cpuhp_setup_state(CPUHP_AP_ONLINE_DYN, "block/iomemory_vsl4:online", NULL, NULL);
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1 -Werror
+}
+
+
+# flag:            KFIOC_HAS_HOTPLUG_STATES_REMOVAL_BUG
+# usage:           1 The cpuhp_remove_state() function has a bug and can't remove the last item in its states array.
+#                  0 The kernel does not have the bug.
+# kernel version: v4.8 introduced the function and the bug, v4.13 fixed the bug.
+KFIOC_HAS_HOTPLUG_STATES_REMOVAL_BUG()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/version.h>
+
+#if LINUX_VERSION_CODE > KERNEL_VERSION(4, 8, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 13, 0)
+#error Kernel has a bug in cpuhp_remove_state().
+#endif
+#endif
+'
+    kfioc_test "$test_code" "$test_flag" 0 -Werror
+}
+
+
 # flag:           KFIOC_HAS_TIMER_SETUP
 # usage:          1   linux/time.h has `timer_setup((struct timer_list *)  timer, fusion_timer_callback, 0)
 #                 0   not timer_setup, use function and data of timer instead
@@ -2693,6 +2824,110 @@ void kfioc_has_timer_setup(void) {
     kfioc_test "$test_code" "$test_flag" 1
 
 }
+
+
+# flag:            KFIOC_HAS_PCI_ENABLE_MSIX_EXACT
+# usage:           1 pci_enable_msix_exact() function exists
+#                  0 Use the older pci_enable_msix() function.
+# git commit:      kernel 4.8 added new API
+#                  kernel 4.12 removed old function
+# kernel version: v4.8 and 4.12
+KFIOC_HAS_PCI_ENABLE_MSIX_EXACT()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/pci.h>
+
+void test_pcie_enable_msix_exact(struct pci_dev* pdev, struct msix_entry* msi)
+{
+    unsigned int nr_vecs = 1;
+
+    pci_enable_msix_exact(pdev, msi, nr_vecs);
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1 -Werror
+}
+
+
+# flag:            KFIOC_ELEVATOR_EXIT_HAS_REQQ_PARAM
+# usage:           1 elevator_exit() has both struct request_queue* and struct elevator_queue parameters
+#                  0 elevator_exit() is older and only has request_queue parameter.
+# kernel version:  kernel 4.12 added new parameter.
+KFIOC_ELEVATOR_EXIT_HAS_REQQ_PARAM()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/blkdev.h>
+#include <linux/elevator.h>
+
+void test_elevator_exit_params(struct request_queue* rq)
+{
+    elevator_exit(rq, rq->elevator);
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1 -Werror
+}
+
+
+# flag:            KFIOC_HAS_BLK_RQ_IS_PASSTHROUGH
+# usage:           1 blk_rq_is_passthrough() function exists
+#                  0 function does not exist, must use rq->cmd_type field with REQ_TYPE_FS or blk_fs_request().
+# kernel version:  kernel 4.11 added this new macro.
+KFIOC_HAS_BLK_RQ_IS_PASSTHROUGH()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/blkdev.h>
+
+void test_has_blk_rq_is_passthrough(struct request* req)
+{
+    blk_rq_is_passthrough(req);
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1 -Werror
+}
+
+
+# flag:            KFIOC_HAS_BLK_QUEUE_BOUNCE
+# usage:           1 blk_queue_bounce() function exists
+#                  0 function does not exist. No need to call it as it is called within the kernel.
+# kernel version:  kernel 4.13 removed the EXPORT_SYMBOL for blk_queue_bounce().
+KFIOC_HAS_BLK_QUEUE_BOUNCE()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/blkdev.h>
+
+void test_has_blk_queue_bounce(struct request_queue *rq, struct bio **bio)
+{
+    blk_queue_bounce(rq, bio);
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1 -Werror
+}
+
+
+# flag:            KFIOC_HAS_BLK_QUEUE_SPLIT2
+# usage:           1 blk_queue_split() with two parameters exists
+#                  0 function does not exist, or is the older 3-parameter version.
+# kernel version:  Added in 4.3 with three parameters, changed to 2 parameters in 4.13.
+#                   This checks for the two-parameter version, since it appears that
+#                   the kernel quit honoring segment limits in about 4.13, requiring us
+#                   to have to split bios given to us with too many segments.
+KFIOC_HAS_BLK_QUEUE_SPLIT2()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/blkdev.h>
+
+void test_has_blk_queue_split2(struct request_queue *rq, struct bio **bio)
+{
+    blk_queue_split(rq, bio);
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1 -Werror
+}
+
 
 ###############################################################################
 

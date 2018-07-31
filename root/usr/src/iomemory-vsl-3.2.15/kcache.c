@@ -31,7 +31,13 @@
 
 #include "port-internal.h"
 #include <fio/port/dbgset.h>
+#include <fio/port/kcache.h>
 #include <linux/hardirq.h>  // in_atomic()
+
+/**
+ * @ingroup PORT_LINUX
+ * @{
+ */
 
 #if KFIOC_HAS_KMEM_CACHE
 #define KCACHE_PTR (struct kmem_cache *)
@@ -130,7 +136,7 @@ void kfio_cache_free(fusion_mem_cache_t *cache, void *p)
         count = fusion_atomic_decr(&cache->count);
 
         if (! count)
-            kfio_print("cache %s count decremented to zero\n", cache->name);
+            infprint("cache %s count decremented to zero\n", cache->name);
 
         kassert(count >= 0);
     }
@@ -143,8 +149,8 @@ void kfio_cache_free(fusion_mem_cache_t *cache, void *p)
 void kfio_cache_destroy(fusion_mem_cache_t *cache)
 {
 #if FUSION_DEBUG_CACHE
-    kfio_print("%d objects remaining in cache %s.\n",
-               fusion_atomic_read(&cache->count), cache->name);
+    infprint("%d objects remaining in cache %s.\n",
+             fusion_atomic_read(&cache->count), cache->name);
 #endif
     kmem_cache_destroy(KCACHE_PTR (cache->p));
 
@@ -152,3 +158,7 @@ void kfio_cache_destroy(fusion_mem_cache_t *cache)
 }
 
 #undef KCACHE_PTR
+
+/**
+ * @}
+ */

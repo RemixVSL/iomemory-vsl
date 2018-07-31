@@ -234,6 +234,11 @@ int kfio_teardown_storage_interface(void)
 // "Real" ESX register functions
 int kfio_register_esx_blkdev(kfio_pci_dev_t *pdev)
 {
+    // vmklnx_register_blkdev() expects PCI slot information, which is
+    // unavailable/irrelevant/inappropriate with VSUs or dual-pipe.
+    // Our modified block layer module allows skipping this information
+    // by passing -1 and NULL instead.
+    // Side effect: device gets listed as "Unknown" instead of "Adapter for iomemory-vsl"
     return vmklnx_register_blkdev(0, "fio",
                                   kfio_pci_get_bus(pdev),
                                   kfio_pci_get_function(pdev),
@@ -701,7 +706,7 @@ int kfio_expose_disk(kfio_disk_t *dp, char *name, int major, int disk_index,
     gd->maxXfer = 1024 * 1024; // 1M - matches BLK_DEF_MAX_SECTORS
 #endif
 
-    fio_bdev_ops.owner = fusion_get_this_module();
+    fio_bdev_ops.owner = THIS_MODULE;
 
     strncpy(gd->disk_name, name, 32);
 
@@ -1121,21 +1126,84 @@ static unsigned long __kfio_bio_sync(struct bio *bio)
 #endif
 }
 
-/* Rethink whole block, too messy now! */
+#if KFIOC_BIO_ERROR_CHANGED_TO_STATUS
+static blk_status_t kfio_errno_to_blk_status(int error)
+{
+    // We would use the kernel function of the same name, but they decided to impede us by making it GPL.
+
+    // Translate the possible errno values to blk_status_t values.
+    // This is the reverse of the kernel blk_status_to_errno() function.
+    blk_status_t blk_status;
+
+    switch (error)
+    {
+        case 0:
+            blk_status = BLK_STS_OK;
+            break;
+        case -EOPNOTSUPP:
+            blk_status = BLK_STS_NOTSUPP;
+            break;
+        case -ETIMEDOUT:
+            blk_status = BLK_STS_TIMEOUT;
+            break;
+        case -ENOSPC:
+            blk_status = BLK_STS_NOSPC;
+            break;
+        case -ENOLINK:
+            blk_status = BLK_STS_TRANSPORT;
+            break;
+        case -EREMOTEIO:
+            blk_status = BLK_STS_TARGET;
+            break;
+        case -EBADE:
+            blk_status = BLK_STS_NEXUS;
+            break;
+        case -ENODATA:
+            blk_status = BLK_STS_MEDIUM;
+            break;
+        case -EILSEQ:
+            blk_status = BLK_STS_PROTECTION;
+            break;
+        case -ENOMEM:
+            blk_status = BLK_STS_RESOURCE;
+            break;
+        case -EAGAIN:
+            blk_status = BLK_STS_AGAIN;
+            break;
+        default:
+            blk_status = BLK_STS_IOERR;
+            break;
+    }
+
+    return blk_status;
+}
+#endif /* KFIOC_BIO_ERROR_CHANGED_TO_STATUS */
+
 static void __kfio_bio_complete(struct bio *bio, uint32_t bytes_complete, int error)
 {
-#if KFIOC_BIO_HAS_ERROR
-    /* now a member of the bio struct */
-    bio->bi_error = error;
-#endif /* KFIOC_BIO_HAS_ERROR*/
+#if KFIOC_BIO_ENDIO_REMOVED_ERROR
+#if KFIOC_BIO_ERROR_CHANGED_TO_STATUS
+    // bi_status is type blk_status_t, not an int errno, so must translate as necessary.
+    blk_status_t bio_status = BLK_STS_OK;
+
+    if (unlikely(error != 0))
+    {
+        bio_status = kfio_errno_to_blk_status(error);
+    }
+    bio->bi_status = bio_status;            /* bi_error was changed to bi_status <sigh> */
+#else
+    bio->bi_error = error;                  /* now a member of the bio struct */
+#endif /* KFIOC_BIO_ERROR_CHANGED_TO_STATUS */
+#endif /* !KFIOC_BIO_ENDIO_HAS_ERROR */
+
     bio_endio(bio
 #if KFIOC_BIO_ENDIO_HAS_BYTES_DONE
-             , bytes_complete
-#endif /* ! KFIO_BIO_ENDIO_HAS_BYTES_DONE */
+              , bytes_complete
+#endif /* KFIOC_BIO_ENDIO_HAS_BYTES_DONE */
 #if !KFIOC_BIO_ENDIO_REMOVED_ERROR
-             , error
-#endif /* KFIOC_BIO_ENDIO_REMOVED_ERROR*/
-           );
+              , error
+#endif /* KFIOC_BIO_ENDIO_HAS_ERROR */
+              );
 }
 
 static void kfio_bio_completor(kfio_bio_t *fbio, uint64_t bytes_complete, int error)
@@ -1853,6 +1921,16 @@ static int kfio_make_request(struct request_queue *queue, struct bio *bio)
         return FIO_MFN_RET;
     }
 
+#if KFIOC_HAS_BLK_QUEUE_SPLIT2
+    // Split the incomming bio if it has more segments than we have scatter-gather DMA vectors,
+    //   and re-submit the remainder to the request queue. blk_queue_split() does all that for us.
+    // It appears the kernel quit honoring the blk_queue_max_segments() in about 4.13.
+    if (bio_phys_segments(queue, bio) > queue_max_segments(queue))
+    {
+        blk_queue_split(queue, &bio);
+    }
+#endif
+
 #if KFIOC_HAS_BIO_COMP_CPU
     if (bio->bi_comp_cpu == -1)
     {
@@ -1860,10 +1938,9 @@ static int kfio_make_request(struct request_queue *queue, struct bio *bio)
     }
 #endif
 
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(4,13,0)
+#if KFIOC_HAS_BLK_QUEUE_BOUNCE
     blk_queue_bounce(queue, &bio);
-#endif
-    // blk_queue_bounce_limit(queue, BLK_BOUNCE_ANY);
+#endif /* KFIOC_HAS_BLK_QUEUE_BOUNCE */
 
     plug_data = kfio_should_plug(queue);
     if (!plug_data)
@@ -2148,7 +2225,7 @@ static void kfio_elevator_change(struct request_queue *q, char *name)
 // We don't use the real elevator_change since it isn't in the RedHat Whitelist
 // see FH-14626 for the gory details.
 #if !defined(__VMKLNX__)
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(4,11,0)
+#if KFIOC_ELEVATOR_EXIT_HAS_REQQ_PARAM
     elevator_exit(q, q->elevator);
 # else
     elevator_exit(q->elevator);
