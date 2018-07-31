@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------
 // Copyright (c) 2006-2014, Fusion-io, Inc.(acquired by SanDisk Corp. 2014)
-// Copyright (c) 2014-2015, SanDisk Corp. and/or all its affiliates. All rights reserved.
+// Copyright (c) 2014-2016 SanDisk Corp. and/or all its affiliates. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -33,6 +33,11 @@
 
 #define AUTO_ATTACH_DEFAULT 1
 
+/**
+ * @ingroup PORT_COMMON_LINUX
+ * @{
+ */
+
 // Global driver options
 char       *numa_node_override[MAX_PCI_DEVICES];
 int         num_numa_node_override;
@@ -60,3 +65,6 @@ int use_workqueue = USE_QUEUE_NONE;
 
 KFIO_MODULE_PARAM(use_workqueue, int, S_IRUGO | S_IWUSR);
 
+/**
+ * @}
+ */

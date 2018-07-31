@@ -24,7 +24,8 @@
 // WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+
 #if !defined (__linux__)
 #error This file supports linux only
 #endif
@@ -38,6 +39,11 @@
 #include <linux/poll.h>
 
 #include <fio/port/common-linux/kfile.h>
+
+/**
+ * @ingroup PORT_COMMON_LINUX
+ * @{
+ */
 
 C_ASSERT(sizeof(fusion_seq_operations_t) >= sizeof(struct seq_operations));
 C_ASSERT(sizeof(fusion_file_operations_t) >= sizeof(struct file_operations));
@@ -301,3 +307,6 @@ void kfio_set_seq_ops_show_handler(fusion_seq_operations_t *sops, void *show)
     ((struct seq_operations *)sops)->show = (seq_ops_show_fn)show;
 }
 
+/**
+ * @}
+ */

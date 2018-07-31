@@ -1,6 +1,6 @@
 // --------------------------------------------------------------------------
 // Copyright (c) 2013-2014, Fusion-io, Inc.(acquired by SanDisk Corp. 2014)
-// Copyright (c) 2014-2015 SanDisk Corp. and/or all its affiliates. All rights reserved.
+// Copyright (c) 2014-2016 SanDisk Corp. and/or all its affiliates. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -51,6 +51,11 @@
 #undef DID_BAD_TARGET
 #define DID_BAD_TARGET DID_NO_CONNECT
 #endif
+
+/**
+ * @ingroup PORT_COMMON_LINUX
+ * @{
+ */
 
 static void fio_init_scsi_host_template(void);
 
@@ -110,7 +115,7 @@ int kfio_init_storage_interface(void)
     return 0;
 }
 
-/// @brief One-time cleanup of the SCSI driver.
+/// @brief One-time teardown of the SCSI driver.
 int kfio_teardown_storage_interface(void)
 {
     kfio_scsi_cleanup();
@@ -243,7 +248,9 @@ static void fio_scmd_immediate_error(struct scsi_cmnd *scmd, uint8_t host_byte, 
 
     scmd->result = 0;
     set_host_byte(scmd, host_byte);
+#if KFIOC_HAS_NEW_QUEUECOMMAND_SIGNATURE
     scmd->scsi_done(scmd);
+#endif
 }
 
 #if KFIOC_HAS_NEW_QUEUECOMMAND_SIGNATURE
@@ -262,9 +269,6 @@ static int fio_shost_queuecommand(struct scsi_cmnd *scmd, void (*completor)(stru
 
     kassert(scmd != NULL);
 
-#if KFIOC_HAS_NEW_QUEUECOMMAND_SIGNATURE==0
-    scmd->scsi_done = completor;
-#endif
     kassert(scmd->scsi_done != NULL);
 
     sdev = scmd->device;
@@ -277,12 +281,18 @@ static int fio_shost_queuecommand(struct scsi_cmnd *scmd, void (*completor)(stru
     if (port_host == NULL)
     {
         fio_scmd_immediate_error(scmd, DID_NO_CONNECT, "host is unregistered");
+#if KFIOC_HAS_NEW_QUEUECOMMAND_SIGNATURE==0
+        completor(scmd);
+#endif
         return 0;
     }
 
     if (sdev->id != port_host->target_id)
     {
         fio_scmd_immediate_error(scmd, DID_NO_CONNECT, "invalid target for host");
+#if KFIOC_HAS_NEW_QUEUECOMMAND_SIGNATURE==0
+        completor(scmd);
+#endif
         return 0;
     }
 
@@ -300,6 +310,9 @@ static int fio_shost_queuecommand(struct scsi_cmnd *scmd, void (*completor)(stru
         if (lu == NULL)
         {
             fio_scmd_immediate_error(scmd, DID_TIME_OUT, "LU is not attached");
+#if KFIOC_HAS_NEW_QUEUECOMMAND_SIGNATURE==0
+            completor(scmd);
+#endif
             return 0;
         }
 
@@ -327,6 +340,9 @@ static int fio_shost_queuecommand(struct scsi_cmnd *scmd, void (*completor)(stru
     if (ret == -ENOENT)
     {
         fio_scmd_immediate_error(scmd, DID_TIME_OUT, "LU just became detached");
+#if KFIOC_HAS_NEW_QUEUECOMMAND_SIGNATURE==0
+        completor(scmd);
+#endif
         return 0;
     }
 
@@ -336,10 +352,16 @@ static int fio_shost_queuecommand(struct scsi_cmnd *scmd, void (*completor)(stru
 
     scmd->host_scribble = (unsigned char *)cmd;
 
+#if KFIOC_HAS_NEW_QUEUECOMMAND_SIGNATURE==0
+    scmd->scsi_done = completor;
+#endif
+
     cmd_status = kfio_scsi_cmd_rcvd(cmd);
 
     if (cmd_status == -ENOMEM)
     {
+        infprint("%s: scsi command %02x was not be handled due to lack of memory resources\n",
+            fio_scsi_bus_name_from_scmd(scmd), scmd->cmnd[0]);
         return SCSI_MLQUEUE_HOST_BUSY;
     }
 
@@ -577,8 +599,8 @@ int kfio_port_scsi_new_lu(struct fio_scsi_lu *lu)
         {
             return -ENOMEM;
         }
-
         fusion_spin_lock(&port_hosts_lk);
+
         if ((other_thread_port_host = fio_port_scsi_host_lookup_from_tid(target_id)) != NULL)
         {
             // Another thread created this same host while we were unlocked. Destroy ours. Use his.
@@ -677,8 +699,10 @@ void kfio_port_scsi_cmd_get_sense_buffer(void *port_cmd, uint8_t **buffer, uint3
 }
 
 /// @brief Call from fio-scsi layer when a command is complete.
-void kfio_port_scsi_cmd_completor(void *port_cmd, uint64_t bytes_xferred, enum fio_scsi_cmd_status scsi_status,
-                                 int driver_error)
+void kfio_port_scsi_cmd_completor(void *port_cmd,
+                                  uint64_t bytes_xferred,
+                                  enum fio_scsi_cmd_status scsi_status,
+                                  int driver_error)
 {
     struct scsi_cmnd *scmd;
     struct fio_port_scsi_host *port_host;
@@ -802,3 +826,8 @@ void kfio_port_scsi_cmd_completor(void *port_cmd, uint64_t bytes_xferred, enum f
         scmd->scsi_done(scmd);
     }
 }
+
+/**
+ * @}
+ */
+

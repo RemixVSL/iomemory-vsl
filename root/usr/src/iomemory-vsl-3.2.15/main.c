@@ -76,6 +76,10 @@
 #define FIO_CONFIG_MACRO(dbgf) [_DF_ ## dbgf] = { .name = #dbgf, .mode = S_IRUGO | S_IWUSR, .value = dbgf },
 #endif
 
+/**
+ * @ingroup PORT_COMMON_LINUX
+ * @{
+ */
 extern int use_workqueue;
 
 static struct dbgflag _dbgflags[] = {
@@ -92,26 +96,6 @@ struct dbgset _dbgset = {
     .flag_dir_name = "debug",
     .flags         = _dbgflags
 };
-
-void
-__kassert_fail (const char *expr, const char *file, int line,
-                const char *func, int good, int bad)
-{
-    errprint("iodrive: assertion failed %s:%d:%s: %s",
-             file, line, func, expr);
-
-    if (make_assert_nonfatal)
-    {
-        errprint("ASSERT STATISTICS: %d bad, %d good\n",
-                 bad, good);
-        dump_stack ();
-    }
-    else
-    {
-        BUG();
-    }
-}
-KFIO_EXPORT_SYMBOL(__kassert_fail);
 
 /* Make debug flags module parameters so they can be set at module load-time */
 /// @cond GENERATED_CODE
@@ -165,7 +149,11 @@ extern int  ifio_init_memory();
 extern void ifio_cleanup_memory();
 #endif
 
-int fio_do_init(void)
+/// @brief Driver initialization for parts that do not require cleanup if initialization fails.
+/// @note  The companion fio_do_exit() function may be called at any time, regardless of the
+///        status of fio_do_init(). However, on error, a call to fio_do_exit() is unnecessary
+///        because everything is automatically cleaned up.
+static int fio_do_init(void)
 {
     int rc;
 
@@ -196,7 +184,7 @@ int fio_do_init(void)
     return rc;
 }
 
-int __init init_fio_driver(void)
+static int __init init_fio_driver(void)
 {
     int rc = 0;
 
@@ -229,6 +217,7 @@ int __init init_fio_driver(void)
         return 0;
     }
 
+    /* Call swiss knife of all init functions. */
     rc = fio_do_init();
 
 #if !defined(__VMKLNX__)
@@ -243,7 +232,8 @@ int __init init_fio_driver(void)
     // Unfortunately, it appears that dev node exposure can race with the
     // vmkernel's datastore scan.  This is rare, however, and has only been
     // observed once. Hence, we provide an option to re-enable the attach wait.
-    if (!background_attach) {
+    if (!background_attach)
+    {
         infprint("Background-attach disabled; waiting for all devices...\n");
         fio_auto_attach_wait();
     }
@@ -280,6 +270,10 @@ void __exit cleanup_fio_driver(void)
     ifio_cleanup_memory();
 #endif
 }
+
+/**
+ * @}
+ */
 
 #if (FUSION_STATIC_KERNEL==0)
 module_init(init_fio_driver);
