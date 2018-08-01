@@ -161,6 +161,7 @@ KFIOC_HAS_NEW_QUEUECOMMAND_SIGNATURE
 KFIOC_HAS_SCSI_SG_FNS
 KFIOC_HAS_SCSI_SG_COPY_FNS
 KFIOC_HAS_SCSI_RESID_FNS
+KFIOC_ACPI_EVAL_INT_TAKES_UNSIGNED_LONG_LONG
 KFIOC_BIO_HAS_HW_SEGMENTS
 KFIOC_BIO_HAS_SEG_SIZE
 KFIOC_BIO_HAS_DESTRUCTOR
@@ -2366,6 +2367,28 @@ void kfioc_has_scsi_resid_fns(void)
 '
 
     kfioc_test "$test_code" "$test_flag" 1 -Werror-implicit-function-declaration
+}
+
+# flag:           KFIOC_ACPI_EVAL_INT_TAKES_UNSIGNED_LONG_LONG
+# values:
+#                 0     32-bit version of acpi_evaluate_integer present
+#                 1     64-bit version of acpi_evaluate_integer present
+# git commit:     27663c5855b10af9ec67bc7dfba001426ba21222
+# kernel version: >= 2.6.27.15
+KFIOC_ACPI_EVAL_INT_TAKES_UNSIGNED_LONG_LONG()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/acpi.h>
+
+void kfioc_acpi_eval_int_takes_unsigned_long_long(void)
+{
+    unsigned long long data = 0;
+    acpi_evaluate_integer(NULL, NULL, NULL, &data);
+}
+'
+
+    kfioc_test "$test_code" "$test_flag" 1 -Werror
 }
 
 # flag:           KFIOC_BIO_HAS_HW_SEGMENTS

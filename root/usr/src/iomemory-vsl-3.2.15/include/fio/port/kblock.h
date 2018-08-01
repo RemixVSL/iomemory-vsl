@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------
 // Copyright (c) 2006-2014, Fusion-io, Inc.(acquired by SanDisk Corp. 2014)
-// Copyright (c) 2014 SanDisk Corp. and/or all its affiliates. All rights reserved.
+// Copyright (c) 2014-2015 SanDisk Corp. and/or all its affiliates. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -25,12 +25,16 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //-----------------------------------------------------------------------------
-/** @file include/fio/port/kblock.h
+/** @file
  *     NO OS-SPECIFIC REFERENCES ARE TO BE IN THIS FILE
  *
  */
 #ifndef __FIO_PORT_KBLOCK_H__
 #define __FIO_PORT_KBLOCK_H__
+
+#include <fio/port/ktypes.h>
+#include <fio/port/kcpu.h>
+#include <fio/port/kbio.h>
 
 struct kfio_bio;
 struct fio_device;

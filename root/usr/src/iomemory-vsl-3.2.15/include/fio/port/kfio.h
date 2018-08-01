@@ -37,6 +37,7 @@
 #include <fio/port/ktypes.h>
 #include <fio/port/kcpu.h>
 #include <fio/port/kmem.h>
+#include <fio/port/kblock.h>
 
 #if defined(USERSPACE_KERNEL)
 #include <fio/port/userspace/kfio.h>
@@ -120,13 +121,6 @@ extern void kfio_set_dev_state_running(struct fio_device *dev);
 extern void kfio_set_dev_state_quiescing(struct fio_device *dev);
 
 /* PCI */
-extern void kfio_pci_set_master(kfio_pci_dev_t *pdev);
-extern int kfio_pci_request_regions(kfio_pci_dev_t *pdev, const char *res_name);
-extern void kfio_pci_release_regions(kfio_pci_dev_t *pdev);
-extern int kfio_pci_enable_device(kfio_pci_dev_t *pdev);
-extern void kfio_pci_disable_device(kfio_pci_dev_t *pdev);
-extern int kfio_pci_set_dma_mask(kfio_pci_dev_t *pdev, uint64_t mask);
-
 extern int kfio_pci_enable_msi(kfio_pci_dev_t *pdev);
 extern void kfio_pci_disable_msi(kfio_pci_dev_t *pdev);
 extern const char *kfio_pci_name(kfio_pci_dev_t *pdev);
@@ -135,24 +129,6 @@ extern void *kfio_pci_get_drvdata(kfio_pci_dev_t *pdev);
 extern void kfio_pci_set_drvdata(kfio_pci_dev_t *pdev, void *data);
 
 extern void kfio_iodrive_intx (kfio_pci_dev_t *pci_dev, int enable);
-
-extern int kfio_pci_read_config_byte(kfio_pci_dev_t *pdev, int where, uint8_t *val);
-extern int kfio_pci_read_config_word(kfio_pci_dev_t *pdev, int where, uint16_t *val);
-extern int kfio_pci_read_config_dword(kfio_pci_dev_t *pdev, int where, uint32_t *val);
-extern int kfio_pci_write_config_byte(kfio_pci_dev_t *pdev, int where, uint8_t val);
-extern int kfio_pci_write_config_word(kfio_pci_dev_t *pdev, int where, uint16_t val);
-extern int kfio_pci_write_config_dword(kfio_pci_dev_t *pdev, int where, uint32_t val);
-
-extern uint8_t kfio_pci_get_bus(kfio_pci_dev_t *pdev);
-extern uint8_t kfio_pci_get_devicenum(kfio_pci_dev_t *pdev);
-extern uint8_t kfio_pci_get_function(kfio_pci_dev_t *pdev);
-extern uint8_t kfio_pci_get_slot(kfio_pci_dev_t *pdev);
-
-extern uint16_t kfio_pci_get_vendor(kfio_pci_dev_t *pdev);
-extern uint32_t kfio_pci_get_devnum(kfio_pci_dev_t *pdev);
-extern uint16_t kfio_pci_get_subsystem_vendor(kfio_pci_dev_t *pdev);
-extern uint16_t kfio_pci_get_subsystem_device(kfio_pci_dev_t *pdev);
-extern uint16_t kfio_pci_get_domain(kfio_pci_dev_t *pdev);
 
 struct fusion_nand_channel;
 struct kfio_pci_csr_handle
@@ -189,42 +165,6 @@ extern void kfio_pci_unmap_csr(kfio_pci_dev_t *pdev, struct kfio_pci_csr_handle 
         pu_ret;                                               \
     })
 
-extern int kfio_request_irq(kfio_pci_dev_t *pd, const char *devname,
-                            void *iodrive_dev, int msi_enabled);
-extern void kfio_free_irq(kfio_pci_dev_t *pd, void *dev);
-
-#if defined(PORT_SUPPORTS_MSIX) && defined(__KERNEL__) && !defined(USERSPACE_KERNEL)
-extern int kfio_request_msix(kfio_pci_dev_t *pd, const char *devname,
-                             void *iodrive_dev, kfio_msix_t *msix,
-                             unsigned int vector);
-extern void kfio_free_msix(kfio_msix_t *msix, unsigned int vector, void *dev);
-extern unsigned int kfio_pci_enable_msix(kfio_pci_dev_t *pdev, kfio_msix_t *msix, unsigned int nr_vecs);
-extern void kfio_pci_disable_msix(kfio_pci_dev_t *pdev);
-#else
-typedef struct kfio_msix {
-    DECLARE_RESERVE(1); // UEFI compiler does not like arrays of zero sized objects
-} kfio_msix_t;
-
-static inline int kfio_request_msix(kfio_pci_dev_t *pd, const char *devname,
-                                    void *iodrive_dev, kfio_msix_t *msix,
-                                    unsigned int vector)
-{
-    return -EINVAL;
-}
-static inline int kfio_pci_enable_msix(kfio_pci_dev_t *pdev, kfio_msix_t *msix,
-                                       unsigned int nr_vecs)
-{
-    return 0;
-}
-static inline void kfio_pci_disable_msix(kfio_pci_dev_t *pdev)
-{
-}
-static inline void kfio_free_msix(kfio_msix_t *msix, unsigned int vector,
-                                  void *dev)
-{
-}
-#endif /* PORT_SUPPORTS_MSIX */
-
 extern void kfio_dump_stack(void);
 extern uint32_t kfio_random_seed(void);
 
@@ -233,15 +173,6 @@ extern uint32_t kfio_random_seed(void);
 extern int kfio_get_next_device_number(kfio_pci_dev_t *pci_dev);
 
 extern int kfio_get_irq_number(kfio_pci_dev_t *pd, uint32_t *irq);
-
-#if defined(PORT_SUPPORTS_MSIX)
-extern int kfio_get_msix_number(void *msix, uint32_t vec_ix, uint32_t *irq);
-#else
-static inline int kfio_get_msix_number(void *msix, uint32_t vec_ix, uint32_t *irq)
-{
-    return -ENOENT;
-}
-#endif
 
 /* Core entry points. */
 int  iodrive_pci_attach(kfio_pci_dev_t *pci_dev, int device_num);

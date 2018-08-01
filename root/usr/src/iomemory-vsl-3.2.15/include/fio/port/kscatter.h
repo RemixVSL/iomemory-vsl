@@ -38,6 +38,9 @@
 #ifndef __FIO_PORT_KSCATTER_H__
 #define __FIO_PORT_KSCATTER_H__
 
+#include <fio/port/kmem.h>
+#include <fio/port/kpci.h>
+
 /// The max number of sectors the OS is allowed to ask for in a single request.
 ///
 /// This value was previously hardcoded in kfio_setup_gendisk(); its derivation is

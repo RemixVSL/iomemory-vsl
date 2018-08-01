@@ -58,6 +58,10 @@
 #include "port-internal.h"
 #include <fio/port/dbgset.h>
 #include <fio/port/kfio.h>
+#include <fio/port/ktime.h>
+#include <fio/port/kblock.h>
+#include <fio/port/kscsi.h>
+#include <fio/port/sched.h>
 #include <fio/port/bitops.h>
 #include <fio/port/common-linux/kblock.h>
 #include <fio/port/atomic_list.h>
@@ -65,6 +69,7 @@
 #include <linux/version.h>
 #include <linux/fs.h>
 #if !defined(__VMKLNX__)
+#include <fio/port/cdev.h>
 #include <linux/buffer_head.h>
 #endif
 

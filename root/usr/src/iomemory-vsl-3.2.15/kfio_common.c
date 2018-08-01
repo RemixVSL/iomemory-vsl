@@ -39,6 +39,7 @@
 #include <linux/uaccess.h>
 #endif
 #include <fio/port/dbgset.h>
+#include <fio/port/kfio_config.h>
 
 /**
  * @ingroup PORT_LINUX

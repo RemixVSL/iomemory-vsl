@@ -34,7 +34,10 @@
 #include <linux/version.h>
 #include <linux/module.h>
 #include <fio/port/dbgset.h>
+#include <fio/port/ktime.h>
+#include <fio/port/cdev.h>
 #include <fio/port/fio-port.h>
+#include <fio/port/sched.h>
 #include <linux/slab.h>
 #if !defined(__VMKLNX__)
 #include <linux/buffer_head.h>

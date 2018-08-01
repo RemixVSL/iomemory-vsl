@@ -29,6 +29,8 @@
 #define KSCATTER_IMPL
 #include "port-internal.h"
 #include <fio/port/dbgset.h>
+#include <fio/port/kscatter.h>
+#include <fio/port/ktime.h>
 #include <linux/version.h>
 
 /**
@@ -229,19 +231,21 @@ int kfio_sgl_map_bytes(kfio_sg_list_t *sgl, const void *buffer, uint32_t size)
         page_remainder = FUSION_PAGE_SIZE - page_offset;
         mapped_bytes   = MIN(size, page_remainder);
 
+        {
 #if !defined(__VMKLNX__)
-        if (vmalloc_buffer)
-        {
-            /*
-             * Do extra casting to get rid of const not expected by
-             * vmalloc_to_page on older Linux kernels.
-             */
-            page = (fusion_page_t) vmalloc_to_page((void *)(fio_uintptr_t)bp);
-        }
-        else
+            if (vmalloc_buffer)
+            {
+                /*
+                 * Do extra casting to get rid of const not expected by
+                 * vmalloc_to_page on older Linux kernels.
+                 */
+                page = (fusion_page_t) vmalloc_to_page((void *)(fio_uintptr_t)bp);
+            }
+            else
 #endif
-        {
-            page = (fusion_page_t) virt_to_page((void *)(fio_uintptr_t)bp);
+            {
+                page = (fusion_page_t) virt_to_page((void *)(fio_uintptr_t)bp);
+            }
         }
 
         kassert_release(page != NULL);
@@ -302,7 +306,7 @@ int kfio_sgl_map_page(kfio_sg_list_t *sgl, fusion_page_t page,
             return -EINVAL;
         }
 #elif !defined(DMA_X_PAGE_BOUNDARY)
-        dbgprint(DBGS_GENERAL, "Attempt to map too great a span\n");
+        engprint("Attempt to map too great a span\n");
         return -EINVAL;
 #endif
     }
@@ -471,7 +475,7 @@ int kfio_sgl_map_bio(kfio_sg_list_t *sgl, struct bio *pbio)
                                  BIOV_MEMBER(vec, bv_len));
         if (rval)
         {
-            dbgprint(DBGS_GENERAL, "Failed to map bio_vec\n" );
+            engprint("kfio_sgl_map_page failed with error %d in map_bio\n", rval);
             break;
         }
     }

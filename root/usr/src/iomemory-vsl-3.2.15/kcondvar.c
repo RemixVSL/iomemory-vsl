@@ -31,8 +31,9 @@
 #endif
 
 #include "port-internal.h"
-#include <fio/port/kcondvar.h>
 #include <fio/port/dbgset.h>
+#include <fio/port/kcondvar.h>
+#include <fio/port/ktime.h>
 #if !defined(__VMKLNX__) && FUSION_DEBUG
 #include <linux/sched.h>    // for struct task_struct used in kassert
 #endif

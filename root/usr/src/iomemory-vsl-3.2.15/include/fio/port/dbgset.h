@@ -32,6 +32,8 @@
 #if defined(__KERNEL__)
 #include <fio/port/kfio.h>
 #endif
+#include <fio/port/kinfo.h>
+
 
 /// @cond GENERATED_CODE
 #include <fio/port/port_config.h>

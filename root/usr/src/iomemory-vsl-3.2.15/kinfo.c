@@ -32,6 +32,11 @@
 #include <fio/port/kinfo.h>
 #include <fio/port/common-linux/kfile.h>
 
+/**
+ * @ingroup PORT_LINUX
+ * @{
+ */
+
 static fusion_file_operations_t kfio_info_type_fops;
 static fusion_file_operations_t kfio_info_text_fops;
 static fusion_file_operations_t kfio_info_seqf_fops;
@@ -387,6 +392,9 @@ static int kfio_info_seqf_open(fusion_inode *inode, fusion_file *file)
     return retval;
 }
 
+/**
+ * @brief Global initialization for the OS-specific kinfo backend.
+ */
 static void kfio_info_os_init(void)
 {
     /* Initialize file ops used to handle fixed types. */
@@ -507,8 +515,8 @@ void kfio_info_os_remove_node(kfio_info_node_t *parent, kfio_info_node_t *nodep)
     kfio_info_node_set_os_private(nodep, NULL);
 
     /*
-     * If dir node we are creating has no parent, this is the first
-     * time this code is being called. Use the opportunity to initialize
+     * If dir node we are creating has no parent, this is the last
+     * time this code is being called. Use the opportunity to destroy
      * few globals.
      */
     if (parent == NULL)
@@ -533,4 +541,6 @@ KFIO_EXPORT_SYMBOL(kfio_info_create_proc);
 KFIO_EXPORT_SYMBOL(kfio_info_printf);
 KFIO_EXPORT_SYMBOL(fusion_info_root);
 
-
+/**
+ * @}
+ */
