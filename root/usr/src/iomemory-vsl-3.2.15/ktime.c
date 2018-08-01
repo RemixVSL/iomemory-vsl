@@ -27,6 +27,7 @@
 // -----------------------------------------------------------------------------
 
 #include "port-internal.h"
+#include <fio/port/ktime.h>
 
 #include <linux/jiffies.h>
 #include <linux/time.h>

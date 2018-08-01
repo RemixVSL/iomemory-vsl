@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------
 // Copyright (c) 2006-2014, Fusion-io, Inc.(acquired by SanDisk Corp. 2014)
-// Copyright (c) 2014 SanDisk Corp. and/or all its affiliates. All rights reserved.
+// Copyright (c) 2014-2016 SanDisk Corp. and/or all its affiliates. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -104,29 +104,21 @@
 #error Unsupported wordsize!
 #endif
 
-/*
- * Shared type for now. We'll likely need accessor functions to iterate
- * CPUs on Windows, so it's a good idea to have a fixed type to use for this.
- */
-typedef int kfio_cpu_t;
-
 /**** common, OS-independent includes for abstracted structures and functions ***/
-#include <fio/port/kbitops.h>
-#include <fio/port/kblock.h>
-#include <fio/port/kmisc.h>
-#include <fio/port/cdev.h>
+// #include <fio/port/kbitops.h>
+// #include <fio/port/kblock.h>
+// #include <fio/port/kmisc.h>
+// #include <fio/port/cdev.h>
 
-#include <fio/port/kcondvar.h>
-#include <fio/port/kdebug.h>
-#include <fio/port/kmem.h>
-#include <fio/port/kchunk.h>
-#include <fio/port/kbmp.h>
-#include <fio/port/kscatter.h>
-#include <fio/port/ktime.h>
-#include <fio/port/sched.h>
-#include <fio/port/kinfo.h>
-#include <fio/port/kcache.h>
-#include <fio/port/kbio.h>
+// #include <fio/port/kdebug.h>
+// #include <fio/port/kmem.h>
+// #include <fio/port/kchunk.h>
+// #include <fio/port/kbmp.h>
+// #include <fio/port/kscatter.h>
+// #include <fio/port/ktime.h>
+// #include <fio/port/sched.h>
+// #include <fio/port/kinfo.h>
+// #include <fio/port/kcache.h>
 
 #ifndef KFIO_INT_MAX
 #define KFIO_INT_MAX       2147483647
@@ -195,7 +187,13 @@ static inline int32_t safe_i32(uint64_t v)
 # define KFIO_CACHE_LINE_SIZE_BYTES 64
 #endif
 
+/*
+ * Shared type for now. We'll likely need accessor functions to iterate
+ * CPUs on Windows, so it's a good idea to have a fixed type to use for this.
+ */
+typedef int kfio_cpu_t;
+
 #include <fio/port/byteswap.h>
-#include <fio/port/unaligned.h>
+#include <fio/port/kcondvar.h>
 
 #endif /* __FIO_PORT_KTYPES_H__ */

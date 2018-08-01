@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------
 // Copyright (c) 2011-2014, Fusion-io, Inc.(acquired by SanDisk Corp. 2014)
-// Copyright (c) 2014 SanDisk Corp. and/or all its affiliates. All rights reserved.
+// Copyright (c) 2014-2016 SanDisk Corp. and/or all its affiliates. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -27,10 +27,13 @@
 //-----------------------------------------------------------------------------
 
 #ifndef __FIO_PORT_KTYPES_H__
-#error "Please include <fio/port/ktypes.h> rather than this file directly."
+#error "Please include <fio/port/ktypes.h> before this file."
 #endif
 #ifndef __FIO_PORT_KCPU_H__
 #define __FIO_PORT_KCPU_H__
+
+#include <fio/port/errno.h>
+#include <fio/port/kpci.h>
 
 extern kfio_cpu_t kfio_current_cpu(void);
 

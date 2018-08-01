@@ -28,6 +28,7 @@
 
 #include "port-internal.h"
 #include <fio/port/dbgset.h>
+#include <fio/port/cdev.h>
 
 #if !defined (__linux__)
 #error This file supports linux only

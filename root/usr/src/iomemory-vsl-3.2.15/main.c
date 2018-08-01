@@ -248,7 +248,7 @@ static int __init init_fio_driver(void)
     return rc;
 }
 
-void __exit cleanup_fio_driver(void)
+void __exit exit_fio_driver(void)
 {
     dbgs_delete_flags_dir(&_dbgset);
 
@@ -277,7 +277,7 @@ void __exit cleanup_fio_driver(void)
 
 #if (FUSION_STATIC_KERNEL==0)
 module_init(init_fio_driver);
-module_exit(cleanup_fio_driver);
+module_exit(exit_fio_driver);
 #endif
 
 // MODULE_LICENSE is found in license.c - which is auto-generated

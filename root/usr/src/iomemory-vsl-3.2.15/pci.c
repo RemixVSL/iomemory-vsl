@@ -41,6 +41,7 @@
 #include <fio/port/dbgset.h>
 #include <fio/port/port_config.h>
 #include <fio/port/kfio.h>
+#include <fio/port/kpci.h>
 
 /*************************************************************************************/
 /*   Legacy and MSI interrupts.                                                      */
@@ -152,7 +153,7 @@ int kfio_request_msix(kfio_pci_dev_t *pd, const char *devname, void *dev_id,
     return request_irq(msi[vector].vector, kfio_handle_irqx_wrapper, 0, devname, dev_id);
 }
 
-int kfio_get_msix_number(void *msix, uint32_t vec_ix, uint32_t *irq)
+int kfio_get_msix_number(kfio_msix_t *msix, uint32_t vec_ix, uint32_t *irq)
 {
     struct msix_entry *linux_msix = (struct msix_entry *)msix;
     *irq = linux_msix[vec_ix].vector;
@@ -477,7 +478,7 @@ static uint8_t find_slot_number_bios(const struct pci_dev *dev)
 #if defined(__x86_64__) && !defined(__VMKLNX__)
 static uint8_t find_slot_number_acpi(const struct pci_dev *pcidev)
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
+#if KFIOC_ACPI_EVAL_INT_TAKES_UNSIGNED_LONG_LONG
     unsigned long long sun = 0;
 #else
     unsigned long sun = 0;

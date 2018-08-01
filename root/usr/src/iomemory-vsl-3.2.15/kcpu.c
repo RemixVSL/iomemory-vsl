@@ -78,11 +78,11 @@ void kfio_put_cpu(kfio_get_cpu_t *flags)
  */
 unsigned int kfio_max_cpus(void)
 {
-#if !defined(__VMKLNX__)
+  #if !defined(__VMKLNX__)
     return num_possible_cpus();
-#else
+  #else
     return 1;
-#endif
+  #endif
 }
 
 /**
@@ -90,11 +90,11 @@ unsigned int kfio_max_cpus(void)
  */
 int kfio_cpu_online(kfio_cpu_t cpu)
 {
-#if !defined(__VMKLNX__)
+  #if !defined(__VMKLNX__)
     return cpu_online(cpu);
-#else
+  #else
     return 1;
-#endif
+  #endif
 }
 
 #if PORT_SUPPORTS_PER_CPU
@@ -116,11 +116,13 @@ void kfio_create_kthread_on_cpu(fusion_kthread_func_t func, void *data,
     va_end(ap);
 
     task = kthread_create(func, data, "%s", buffer);
-    if (!IS_ERR(task) && task)
+    if (IS_ERR(task))
     {
-        kthread_bind(task, cpu);
-        wake_up_process(task);
+        return;
     }
+
+    kthread_bind(task, cpu);
+    wake_up_process(task);
 }
 #endif
 

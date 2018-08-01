@@ -33,6 +33,8 @@
 #define __FIO_PORT_KBIO_H__
 
 #include "fio/port/compiler.h"
+#include <fio/port/kscatter.h>
+#include <fio/port/errno.h>
 
 struct fio_device;
 struct fusion_ioctx;

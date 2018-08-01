@@ -25,47 +25,18 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //-----------------------------------------------------------------------------
-/** @file
- *     NO OS-SPECIFIC REFERENCES ARE TO BE IN THIS FILE
- *
+
+#ifndef __FIO_PORT_LINUX_KPCI_H__
+#define __FIO_PORT_LINUX_KPCI_H__
+
+/**
+ * @ingroup PORT_COMMON_LINUX
+ * @{
  */
-#ifndef __FIO_PORT_LINUX_KBLOCK_H__
-#define __FIO_PORT_LINUX_KBLOCK_H__
 
-#define FIO_NUM_MINORS         16
+/**
+ * @}
+ */
+#endif /* __FIO_PORT_LINUX__KPCI_H__ */
 
-#include <fio/port/vectored.h>
 
-typedef enum
-{
-    destroy_type_normal,
-    destroy_type_force
-} destroy_type_t;
-
-extern int  kfio_init_storage_interface(void);
-extern int  kfio_teardown_storage_interface(void);
-#ifdef __VMKLNX__
-extern int kfio_register_esx_blkdev(kfio_pci_dev_t *pdev);
-extern int kfio_unregister_esx_blkdev(unsigned int major, const char *name);
-#endif
-
-extern int  kfio_create_disk(struct fio_device *dev, kfio_pci_dev_t *pci_dev,
-                             uint32_t sector_size,
-                             uint32_t max_sectors_per_request,
-                             uint32_t max_sg_elements_per_request,
-                             fusion_spinlock_t *queue_lock, kfio_disk_t **diskp,
-                             kfio_numa_node_t node);
-extern int  kfio_expose_disk(kfio_disk_t *dp, char *name, int major, int disk_index,
-                             uint64_t reported_capacity, uint32_t sector_size,
-                             uint32_t max_sg_elements_per_request);
-extern void kfio_destroy_disk(kfio_disk_t *disk, destroy_type_t dt);
-
-extern void fio_bio_posted(struct fio_device *dev);
-
-#define FIO_ATOMIC_WRITE_USER_IOV      0x01
-#define FIO_ATOMIC_WRITE_USER_PAGES    0x02
-
-extern int kfio_handle_atomic(struct fio_device *dev, const struct kfio_iovec *iov, uint32_t iovcnt, uint32_t *bytes_written, uint32_t flags);
-extern int fio_count_sectors_inuse(struct fio_device *dev, uint64_t base, uint64_t length, uint64_t *count);
-
-#endif // __FIO_PORT_LINUX_KBLOCK_H__

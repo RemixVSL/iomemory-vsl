@@ -26,7 +26,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //-----------------------------------------------------------------------------
 
-/** @file include/fio/port/kcache.h
+/** @file
  *     NO OS-SPECIFIC REFERENCES ARE TO BE IN THIS FILE
  *
  */
@@ -46,14 +46,21 @@
 
 #include <fio/port/errno.h>
 
+/*---------------------------------------------------------------------------*/
+
 /**
  * @brief OS-independent structure for cache.
- * Linux - \#if KFIOC_HAS_KMEM_CACHE p -> struct kmem_cache
- *         \#else   p-> struct kmem_cache_s
- * MS Windows p -> NPAGED_LOOKASIDE_LIST
- * FreeBSD p = uma_zone_t (struct uma_zone *)
- * Solaris kmem_cache
- * OS X homegrown double-linked list of free and used elements.
+ *
+ * @note Linux - if KFIOC_HAS_KMEM_CACHE p -> struct kmem_cache
+ *               else   p-> struct kmem_cache_s
+ *
+ * @note MS Windows p -> NPAGED_LOOKASIDE_LIST
+ *
+ * @note FreeBSD p = uma_zone_t (struct uma_zone *)
+ *
+ * @note Solaris kmem_cache
+ *
+ * @note OS X homegrown double-linked list of free and used elements.
  */
 typedef struct
 {
@@ -88,15 +95,14 @@ extern int __kfio_create_cache(fusion_mem_cache_t *pcache, char *name, uint32_t 
 
 /// @brief create a memory cache suitable for allocation pool of fixed size objects.
 ///
-/// NEVER CALL THIS FUNCTION DIRECTLY! Use fusion_create_cache_* macro!
-///
 /// @param pcache pointer to cache structure to initialize (need not be initialized before call).
-/// @param name   name of cache (for debugging purposes).
-/// @param size   size of cache elements in bytes, Must be non-zero.
-/// @param align  alignment of cache elements, Must be >= sizeof void * and a power of 2.
+/// @param name     name of cache (for debugging purposes).
+/// @param size     size of cache elements in bytes, Must be non-zero.
+/// @param align    alignment of cache elements, Must be >= sizeof void * and a power of 2.
 ///
 /// @returns zero on success,
-static inline int kfio_create_cache(fusion_mem_cache_t *pcache, char *name, uint32_t size, uint32_t align)
+static inline int kfio_create_cache(fusion_mem_cache_t *pcache, char *name,
+                                    uint32_t size, uint32_t align)
 {
     kassert(size != 0);
     kassert(align != 0);
@@ -239,6 +245,10 @@ static inline void fusion_cache_free(fusion_mem_cache_t *cache, void *p, int pre
     }
 }
 
+/*---------------------------------------------------------------------------*/
+
+/// @brief Destroy a fusion_cache
+/// @note  All preallocated blocks must be removed from the cache before this call
 static inline void fusion_cache_destroy(fusion_mem_cache_t *cache)
 {
     fusion_list_entry_t *e, *n;
@@ -253,6 +263,7 @@ static inline void fusion_cache_destroy(fusion_mem_cache_t *cache)
     kfio_cache_destroy(cache);
 }
 
+/*---------------------------------------------------------------------------*/
 
 #endif //__FIO_PORT_KCACHE_H__
 
