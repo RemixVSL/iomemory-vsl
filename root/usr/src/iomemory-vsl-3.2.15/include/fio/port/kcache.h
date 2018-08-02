@@ -119,11 +119,11 @@ static inline int kfio_create_cache(fusion_mem_cache_t *pcache, char *name,
 }
 
 /// @brief initialize the cache structure 'c' to allocate elements of type 't'
-#define fusion_create_cache(c, t) 
+#define fusion_create_cache(c, t) \
     kfio_create_cache(c, #t, sizeof(t), __alignof__(t))
 
 /// @brief initialize the cache structure 'c' to allocate elements of type struct 't'
-#define fusion_create_struct_cache(c, t) 
+#define fusion_create_struct_cache(c, t) \
     kfio_create_cache(c, #t, sizeof(struct t), __alignof__(struct t))
 
 extern void *kfio_cache_alloc(fusion_mem_cache_t *cache, int can_wait);
