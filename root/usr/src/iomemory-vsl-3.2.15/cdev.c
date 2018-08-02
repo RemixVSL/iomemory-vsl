@@ -29,6 +29,7 @@
 #include "port-internal.h"
 #include <fio/port/dbgset.h>
 #include <fio/port/cdev.h>
+#include <fio/port/common-linux/kfile.h>
 
 #if !defined (__linux__)
 #error This file supports linux only
@@ -46,10 +47,12 @@
 * @brief given a pointer to struct file returns a pointer to
 * the private_data member of the file structure
 */
+/* MST maybe not needed any more ... defined inside kfile.c
 static inline void *kfio_fs_private_data(struct file *fp)
 {
     return fp->private_data;
 }
+*/
 
 /**
  * Return events that are set.  If the cdev is not alerted,

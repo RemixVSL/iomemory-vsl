@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------
 // Copyright (c) 2006-2014, Fusion-io, Inc.(acquired by SanDisk Corp. 2014)
-// Copyright (c) 2014-2015 SanDisk Corp. and/or all its affiliates. All rights reserved.
+// Copyright (c) 2014-2015, SanDisk Corp. and/or all its affiliates. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -31,13 +31,7 @@
 #endif
 
 #include <linux/types.h>
-#include <linux/version.h>
 #include <linux/module.h>
-#include <fio/port/dbgset.h>
-#include <fio/port/ktime.h>
-#include <fio/port/cdev.h>
-#include <fio/port/fio-port.h>
-#include <fio/port/sched.h>
 #include <linux/slab.h>
 #if !defined(__VMKLNX__)
 #include <linux/buffer_head.h>
@@ -45,7 +39,6 @@
 #include <linux/interrupt.h>
 #include <linux/pci.h>
 #include <linux/kthread.h>
-#include <linux/reboot.h> // register_reboot_notifier unregister_reboot_notifier
 #include <linux/stddef.h>
 #if !defined(__VMKLNX__)
 #include <linux/delay.h>
@@ -59,6 +52,11 @@
 #include <linux/random.h>
 #include <linux/cpumask.h>
 
+#include <fio/port/dbgset.h>
+#include <fio/port/ktime.h>
+#include <fio/port/cdev.h>
+#include <fio/port/fio-port.h>
+#include <fio/port/sched.h>
 #include <fio/port/kfio_config.h>
 #if KFIOC_HAS_LINUX_SCATTERLIST_H
 #include <linux/scatterlist.h>
@@ -143,7 +141,7 @@ KFIO_EXPORT_SYMBOL(fusion_init_spin);
 void noinline fusion_spin_lock(fusion_spinlock_t *s)
 {
     linux_spinlock_t *ps = (linux_spinlock_t *) s;
-#if FUSION_DEBUG && !KFIOC_CONFIG_PREEMPT_RT && !defined(__VMKLNX__)
+#if FUSION_DEBUG && !defined(CONFIG_PREEMPT_RT) && !defined(__VMKLNX__)
     kassert(!irqs_disabled());
 #endif
     spin_lock(&ps->lock);
@@ -167,7 +165,7 @@ int noinline fusion_spin_is_locked(fusion_spinlock_t *s)
 
 void noinline fusion_spin_lock_irqdisabled(fusion_spinlock_t *s)
 {
-#if FUSION_DEBUG && !KFIOC_CONFIG_PREEMPT_RT
+#if FUSION_DEBUG && !defined(CONFIG_PREEMPT_RT)
     kassert(irqs_disabled());
 #endif
     spin_lock(&((linux_spinlock_t *)s)->lock);

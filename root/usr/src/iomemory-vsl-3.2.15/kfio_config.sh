@@ -155,6 +155,8 @@ KFIOC_HAS_BLK_FS_REQUEST
 KFIOC_KMAP_ATOMIC_NEEDS_TYPE
 KFIOC_HAS_BLK_ALLOC_QUEUE_NODE
 KFIOC_SGLIST_NEW_API
+KFIOC_HAS_SCSI_QD_CHANGE_FN
+KFIOC_HAS_SCSI_LUNID_UINT
 KFIOC_HAS_PROCFS_PDE_DATA
 KFIOC_HAS_PROC_CREATE_DATA
 KFIOC_HAS_NEW_QUEUECOMMAND_SIGNATURE
@@ -2304,6 +2306,46 @@ struct scsi_host_template testtemplate = {
 
     kfioc_test "$test_code" "$test_flag" 1 "-Werror"
 }
+
+# flag:           KFIOC_HAS_SCSI_LUNID_UINT
+# usage:          undef for automatic selection by kernel version
+#                 0     if the kernel does not have the SCSI lun id as unsigned int
+#                 1     if the kernel has the functions
+KFIOC_HAS_SCSI_LUNID_UINT()
+{
+    local test_flag="$1"
+    local test_code='
+#include <scsi/scsi_device.h>
+struct scsi_device sdev;
+
+void kfioc_has_scsi_lunid(void)
+{
+    printk("%u",sdev.lun);
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1 -Werror
+}
+
+# flag:           KFIOC_HAS_SCSI_QD_CHANGE_FN
+# usage:          undef for automatic selection by kernel version
+#                 0     if the kernel does not have the SCSI change queue depth function
+#                 1     if the kernel has the functions
+KFIOC_HAS_SCSI_QD_CHANGE_FN()
+{
+    local test_flag="$1"
+    local test_code='
+#include <scsi/scsi_device.h>
+struct scsi_device *sdev;
+
+void kfioc_has_scsi_qd_fns(void)
+{
+    scsi_change_queue_depth(sdev, 64);
+}
+'
+
+    kfioc_test "$test_code" "$test_flag" 1 -Werror-implicit-function-declaration
+}
+
 
 # flag:           KFIOC_HAS_SCSI_SG_FNS
 # usage:          undef for automatic selection by kernel version

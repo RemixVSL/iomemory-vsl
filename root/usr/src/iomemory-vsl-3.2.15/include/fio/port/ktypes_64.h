@@ -43,7 +43,7 @@
 #define UINTMAX_C(c)    c ## UL
 #endif
 
-#if defined(WINNT) || defined(WIN32) || defined(UEFI)
+#if defined(_MSC_VER)
 #define FUSION_ALIGN(x)        __declspec(align(8)) x
 #else
 #define FUSION_ALIGN(x)        x __attribute__((aligned(8)))
