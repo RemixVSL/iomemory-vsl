@@ -135,6 +135,7 @@ extern void kfio_cache_free_node(fusion_mem_cache_t *cache, void *p);
 #endif
 extern void kfio_cache_destroy(fusion_mem_cache_t *cache);
 
+/* MST check if driver compiles without the following lines ...
 static inline int fusion_cache_reserve(fusion_mem_cache_t *cache, int can_wait, uint32_t n)
 {
     int retval = 0;
@@ -244,6 +245,7 @@ static inline void fusion_cache_free(fusion_mem_cache_t *cache, void *p, int pre
         kfio_cache_free(cache, p);
     }
 }
+*/
 
 /*---------------------------------------------------------------------------*/
 

@@ -48,6 +48,11 @@
 #include <fio/port/common-linux/commontypes.h>
 
 /**
+ * @ingroup PORT_LINUX
+ * @{
+ */
+
+/**
  * brief @struct __fusion_poll_struct
  * OS-independent structure for poll support:
  * Linux wait_queue_head_t
@@ -343,5 +348,9 @@ static inline unsigned long long kfio_rdtsc(void)
 #define KFIO_INFO_USE_OS_BACKEND 1
 #define KFIO_SUPPORTS_DUAL_PIPE 1
 #endif
+
+/**
+ * @}
+ */
 
 #endif

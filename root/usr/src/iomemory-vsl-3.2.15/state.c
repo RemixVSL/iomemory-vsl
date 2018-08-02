@@ -204,26 +204,6 @@ void __fio_wait_on_states(fio_state_t *s, uint32_t num_states, char *names, ...)
     va_end(ap);
 }
 
-/*---------------------------------------------------------------------------*/
-
-/// @brief Move the state to the next higher state (increment)
-void fio_state_up(fio_state_t *s)
-{
-    fusion_cv_lock_irq(&s->lk);
-    __fio_set_state_locked(s, s->state + 1);
-    fusion_cv_unlock_irq(&s->lk);
-}
-
-/// @brief Move the state to the next lower state (decrement)
-void fio_state_down(fio_state_t *s)
-{
-    fusion_cv_lock_irq(&s->lk);
-    __fio_set_state_locked(s, s->state - 1);
-    fusion_cv_unlock_irq(&s->lk);
-}
-
-/*---------------------------------------------------------------------------*/
-
 /// @brief Execute a state transition per possible transitions described in an arc table
 /// @param s           State variable
 /// @param arcs        Structure of arc descriptions

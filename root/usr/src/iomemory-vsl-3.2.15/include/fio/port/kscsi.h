@@ -61,7 +61,6 @@ extern void dbgkprint_hex(const char *prefix, const uint8_t *hex, unsigned len);
        FUSION_INTERNAL==0
 
 #define dbgprint_cdb(_df_flag, _cdb, ...)  do {} while(0)
-
 #define errprint_cdb(_cdb, ...)            do {} while(0)
 
 #else
@@ -83,6 +82,8 @@ extern void dbgkprint_hex(const char *prefix, const uint8_t *hex, unsigned len);
 
 /// @brief errprint a message containing a SCSI CDB
 /// @param _cdb     a const uint8_t* which points to the CDB data.
+/// @param lbl      the bus name
+/// @param id       the errprint message ID
 /// @param ...      the format string and arguments
 /// @note  Use _cdb_str as the argument which has the ASCII CDB string.
 #define errprint_cdb(_cdb, ...)                                        \

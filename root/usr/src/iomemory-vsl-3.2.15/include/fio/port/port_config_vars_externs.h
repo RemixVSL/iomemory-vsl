@@ -1,6 +1,6 @@
 /* -----------------------------------------------------------------------------
- * Copyright (c) 2017, Fusion-io, Inc. (acquired by SanDisk Corp. 2014)
- * Copyright (c) 2014 SanDisk Corp. and/or all its affiliates.
+ * Copyright (c) 2018, Fusion-io, Inc. (acquired by SanDisk Corp. 2014)
+ * Copyright (c) 2014-2015 SanDisk Corp. and/or all its affiliates.
  * All rights reserved.
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -51,61 +51,61 @@ typedef struct _int_array_s_
 
 #if defined(__KERNEL__)
 
+extern int auto_attach ; //AUTO_ATTACH
+extern int compaction_timeout_ms ; //COMPACTION_TIMEOUT_MS
 extern int strict_sync ; //STRICT_SYNC
 extern const int port_supports_pci_numa_info ; //PORT_SUPPORTS_PCI_NUMA_INFO
+extern int disable_msi ; //DISABLE_MSI
 extern int disable_msix ; //DISABLE_MSIX
-extern int bypass_ecc ; //BYPASS_ECC
-extern const int port_supports_numa_node_override ; //PORT_SUPPORTS_NUMA_NODE_OVERRIDE
-extern int groomer_low_water_delta_hpcnt ; //GROOMER_LOW_WATER_DELTA_HPCNT
 extern int disable_scanner ; //DISABLE_SCANNER
+extern int enable_discard ; //ENABLE_DISCARD
+extern int bypass_ecc ; //BYPASS_ECC
+extern char exclude_devices[PARAM_STRING_VAL_MAX_LEN] ; //EXCLUDE_DEVICES
+extern int expected_io_size ; //EXPECTED_IO_SIZE
+extern char fio_affinity[PARAM_STRING_VAL_MAX_LEN] ; //FIO_AFFINITY
+extern int fio_dev_optimal_blk_size ; //FIO_DEV_BLK_OPTIMAL_BLK_SIZE
+extern int fio_dev_wait_timeout_secs ; //FIO_DEV_WAIT_TIMEOUT_SECS
+extern char external_power_override[PARAM_STRING_VAL_MAX_LEN] ; //FIO_EXTERNAL_POWER_OVERRIDE
+extern int groom_harder_threshold ; //FIO_GROOM_HARDER_THRESHOLD
+extern char preallocate_memory[PARAM_STRING_VAL_MAX_LEN] ; //FIO_PREALLOCATE_MEMORY
+extern int enable_unmap ; //FIO_SCSI_UNMAP_SUPPORTED
+extern int force_minimal_mode ; //FORCE_MINIMAL_MODE
+extern int disable_groomer ; //GROOMER_DISABLE
+extern int groomer_high_water_delta_hpcnt ; //GROOMER_HIGH_WATER_DELTA_HPCNT
+extern int groomer_low_water_delta_hpcnt ; //GROOMER_LOW_WATER_DELTA_HPCNT
+extern char include_devices[PARAM_STRING_VAL_MAX_LEN] ; //INCLUDE_DEVICES
+extern int iodrive_load_eb_map ; //IODRIVE_LOAD_EB_MAP
+extern int make_assert_nonfatal ; //IODRIVE_MAKE_ASSERT_NONFATAL
+extern const int iodrive_max_ebmap_probe ; //IODRIVE_MAX_EBMAP_PROBE
+extern int max_requests ; //IODRIVE_MAX_NUM_REQUEST_STRUCTURES
+extern int capacity_warning_threshold ; //IODRIVE_THROTTLE_CAPACITY_WARNING_THRESHOLD
 extern int use_command_timeouts ; //IODRIVE_USE_COMMAND_TIMEOUTS
+extern int scsi_queue_depth ; //KFIO_SCSI_QUEUE_DEPTH
+extern int max_md_blocks_per_device ; //MAX_MD_BLOCKS_PER_DEVICE
+extern int parallel_attach ; //PARALLEL_ATTACH
+extern int global_slot_power_limit_mw ; //PCIe_GLOBAL_SLOT_POWER_LIMIT
+extern int port_supports_numa_node_cache_allocations ; //PORT_SUPPORTS_NUMA_NODE_CACHE_ALLOCATIONS
+extern const int port_supports_numa_node_override ; //PORT_SUPPORTS_NUMA_NODE_OVERRIDE
+extern const int port_supports_per_cpu ; //PORT_SUPPORTS_PER_CPU
+extern const int port_supports_sglist_copy ; //PORT_SUPPORTS_SGLIST_COPY
+extern const int port_supports_user_pages ; //PORT_SUPPORTS_USER_PAGES
+extern int preallocate_mb ; //PREALLOCATE_MB
+extern int rmap_memory_limit_MiB ; //RMAP_MEMORY_LIMIT_MiB
+extern int rsort_memory_limit_MiB ; //RSORT_MEMORY_LIMIT_MiB
 extern int use_large_pcie_rx_buffer ; //USE_LARGE_PCIE_RX_BUFFER
 extern int force_enable_pcie_device_control_fix ; //FORCE_ENABLE_PCIE_DEVICE_CONTROL_FIX
-extern int rsort_memory_limit_MiB ; //RSORT_MEMORY_LIMIT_MiB
-extern char fio_affinity[PARAM_STRING_VAL_MAX_LEN] ; //FIO_AFFINITY
-extern int capacity_warning_threshold ; //IODRIVE_THROTTLE_CAPACITY_WARNING_THRESHOLD
-extern int enable_unmap ; //FIO_SCSI_UNMAP_SUPPORTED
-extern int port_supports_numa_node_cache_allocations ; //PORT_SUPPORTS_NUMA_NODE_CACHE_ALLOCATIONS
 extern const int log_scan_yield_interval_ms ; //LOG_SCAN_YIELD_INTERVAL_MSECS
 extern int fio_qos_enable ; //FIO_QOS_ENABLE
-extern int fio_dev_wait_timeout_secs ; //FIO_DEV_WAIT_TIMEOUT_SECS
-extern int iodrive_load_eb_map ; //IODRIVE_LOAD_EB_MAP
 extern int use_new_io_sched ; //USE_NEW_IO_SCHED
-extern int groomer_high_water_delta_hpcnt ; //GROOMER_HIGH_WATER_DELTA_HPCNT
-extern int preallocate_mb ; //PREALLOCATE_MB
-extern char exclude_devices[PARAM_STRING_VAL_MAX_LEN] ; //EXCLUDE_DEVICES
-extern const int port_supports_user_pages ; //PORT_SUPPORTS_USER_PAGES
-extern int parallel_attach ; //PARALLEL_ATTACH
 extern int enable_ecc ; //ENABLE_ECC
-extern int rmap_memory_limit_MiB ; //RMAP_MEMORY_LIMIT_MiB
-extern int expected_io_size ; //EXPECTED_IO_SIZE
 extern int tintr_hw_wait ; //IODRIVE_TINTR_HW_WAIT
 extern int iodrive_load_midprom ; //IODRIVE_LOAD_MIDPROM
 extern int auto_attach_cache ; //AUTO_ATTACH_CACHE
 extern int retire_on_psub ; //RETIRE_ON_PSUB
 extern int use_modules ; //USE_MODULES
-extern int groom_harder_threshold ; //FIO_GROOM_HARDER_THRESHOLD
-extern int make_assert_nonfatal ; //IODRIVE_MAKE_ASSERT_NONFATAL
-extern const int port_supports_sglist_copy ; //PORT_SUPPORTS_SGLIST_COPY
-extern int enable_discard ; //ENABLE_DISCARD
-extern int max_md_blocks_per_device ; //MAX_MD_BLOCKS_PER_DEVICE
 extern int enable_pcie_device_control_fix ; //ENABLE_PCIE_DEVICE_CONTROL_FIX
 extern int force_soft_ecc ; //FIO_FORCE_SOFT_ECC
-extern const int port_supports_per_cpu ; //PORT_SUPPORTS_PER_CPU
-extern int max_requests ; //IODRIVE_NUM_REQUEST_STRUCTURES
-extern int global_slot_power_limit_mw ; //PCIe_GLOBAL_SLOT_POWER_LIMIT
 extern int read_pipe_depth ; //READ_PIPE_DEPTH
-extern int force_minimal_mode ; //FORCE_MINIMAL_MODE
-extern int auto_attach ; //AUTO_ATTACH
-extern char external_power_override[PARAM_STRING_VAL_MAX_LEN] ; //FIO_EXTERNAL_POWER_OVERRIDE
-extern int compaction_timeout_ms ; //COMPACTION_TIMEOUT_MS
-extern int disable_groomer ; //GROOMER_DISABLE
-extern char include_devices[PARAM_STRING_VAL_MAX_LEN] ; //INCLUDE_DEVICES
-extern char preallocate_memory[PARAM_STRING_VAL_MAX_LEN] ; //FIO_PREALLOCATE_MEMORY
-extern int fio_dev_optimal_blk_size ; //FIO_DEV_BLK_OPTIMAL_BLK_SIZE
-extern const int iodrive_max_ebmap_probe ; //IODRIVE_MAX_EBMAP_PROBE
-extern int disable_msi ; //DISABLE_MSI
-extern int scsi_queue_depth ; //KFIO_SCSI_QUEUE_DEPTH
 
 #endif /* __KERNEL__ */
 #endif //  __GENERATED_PORT_CONFIG_VARS_EXTERNS_H__

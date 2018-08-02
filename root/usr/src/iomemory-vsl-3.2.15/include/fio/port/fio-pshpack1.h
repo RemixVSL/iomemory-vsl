@@ -26,7 +26,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //-----------------------------------------------------------------------------
 
-#if defined(WIN32) || defined(WINNT) || defined(UEFI)
+#if defined(_MSC_VER)
 #include <fio/port/windows/pshpack1.h>
 #undef  ATTRIBUTE_PACKED_ALIGNED
 #define ATTRIBUTE_PACKED_ALIGNED(x)   ATTRIBUTE_ALIGNED(x)
