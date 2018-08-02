@@ -4,6 +4,15 @@ This is an unsupported update of the original driver source for FusionIO
 cards. It comes with no warranty, it may cause DATA LOSS or CORRUPTION.
 Therefore it is NOT meant for production use, just for testing purposes.
 
+## Current version
+At the moment there is a lot of code redesign ongoing. You can find the
+bleeding edge development in the next_generation branch. Despite its name
+it is more mature than the master. Especially it fixes several known bugs:
+- silent IO drops
+- crashes during driver unload
+- SCSI queue settings
+- BIO status handling
+
 ## Background
 Driver support for FusionIO cards has been lagging behind kernel
 releases, effectively making the cards an expensive paperweight
