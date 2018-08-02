@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------
 // Copyright (c) 2006-2014, Fusion-io, Inc.(acquired by SanDisk Corp. 2014)
-// Copyright (c) 2014 SanDisk Corp. and/or all its affiliates. All rights reserved.
+// Copyright (c) 2014-2015 SanDisk Corp. and/or all its affiliates. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -69,16 +69,14 @@
 
 #if defined(USERSPACE_KERNEL)
 # include <fio/port/userspace/kcondvar.h>
+#elif defined(__VMKAPI__)
+#  include <fio/port/esxi6/kcondvar.h>
 #elif defined(__linux__) || defined(__VMKLNX__)
 #  include <fio/port/common-linux/kcondvar.h>
 #elif defined(__SVR4) && defined(__sun)
 #  include <fio/port/solaris/kcondvar.h>
-#elif defined(__hpux__)
-#  include <fio/port/hpux/kcondvar.h>
 #elif defined(__FreeBSD__)
 #  include <fio/port/freebsd/kcondvar.h>
-#elif defined(_AIX)
-#  include <fio/port/aix/kcondvar.h>
 #elif defined(__OSX__)
 #  include <fio/port/osx/kcondvar.h>
 #elif defined(WINNT) || defined(WIN32)
@@ -100,7 +98,7 @@ extern void fusion_schedule_yield(void);
  * Windows =>  LIST_ENTRY
  * FreeBSD =>  struct cv
  * OS X    =>  nothing
- * AIX     =>  tid_t + struct trb * (size 16)
+ * VMKAPI  =>  vmk_WorldEventID (Events to block on are always kernel virtual addresses, so 64 bits.)
  */
 struct FUSION_STRUCT_ALIGN(8) _fusion_condvar_t {
     char dummy[148];
@@ -133,7 +131,7 @@ extern void fusion_condvar_broadcast(fusion_condvar_t *cv);
  * @brief fusion_condvar_wait - sleep until a condition is true
  * @param cv the fusion_condvar_t to wait on
  * @param lock the lock needs to be held before calling this function
- *          and will be held on return.
+ *        and will be held on return.
  *
  * The function @sa fusion_condvar_signal() or fusion_condvar_broadcast()
  *  should be called when a change to the wait condition occurs to wake
@@ -145,13 +143,6 @@ extern void fusion_condvar_broadcast(fusion_condvar_t *cv);
  */
 extern void fusion_condvar_wait(fusion_condvar_t *cv,
                                 fusion_cv_lock_t *lock);
-
-/**
- * @param cv the fusion_condvar_t to wait on
- * @param lock the lock needs to be held before calling this function
- *          and will be held on return.
- * @param timeout_us maximum number of microseconds to wait before returning.
- */
 extern int  fusion_condvar_timedwait(fusion_condvar_t *cv,
                                      fusion_cv_lock_t *lock,
                                      int64_t timeout_us);
