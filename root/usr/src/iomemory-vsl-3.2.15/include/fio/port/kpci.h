@@ -82,7 +82,7 @@ extern uint16_t kfio_pci_get_domain(kfio_pci_dev_t *pdev);
  * OSX     => IOBufferMemoryDescriptor * (8)
  * UEFI    => Mapping & EFI_PCI_IO_PROTOCOL
  */
-struct fusion_dma_t 
+struct fusion_dma_t
 {
     uint64_t phys_addr;
     uint64_t _private[96/sizeof(uint64_t)];
