@@ -223,3 +223,4 @@ static inline int32_t fio_get_top_bit_set_index32(const uint32_t val)
 }
 
 #endif /* __FIO_PORT_BITOPS_H__  */
+

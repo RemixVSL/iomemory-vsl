@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------
 // Copyright (c) 2006-2014, Fusion-io, Inc.(acquired by SanDisk Corp. 2014)
-// Copyright (c) 2014 SanDisk Corp. and/or all its affiliates. All rights reserved.
+// Copyright (c) 2014-2016 SanDisk Corp. and/or all its affiliates. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -31,12 +31,12 @@
 
 #if defined(__FreeBSD__)
 #include <fio/port/freebsd/platform_ioctl.h>
-#elif defined(__hpux__)
-#include <fio/port/hpux/platform_ioctl.h>
 #elif defined(WINNT) || defined(WIN32)
 #include <fio/port/windows/platform_ioctl.h>
 #elif defined(__OSX__)
 #include <fio/port/osx/platform_ioctl.h>
+#elif defined(__VMKAPI__)
+#include <fio/port/esxi6/platform_ioctl.h>
 #endif
 
 /* If needed these can be overriden in the platform_ioctl.h file */

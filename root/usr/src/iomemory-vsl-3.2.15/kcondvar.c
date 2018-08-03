@@ -167,6 +167,7 @@ int noinline __fusion_condvar_timedwait(fusion_condvar_t *cv,
     int ret;
 
     is_irqsaved = fusion_cv_lock_is_irqsaved(lock);
+
     /* Linux wakes all threads in wake_up() unless
      * prepare_to_wait_exclusive() is called */
     if (interruptible)
@@ -201,7 +202,6 @@ int noinline __fusion_condvar_timedwait(fusion_condvar_t *cv,
     finish_wait(q, &_wait);
 
     return (ret == 0) ? FUSION_WAIT_TIMEDOUT : FUSION_WAIT_TRIGGERED;
-
 }
 
 /**
@@ -224,14 +224,13 @@ KFIO_EXPORT_SYMBOL(fusion_condvar_timedwait);
  */
 int noinline fusion_condvar_timedwait_noload(fusion_condvar_t *cv,
                                              fusion_cv_lock_t *lock,
-                                             int64_t timeout)
+                                             int64_t timeout_us)
 {
     /* Only safe from kernel threads! */
 #if !defined(__VMKLNX__)
     kassert(!current->mm);
 #endif
-
-    return __fusion_condvar_timedwait(cv, lock, timeout, 1);
+    return __fusion_condvar_timedwait(cv, lock, timeout_us, 1);
 }
 KFIO_EXPORT_SYMBOL(fusion_condvar_timedwait_noload);
 
