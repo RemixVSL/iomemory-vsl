@@ -36,7 +36,6 @@ usr/src/iomemory-vsl-3.2.15/include/fio/port/kcsr.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/kchunk.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/kcondvar.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/ifio.h
-usr/src/iomemory-vsl-3.2.15/include/fio/port/kmisc.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/byteswap.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/kbio.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/cdev.h
@@ -93,7 +92,6 @@ usr/src/iomemory-vsl-3.2.15/include/fio/port/list.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/utypes.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/fio-stat.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/state.h
-usr/src/iomemory-vsl-3.2.15/kmisc.c
 usr/src/iomemory-vsl-3.2.15/state.c
 usr/src/iomemory-vsl-3.2.15/errno.c
 usr/src/iomemory-vsl-3.2.15/khotplug.c
