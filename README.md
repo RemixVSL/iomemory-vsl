@@ -13,6 +13,14 @@ it is more mature than the master. Especially it fixes several known bugs:
 - SCSI queue settings
 - BIO status handling
 
+## Important note!!!
+Only the version and next_generation branches are tested, nothing else. 
+The driver may in fact work with older or newer kernels. The next_generation 
+branch is currently running in a CEPH cluster with official kernel 4.14 LTS and 
+works quite well. Testing and running with the kernel module has been done on 
+Ubuntu and Redhat.
+*** the untested branch has only been compiled and loaded not device tested ***
+
 ## Background
 Driver support for FusionIO cards has been lagging behind kernel
 releases, effectively making the cards an expensive paperweight
@@ -21,13 +29,6 @@ Deemed a trivial task to update the drivers and actually make them work
 with said newer kernels, and putting the expensive paperweight to use again
 so I could access my data..., set forking and fixing the code in motion 
 quite a while ago.
-
-## Important note!!!
-Only the version branches are tested, nothing else. The driver may
-in fact work with older or newer kernels but none have been tested. The
-latest reliable tested versions are from 3.19 and upwards. Testing and
-running with the kernel module has solely been done on Ubuntu.
-*** the untested branch has only been compiled and loaded not device tested ***
 
 ## Building
 Module building can be done according to the original README.
