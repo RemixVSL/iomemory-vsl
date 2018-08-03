@@ -15,7 +15,6 @@ usr/src/iomemory-vsl-3.2.15/check_target_kernel.conf
 usr/src/iomemory-vsl-3.2.15/check_target_kernel.sh
 usr/src/iomemory-vsl-3.2.15/include/fio/port/kfio.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/dbgset.h
-usr/src/iomemory-vsl-3.2.15/include/fio/port/kbitops.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/port_config.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/unaligned.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/compiler.h
@@ -96,7 +95,6 @@ usr/src/iomemory-vsl-3.2.15/state.c
 usr/src/iomemory-vsl-3.2.15/errno.c
 usr/src/iomemory-vsl-3.2.15/khotplug.c
 usr/src/iomemory-vsl-3.2.15/kfio/x86_64_cc*
-usr/src/iomemory-vsl-3.2.15/kbitops.c
 usr/src/iomemory-vsl-3.2.15/dkms.conf
 usr/src/iomemory-vsl-3.2.15/kblock.c
 usr/src/iomemory-vsl-3.2.15/kcondvar.c

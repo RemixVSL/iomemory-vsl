@@ -224,7 +224,6 @@ Source to build driver for SanDisk Fusion ioMemory devices
 /usr/src/iomemory-vsl-3.2.15/errno.c
 /usr/src/iomemory-vsl-3.2.15/iomemory-vsl.mod.c
 /usr/src/iomemory-vsl-3.2.15/katomic.c
-/usr/src/iomemory-vsl-3.2.15/kbitops.c
 /usr/src/iomemory-vsl-3.2.15/kblock.c
 /usr/src/iomemory-vsl-3.2.15/kscsi.c
 /usr/src/iomemory-vsl-3.2.15/kscsi_host.c
@@ -277,7 +276,6 @@ Source to build driver for SanDisk Fusion ioMemory devices
 /usr/src/iomemory-vsl-3.2.15/include/fio/port/ifio.h
 /usr/src/iomemory-vsl-3.2.15/include/fio/port/ioctl.h
 /usr/src/iomemory-vsl-3.2.15/include/fio/port/kbio.h
-/usr/src/iomemory-vsl-3.2.15/include/fio/port/kbitops.h
 /usr/src/iomemory-vsl-3.2.15/include/fio/port/kblock.h
 /usr/src/iomemory-vsl-3.2.15/include/fio/port/kbmp.h
 /usr/src/iomemory-vsl-3.2.15/include/fio/port/kcache.h

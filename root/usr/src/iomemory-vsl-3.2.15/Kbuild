@@ -44,12 +44,7 @@ $(FIO_DRIVER_NAME)-y += kinfo.o
 $(FIO_DRIVER_NAME)-y += kexports.o
 $(FIO_DRIVER_NAME)-y += khotplug.o
 
-ifeq ($(ARCH),powerpc)
-$(FIO_DRIVER_NAME)-y += kbitops.o
-endif
-
 ifeq ($(CC),mips64el-gentoo-linux-gnu-gcc)
-$(FIO_DRIVER_NAME)-y += kbitops.o
 $(FIO_DRIVER_NAME)-y += katomic.o
 endif
 
