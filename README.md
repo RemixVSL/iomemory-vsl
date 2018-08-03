@@ -16,7 +16,7 @@ it is more mature than the master. Especially it fixes several known bugs:
 ## Important note!!!
 Only the version and next_generation branches are tested, nothing else. 
 The driver may in fact work with older or newer kernels. The next_generation 
-branch is currently running in a CEPH cluster with official kernel 4.14 LTS and 
+branch is currently running in a CEPH cluster with official LTS kernel 4.14 and 
 works quite well. Testing and running with the kernel module has been done on 
 Ubuntu and Redhat.
 *** the untested branch has only been compiled and loaded not device tested ***
