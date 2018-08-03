@@ -39,9 +39,8 @@
 #define FUSION_PDP_ENDIAN    0x3412
 #endif
 
-#if defined(__PPC__) || defined(__PPC64__) || defined(__sparc__) \
-    || ((defined(__mips__) && defined(__MIPSEB__))) \
-    || ((defined(__hpux__) && defined(__ia64__)))
+#if defined(__PPC__) || defined(__PPC64__) || defined(__sparc__) || \
+    (defined(__mips__) && defined(__MIPSEB__))
 #define FUSION_BYTE_ORDER FUSION_BIG_ENDIAN
 #else
 #define FUSION_BYTE_ORDER FUSION_LITTLE_ENDIAN
@@ -49,11 +48,6 @@
 
 #include <fio/port/stdint.h>
 #include <fio/port/commontypes.h>
-
-// Include platform specific byteswap
-#if defined(__hpux__) && defined(__ia64__)
-#include "fio/port/hpux/byteswap.h"
-#endif
 
 /* Generic byteswap implementation. */
 static inline uint64_t fusion_bswap64(uint64_t val)

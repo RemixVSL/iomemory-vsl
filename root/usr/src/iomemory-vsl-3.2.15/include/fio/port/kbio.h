@@ -26,7 +26,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //-----------------------------------------------------------------------------
-/** @file include/fio/port/kbio.h
+/** @file
  *     NO OS-SPECIFIC REFERENCES ARE TO BE IN THIS FILE
  *
  */
@@ -39,6 +39,11 @@
 
 struct fio_device;
 struct fusion_ioctx;
+
+/*---------------------------------------------------------------------------*/
+
+
+/*---------------------------------------------------------------------------*/
 
 typedef struct kfio_bio kfio_bio_t;
 typedef void (*kfio_bio_completor_t)(kfio_bio_t *bio, uint64_t bytes_complete, int error);
