@@ -42,6 +42,21 @@ struct fusion_ioctx;
 
 /*---------------------------------------------------------------------------*/
 
+/// @brief Describes one operation in an io batch for the kernel API.
+struct kfio_iovec
+{
+    void      *iov_base;       ///< The starting address of user buffer
+    size_t     iov_len;        ///< The length of the data in user buffer
+    uint64_t   iov_sector;     ///< Sector base
+    uint32_t   iov_flag;       ///< Extra flags defining operation type
+    uint32_t   iov_reserved;   ///< Reserved for alignment purpose
+
+};
+
+// Flags that determine the type of atomic operation. Currently, only
+// atomic write and trim are supported.
+#define FIOV_ATOMIC_WRITE 0x01
+#define FIOV_ATOMIC_TRIM  0x02
 
 /*---------------------------------------------------------------------------*/
 
