@@ -34,8 +34,6 @@
 
 #define FIO_NUM_MINORS         16
 
-#include <fio/port/vectored.h>
-
 typedef enum
 {
     destroy_type_normal,

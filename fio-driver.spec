@@ -5,7 +5,7 @@
 %define fio_sourcedir      /usr/src
 %define fio_driver_name    iomemory-vsl
 %define kfio_scsi_device   False
-
+%define _sourcedir %{expand:%%(pwd)}
 
 %define has_kver %{?rpm_kernel_version: 1} %{?!rpm_kernel_version: 0}
 %if !%{has_kver}
@@ -58,11 +58,11 @@ Driver for SanDisk Fusion ioMemory devices
 
 
 %prep
-%setup -q -n %{name}-%{fio_tar_version}
+%setup -q -c -T -n %{name}-%{fio_tar_version}
+rsync -rv %{_sourcedir}/root/usr/src/iomemory-vsl-3.2.15/ driver_source/
 
 
 %build
-rsync -rv root/usr/src/iomemory-vsl-3.2.15/ driver_source/
 if ! %{__make} \
         -C driver_source \
         KERNELVER=%{rpm_kernel_version} \
@@ -306,7 +306,6 @@ Source to build driver for SanDisk Fusion ioMemory devices
 /usr/src/iomemory-vsl-3.2.15/include/fio/port/ufio.h
 /usr/src/iomemory-vsl-3.2.15/include/fio/port/utypes.h
 /usr/src/iomemory-vsl-3.2.15/include/fio/port/vararg.h
-/usr/src/iomemory-vsl-3.2.15/include/fio/port/vectored.h
 /usr/src/iomemory-vsl-3.2.15/include/fio/port/common-linux/commontypes.h
 /usr/src/iomemory-vsl-3.2.15/include/fio/port/common-linux/compiler.h
 /usr/src/iomemory-vsl-3.2.15/include/fio/port/common-linux/div64.h

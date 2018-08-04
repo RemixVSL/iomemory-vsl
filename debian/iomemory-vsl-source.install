@@ -30,7 +30,6 @@ usr/src/iomemory-vsl-3.2.15/include/fio/port/ktypes.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/kglobal.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/ufio.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/fio-poppack.h
-usr/src/iomemory-vsl-3.2.15/include/fio/port/vectored.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/kcsr.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/kcondvar.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/ifio.h
