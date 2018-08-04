@@ -61,7 +61,6 @@ Driver for SanDisk Fusion ioMemory devices
 %setup -q -c -T -n %{name}-%{fio_tar_version}
 rsync -rv %{_sourcedir}/root/usr/src/iomemory-vsl-3.2.15/ driver_source/
 
-
 %build
 if ! %{__make} \
         -C driver_source \
@@ -82,7 +81,7 @@ fi
 
 %install
 [ "$(cd "${RPM_BUILD_ROOT}" && pwd)" != "/" ] && rm -rf ${RPM_BUILD_ROOT}
-rsync -a root/ "${RPM_BUILD_ROOT}/"
+rsync -a %{_sourcedir}/root/ "${RPM_BUILD_ROOT}/"
 mkdir -p "${RPM_BUILD_ROOT}/lib/modules/%{rpm_kernel_version}/extra/%{fio_oem_name_short}"
 cp driver_source/iomemory-vsl.ko \
     "${RPM_BUILD_ROOT}/lib/modules/%{rpm_kernel_version}/extra/%{fio_oem_name_short}"
@@ -217,11 +216,13 @@ Source to build driver for SanDisk Fusion ioMemory devices
 %config /etc/ld.so.conf.d/fio.conf
 /usr/src/iomemory-vsl-3.2.15/Kbuild
 /usr/src/iomemory-vsl-3.2.15/Makefile
-/usr/src/iomemory-vsl-3.2.15/dkms.conf.example
+/usr/src/iomemory-vsl-3.2.15/dkms.conf
 /usr/src/iomemory-vsl-3.2.15/cdev.c
 /usr/src/iomemory-vsl-3.2.15/driver_init.c
 /usr/src/iomemory-vsl-3.2.15/check_target_kernel.sh
+%ghost /usr/src/iomemory-vsl-3.2.15/check_target_kernel.conf
 /usr/src/iomemory-vsl-3.2.15/errno.c
+%ghost /usr/src/iomemory-vsl-3.2.15/iomemory-vsl.ko
 /usr/src/iomemory-vsl-3.2.15/iomemory-vsl.mod.c
 /usr/src/iomemory-vsl-3.2.15/katomic.c
 /usr/src/iomemory-vsl-3.2.15/kblock.c
@@ -229,18 +230,22 @@ Source to build driver for SanDisk Fusion ioMemory devices
 /usr/src/iomemory-vsl-3.2.15/kscsi_host.c
 /usr/src/iomemory-vsl-3.2.15/kcache.c
 /usr/src/iomemory-vsl-3.2.15/kcondvar.c
+/usr/src/iomemory-vsl-3.2.15/kcpu.c
 /usr/src/iomemory-vsl-3.2.15/kcsr.c
 /usr/src/iomemory-vsl-3.2.15/kexports.c
 /usr/src/iomemory-vsl-3.2.15/kfile.c
 /usr/src/iomemory-vsl-3.2.15/kfio.c
+/usr/src/iomemory-vsl-3.2.15/kfio_common.c
 /usr/src/iomemory-vsl-3.2.15/kfio_config.sh
 /usr/src/iomemory-vsl-3.2.15/khotplug.c
 /usr/src/iomemory-vsl-3.2.15/kinfo.c
 /usr/src/iomemory-vsl-3.2.15/kmem.c
 /usr/src/iomemory-vsl-3.2.15/kscatter.c
 /usr/src/iomemory-vsl-3.2.15/ktime.c
+/usr/src/iomemory-vsl-3.2.15/license.c
 /usr/src/iomemory-vsl-3.2.15/main.c
 /usr/src/iomemory-vsl-3.2.15/module_param.c
+%ghost /usr/src/iomemory-vsl-3.2.15/modules.order
 /usr/src/iomemory-vsl-3.2.15/pci.c
 /usr/src/iomemory-vsl-3.2.15/port-internal.h
 /usr/src/iomemory-vsl-3.2.15/sched.c
@@ -287,6 +292,7 @@ Source to build driver for SanDisk Fusion ioMemory devices
 /usr/src/iomemory-vsl-3.2.15/include/fio/port/kglobal.h
 /usr/src/iomemory-vsl-3.2.15/include/fio/port/kinfo.h
 /usr/src/iomemory-vsl-3.2.15/include/fio/port/kmem.h
+/usr/src/iomemory-vsl-3.2.15/include/fio/port/kpci.h
 /usr/src/iomemory-vsl-3.2.15/include/fio/port/kscatter.h
 /usr/src/iomemory-vsl-3.2.15/include/fio/port/kscsi.h
 /usr/src/iomemory-vsl-3.2.15/include/fio/port/ktime.h
@@ -314,6 +320,7 @@ Source to build driver for SanDisk Fusion ioMemory devices
 /usr/src/iomemory-vsl-3.2.15/include/fio/port/common-linux/kcondvar.h
 /usr/src/iomemory-vsl-3.2.15/include/fio/port/common-linux/kfile.h
 /usr/src/iomemory-vsl-3.2.15/include/fio/port/common-linux/kfio.h
+/usr/src/iomemory-vsl-3.2.15/include/fio/port/common-linux/kpci.h
 /usr/src/iomemory-vsl-3.2.15/include/fio/port/common-linux/kscsi_config.h
 /usr/src/iomemory-vsl-3.2.15/include/fio/port/common-linux/kscsi_host.h
 /usr/src/iomemory-vsl-3.2.15/include/fio/port/common-linux/stdint.h
@@ -321,7 +328,6 @@ Source to build driver for SanDisk Fusion ioMemory devices
 /usr/src/iomemory-vsl-3.2.15/include/fio/port/linux/ktypes.h
 /usr/src/iomemory-vsl-3.2.15/include/fio/port/linux/utypes.h
 /usr/src/iomemory-vsl-3.2.15/include/fio/port/gcc/align.h
-/usr/src/iomemory-vsl-3.2.15/kfio/.x86_64_cc*
 /usr/src/iomemory-vsl-3.2.15/kfio/x86_64_cc*
 
 
