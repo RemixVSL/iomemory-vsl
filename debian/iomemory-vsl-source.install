@@ -58,7 +58,6 @@ usr/src/iomemory-vsl-3.2.15/include/fio/port/common-linux/kscsi_host.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/common-linux/kblock.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/common-linux/commontypes.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/vararg.h
-usr/src/iomemory-vsl-3.2.15/include/fio/port/kbmp.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/csr_simulator.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/kdebug.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/gcc/align.h
