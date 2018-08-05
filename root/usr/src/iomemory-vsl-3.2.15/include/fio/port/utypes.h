@@ -42,20 +42,18 @@
 #include <fio/port/linux/utypes.h>
 #elif defined(__SVR4) && defined (__sun)
 #include <fio/port/solaris/utypes.h>
-#elif defined(__hpux__)
-#include <fio/port/hpux/utypes.h>
 #elif defined(__FreeBSD__)
 #include <fio/port/freebsd/utypes.h>
-#elif defined (_AIX)
-#include <fio/port/aix/utypes.h>
 #elif defined(__OSX__)
 #include <fio/port/osx/utypes.h>
 #elif defined(WINNT) || defined(WIN32)
 #include <fio/port/windows/utypes.h>
 #elif defined(UEFI)
-#include <fio/port/uefi/utypes.h>
+// There is no file here for UEFI
 #else
 #error Unsupported OS - if you are porting, try starting with a copy of stubs
 #endif
+
+#include <fio/port/kglobal.h>
 
 #endif /* _FIO_PORT_UTYPES_H_ */

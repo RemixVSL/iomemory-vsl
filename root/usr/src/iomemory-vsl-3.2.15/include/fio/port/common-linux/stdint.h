@@ -30,6 +30,10 @@
 #ifndef __FIO_PORT_LINUX_STDINT_H__
 #define __FIO_PORT_LINUX_STDINT_H__
 
+/**
+ * @ingroup PORT_COMMON_LINUX
+ * @{
+ */
 #ifndef _LINUX_TYPES_H
 
 /* Exact integral types.  */
@@ -90,5 +94,9 @@ typedef unsigned long long int    uint64_t;
 #endif
 
 #endif
+
+/**
+ * @}
+ */
 
 #endif
