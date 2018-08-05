@@ -30,6 +30,11 @@
 #ifndef _KFIO_LINUX_DIV64_H
 #define _KFIO_LINUX_DIV64_H
 
+/**
+ * @ingroup PORT_COMMON_LINUX
+ * @{
+ */
+
 #if FIO_BITS_PER_LONG == 64
 
 static inline uint64_t kfio_div64_64(uint64_t dividend, uint64_t divisor)
@@ -48,5 +53,8 @@ uint64_t kfio_div64_64(uint64_t dividend, uint64_t divisor);
 uint64_t kfio_mod64_64(uint64_t divident, uint64_t divisor);
 
 #endif
+/**
+ * @}
+ */
 
 #endif /* _KFIO_LINUX_DIV64_H */
