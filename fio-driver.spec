@@ -39,7 +39,7 @@ Obsoletes: iodrive-driver-kmod, iodrive-driver, fio-driver
 License: Proprietary
 Group: System Environment/Kernel
 URL: https://link.sandisk.com/commercialsupport.html
-Source0: %{name}-%{fio_tar_version}.tar.gz
+# Source0: %{name}-%{fio_tar_version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 BuildArch: x86_64
 %if "%{_vendor}" == "suse"
@@ -94,6 +94,7 @@ mkdir -p "${RPM_BUILD_ROOT}/usr/src/iomemory-vsl-3.2.15/include/fio/port/linux"
 touch -a "driver_source/Module.symvers"
 cp "driver_source/Module.symvers" "${RPM_BUILD_ROOT}/usr/src/iomemory-vsl-3.2.15/"
 cp "driver_source/include/fio/port/linux/kfio_config.h" "${RPM_BUILD_ROOT}/usr/src/iomemory-vsl-3.2.15/include/fio/port/linux/"
+cp "driver_source/iomemory-vsl.mod.c" "${RPM_BUILD_ROOT}/usr/src/iomemory-vsl-3.2.15/"
 
 
 %pre
