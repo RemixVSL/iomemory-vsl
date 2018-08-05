@@ -1,7 +1,7 @@
 
 //-----------------------------------------------------------------------------
 // Copyright (c) 2006-2014, Fusion-io, Inc.(acquired by SanDisk Corp. 2014)
-// Copyright (c) 2014 SanDisk Corp. and/or all its affiliates. All rights reserved.
+// Copyright (c) 2014-2015 SanDisk Corp. and/or all its affiliates. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -27,7 +27,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //-----------------------------------------------------------------------------
 
-/* FIXME - this should be more selective about being gcc only and which version */
+/* FIXME - this should be more selective about which gcc version is covered */
 
 #ifndef __FIO_PORT_COMPILER_LINUX_H__
 #define __FIO_PORT_COMPILER_LINUX_H__

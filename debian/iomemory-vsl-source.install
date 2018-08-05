@@ -46,7 +46,6 @@ usr/src/iomemory-vsl-3.2.15/include/fio/port/sched.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/bitops.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/common-linux/div64.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/common-linux/kfio.h
-usr/src/iomemory-vsl-3.2.15/include/fio/port/common-linux/compiler.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/common-linux/kfile.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/common-linux/errno.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/common-linux/ufio.h
@@ -60,6 +59,7 @@ usr/src/iomemory-vsl-3.2.15/include/fio/port/common-linux/commontypes.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/vararg.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/csr_simulator.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/gcc/align.h
+usr/src/iomemory-vsl-3.2.15/include/fio/port/gcc/compiler.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/trim_completion.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/atomic_list.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/ktime.h

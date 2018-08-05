@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------
 // Copyright (c) 2006-2014, Fusion-io, Inc.(acquired by SanDisk Corp. 2014)
-// Copyright (c) 2014 SanDisk Corp. and/or all its affiliates. All rights reserved.
+// Copyright (c) 2014-2016 SanDisk Corp. and/or all its affiliates. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -36,15 +36,11 @@
 #if defined(USERSPACE_KERNEL)
 # include <fio/port/userspace/compiler.h>
 #elif defined(__linux__) || defined(__VMKLNX__)
-# include <fio/port/common-linux/compiler.h>
+# include <fio/port/gcc/compiler.h>
 #elif defined(__SVR4) && defined(__sun)
 # include <fio/port/solaris/compiler.h>
-#elif defined(__hpux__)
-# include <fio/port/hpux/compiler.h>
 #elif defined(__FreeBSD__)
 # include <fio/port/freebsd/compiler.h>
-#elif defined(_AIX)
-# include <fio/port/aix/compiler.h>
 #elif defined(__OSX__)
 # include <fio/port/osx/compiler.h>
 #elif defined(WIN32) || defined(WINNT)
