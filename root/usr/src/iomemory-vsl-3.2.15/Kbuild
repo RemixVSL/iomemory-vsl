@@ -43,11 +43,6 @@ $(FIO_DRIVER_NAME)-y += kcondvar.o
 $(FIO_DRIVER_NAME)-y += kinfo.o
 $(FIO_DRIVER_NAME)-y += kexports.o
 $(FIO_DRIVER_NAME)-y += khotplug.o
-
-ifeq ($(CC),mips64el-gentoo-linux-gnu-gcc)
-$(FIO_DRIVER_NAME)-y += katomic.o
-endif
-
 $(FIO_DRIVER_NAME)-y += kcsr.o
 $(FIO_DRIVER_NAME)-y += $(patsubst %_shipped,%,$(KFIO_LIB))
 $(FIO_DRIVER_NAME)-y += module_param.o

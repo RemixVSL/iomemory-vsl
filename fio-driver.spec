@@ -225,7 +225,6 @@ Source to build driver for SanDisk Fusion ioMemory devices
 /usr/src/iomemory-vsl-3.2.15/errno.c
 %ghost /usr/src/iomemory-vsl-3.2.15/iomemory-vsl.ko
 /usr/src/iomemory-vsl-3.2.15/iomemory-vsl.mod.c
-/usr/src/iomemory-vsl-3.2.15/katomic.c
 /usr/src/iomemory-vsl-3.2.15/kblock.c
 /usr/src/iomemory-vsl-3.2.15/kscsi.c
 /usr/src/iomemory-vsl-3.2.15/kscsi_host.c

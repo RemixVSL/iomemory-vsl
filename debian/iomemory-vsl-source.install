@@ -98,7 +98,6 @@ usr/src/iomemory-vsl-3.2.15/module_param.c
 usr/src/iomemory-vsl-3.2.15/cdev.c
 usr/src/iomemory-vsl-3.2.15/Makefile
 usr/src/iomemory-vsl-3.2.15/kscsi_host.c
-usr/src/iomemory-vsl-3.2.15/katomic.c
 usr/src/iomemory-vsl-3.2.15/kscsi.c
 usr/src/iomemory-vsl-3.2.15/license.c
 usr/src/iomemory-vsl-3.2.15/kmem.c
