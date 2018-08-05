@@ -31,7 +31,14 @@ so I could access my data..., set forking and fixing the code in motion
 quite a while ago.
 
 ## Building
-Module building can be done according to the original README.
+If you are on CentOS or similiar distribution simply run
+
+git clone https://github.com/snuf/iomemory-vsl
+cd iomemory-vsl/
+git checkout next_generation
+rpmbuild -ba fio-driver.spec
+
+Otherwise module building can be done according to the original README.
 
 ## Installation
 Installation can be done according to the original README.
