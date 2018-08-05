@@ -4,6 +4,23 @@ This is an unsupported update of the original driver source for FusionIO
 cards. It comes with no warranty, it may cause DATA LOSS or CORRUPTION.
 Therefore it is NOT meant for production use, just for testing purposes.
 
+## Current version
+At the moment there is a lot of code redesign ongoing. You can find the
+bleeding edge development in the next_generation branch. Despite its name
+it is more mature than the master. Especially it fixes several known bugs:
+- silent IO drops
+- crashes during driver unload
+- SCSI queue settings
+- BIO status handling
+
+## Important note!!!
+Only the version and next_generation branches are tested, nothing else. 
+The driver may in fact work with older or newer kernels. The next_generation 
+branch is currently running in a CEPH cluster with official LTS kernel 4.14 and 
+works quite well. Testing and running with the kernel module has been done on 
+Ubuntu and Redhat.
+*** the untested branch has only been compiled and loaded not device tested ***
+
 ## Background
 Driver support for FusionIO cards has been lagging behind kernel
 releases, effectively making the cards an expensive paperweight
@@ -13,15 +30,15 @@ with said newer kernels, and putting the expensive paperweight to use again
 so I could access my data..., set forking and fixing the code in motion 
 quite a while ago.
 
-## Important note!!!
-Only the version branches are tested, nothing else. The driver may
-in fact work with older or newer kernels but none have been tested. The
-latest reliable tested versions are from 3.19 and upwards. Testing and
-running with the kernel module has solely been done on Ubuntu.
-*** the untested branch has only been compiled and loaded not device tested ***
-
 ## Building
-Module building can be done according to the original README.
+If you are on CentOS or similiar distribution simply run
+```
+git clone https://github.com/snuf/iomemory-vsl
+cd iomemory-vsl/
+git checkout next_generation
+rpmbuild -ba fio-driver.spec
+```
+Otherwise module building can be done according to the original README.
 
 ## Installation
 Installation can be done according to the original README.
@@ -91,3 +108,4 @@ recommended.
 When moving from source 2.3.11 to source 3.2.10 the firmware HAS TO BE UPDATED
 to 3.2.10.20150212. For the move to 3.2.15 from 3.2.10 I've not seen any issues
 with my card.
+
