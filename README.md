@@ -32,12 +32,12 @@ quite a while ago.
 
 ## Building
 If you are on CentOS or similiar distribution simply run
-
+```
 git clone https://github.com/snuf/iomemory-vsl
 cd iomemory-vsl/
 git checkout next_generation
 rpmbuild -ba fio-driver.spec
-
+```
 Otherwise module building can be done according to the original README.
 
 ## Installation
