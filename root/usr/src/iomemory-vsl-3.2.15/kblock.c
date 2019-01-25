@@ -901,7 +901,11 @@ void kfio_disk_stat_write_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t 
         cpu = part_stat_lock();
         part_stat_inc(cpu, &gd->part0, ios[1]);
         part_stat_add(cpu, &gd->part0, sectors[1], totalsize >> 9);
+# if KFIOC_HAS_DISK_STATS_NSECS
+        part_stat_add(cpu, &gd->part0, nsecs[1],   duration * 1000);
+# else
         part_stat_add(cpu, &gd->part0, ticks[1],   kfio_div64_64(duration * HZ, 1000000));
+# endif
         part_stat_unlock();
 # endif /* defined(KFIOC_CONFIG_PREEMPT_RT) */
 # else /* KFIOC_PARTITION_STATS */
@@ -909,7 +913,11 @@ void kfio_disk_stat_write_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t 
 #  if KFIOC_HAS_DISK_STATS_READ_WRITE_ARRAYS
         disk_stat_inc(gd, ios[1]);
         disk_stat_add(gd, sectors[1], totalsize >> 9);
+# if KFIOC_HAS_DISK_STATS_NSECS
+        disk_stat_add(gd, nsecs[1], jiffies_to_nsecs(fusion_usectohz(duration)));
+# else
         disk_stat_add(gd, ticks[1], fusion_usectohz(duration));
+# endif
 #  else /* KFIOC_HAS_DISK_STATS_READ_WRITE_ARRAYS */
         disk_stat_inc(gd, writes);
         disk_stat_add(gd, write_sectors, totalsize >> 9);
@@ -941,14 +949,22 @@ void kfio_disk_stat_read_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t d
         cpu = part_stat_lock();
         part_stat_inc(cpu, &gd->part0, ios[0]);
         part_stat_add(cpu, &gd->part0, sectors[0], totalsize >> 9);
+# if KFIOC_HAS_DISK_STATS_NSECS
+        part_stat_add(cpu, &gd->part0, nsecs[0],   duration * 1000);
+# else
         part_stat_add(cpu, &gd->part0, ticks[0],   kfio_div64_64(duration * HZ, 1000000));
+# endif
         part_stat_unlock();
 # endif /* KFIO_CONFIG_PREEMPT_RT */
 # else /* KFIO_PARTITION_STATS */
 #  if KFIOC_HAS_DISK_STATS_READ_WRITE_ARRAYS
         disk_stat_inc(gd, ios[0]);
         disk_stat_add(gd, sectors[0], totalsize >> 9);
+# if KFIOC_HAS_DISK_STATS_NSECS
+        disk_stat_add(gd, nsecs[0], jiffies_to_nsecs(fusion_usectohz(duration)));
+# else
         disk_stat_add(gd, ticks[0], fusion_usectohz(duration));
+# endif
 #  else /* KFIO_C_HAS_DISK_STATS_READ_WRITE_ARRAYS */
         disk_stat_inc(gd, reads);
         disk_stat_add(gd, read_sectors, totalsize >> 9);

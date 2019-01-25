@@ -193,6 +193,7 @@ KFIOC_REQ_HAS_ERRORS
 KFIOC_REQ_HAS_ERROR_COUNT
 KFIOC_BOUNCE_H
 KFIOC_HAS_TIMER_SETUP
+KFIOC_HAS_DISK_STATS_NSECS
 "
 
 
@@ -2993,6 +2994,25 @@ void test_has_blk_queue_split2(struct request_queue *rq, struct bio **bio)
     kfioc_test "$test_code" "$test_flag" 1 -Werror
 }
 
+# flag:            KFIOC_HAS_DISK_STATS_NSECS
+# usage:           1 struct disk_stats has nsecs member
+#                  0 struct is still uses ticks member
+# kernel version:  Added in 4.19 to log disk stats with nanoseconds
+#                  commit "block: use nanosecond resolution for iostat"
+KFIOC_HAS_DISK_STATS_NSECS()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/genhd.h>
+
+void test_has_disk_stats_nsecs(void)
+{
+    struct disk_stats stat = { .nsecs = 0 };
+    (void)stat;
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1 
+}
 
 ###############################################################################
 
