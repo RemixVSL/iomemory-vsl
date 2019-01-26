@@ -1,2 +1,2 @@
 #include "linux/module.h"
-MODULE_LICENSE("Proprietary");
+MODULE_LICENSE("GPL");
