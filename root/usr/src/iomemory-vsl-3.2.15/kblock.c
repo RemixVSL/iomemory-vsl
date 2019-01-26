@@ -2246,6 +2246,7 @@ static void kfio_elevator_change(struct request_queue *q, char *name)
 // We don't use the real elevator_change since it isn't in the RedHat Whitelist
 // see FH-14626 for the gory details.
 #if !defined(__VMKLNX__)
+#if KFIOC_HAS_ELEVATOR_INIT
 #if KFIOC_ELEVATOR_EXIT_HAS_REQQ_PARAM
     elevator_exit(q, q->elevator);
 # else
@@ -2259,6 +2260,9 @@ static void kfio_elevator_change(struct request_queue *q, char *name)
         errprint("Failed to initialize noop io scheduler\n");
     }
 #endif
+# else
+    errprint("elevator_init() unavailable. Setting elevator to noop skipped.\n");
+# endif
 }
 
 #if KFIOC_HAS_BIO_COMP_CPU

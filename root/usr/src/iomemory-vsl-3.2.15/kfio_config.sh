@@ -195,6 +195,7 @@ KFIOC_BOUNCE_H
 KFIOC_HAS_TIMER_SETUP
 KFIOC_HAS_DISK_STATS_NSECS
 KFIOC_HAS_COARSE_REAL_TS
+KFIOC_HAS_ELEVATOR_INIT
 "
 
 
@@ -3016,7 +3017,7 @@ void test_has_disk_stats_nsecs(void)
 }
 
 # flag:            KFIOC_HAS_COARSE_REAL_TS
-# usage            1 kernel exports ktime_get_coarse_real_ts64()
+# usage:           1 kernel exports ktime_get_coarse_real_ts64()
 #                  0 old kernel with current_kernel_time()
 # kernel version:  Added in 4.18 to provide a 64 bit time interface
 #                  commit: "timekeeping: Standardize on ktime_get_*() naming"
@@ -3034,6 +3035,27 @@ void test_has_coarse_real_ts(void)
 '
     kfioc_test "$test_code" "$test_flag" 1
 }
+
+# flag:            KFIOC_HAS_ELEVATOR_INIT
+# usage:           1 kernel has 2 parameter elevator_init()
+#                  0 newer kernel without that function
+# kernel version:  Symbol export removed in 4.18. Since then only internal
+#                  commit: "block: unexport elevator_init/exit"
+KFIOC_HAS_ELEVATOR_INIT()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/elevator.h>
+
+test_has_elevator_init(void)
+{
+    struct request_queue *q;
+    elevator_init(q, "noop");
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1
+}
+
 
 
 ###############################################################################
