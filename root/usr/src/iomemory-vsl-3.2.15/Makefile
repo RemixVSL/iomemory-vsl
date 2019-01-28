@@ -81,7 +81,7 @@ clean modules_clean:
 		KFIO_LIB=$(KFIO_LIB) \
 		clean
 	rm -rf include/fio/port/linux/kfio_config.h kfio_config
-	sed -i 's/GPL/Proprietary/g' license.c
+#	sed -i 's/GPL/Proprietary/g' license.c
 
 include/fio/port/linux/kfio_config.h: kfio_config.sh
 	./$< -a $(FIOARCH) -o $@ -k $(KERNEL_SRC) -p -d $(CURDIR)/kfio_config -l $(FUSION_DEBUG)

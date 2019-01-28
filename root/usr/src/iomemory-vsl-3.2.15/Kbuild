@@ -9,7 +9,7 @@ endif
 
 
 $(src)/license.c: $(src)/Kbuild
-	printf '#include "linux/module.h"\nMODULE_LICENSE("Proprietary");\n' >$@
+	printf '#include "linux/module.h"\nMODULE_LICENSE("GPL");\n' >$@
 
 
 obj-m := $(FIO_DRIVER_NAME).o
