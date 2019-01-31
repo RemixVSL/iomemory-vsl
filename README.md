@@ -108,3 +108,4 @@ recommended.
 When moving from source 2.3.11 to source 3.2.10 the firmware HAS TO BE UPDATED
 to 3.2.10.20150212. For the move to 3.2.15 from 3.2.10 I've not seen any issues
 with my card.
+

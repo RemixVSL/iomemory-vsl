@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------
 // Copyright (c) 2006-2014, Fusion-io, Inc.(acquired by SanDisk Corp. 2014)
-// Copyright (c) 2014-2015, SanDisk Corp. and/or all its affiliates. All rights reserved.
+// Copyright (c) 2014-2016 SanDisk Corp. and/or all its affiliates. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -30,10 +30,6 @@
 extern "C" {
 #endif
 
-/*
- * The Linux port's header files aren't quite self-consistent enough, so we have to
- * work around that here.
- */
 #ifdef __linux
 #include <linux/types.h>
 #endif
@@ -90,9 +86,12 @@ static struct fio_strerror_entry fio_strerror_entries[] = {
     FIO_STRERROR_ENTRY(EPIPE,             "Broken pipe"),
     FIO_STRERROR_ENTRY(EDOM,              "Math argument out of domain of func"),
     FIO_STRERROR_ENTRY(ERANGE,            "Math result not representable"),
+    FIO_STRERROR_ENTRY(ENOTSUP,           "Function not supported"),
     FIO_STRERROR_ENTRY(EUNCORRECTABLEECC, "Uncorrectable ECC error"),
     FIO_STRERROR_ENTRY(EUECC_BMOK,        "Uncorrectable ECC error"),
     FIO_STRERROR_ENTRY(EECC_VALIDATION_FAIL, "ECC validation failure"),
+    FIO_STRERROR_ENTRY(EERASED,           "Erased space was read"),
+    FIO_STRERROR_ENTRY(EVERRNG,           "Version is out of range"),
     { -1, "EUNKNOWN", "Unknown error" }
 };
 

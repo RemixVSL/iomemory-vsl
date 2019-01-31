@@ -1,6 +1,6 @@
 // --------------------------------------------------------------------------
 // Copyright (c) 2013-2014, Fusion-io, Inc.(acquired by SanDisk Corp. 2014)
-// Copyright (c) 2014-2015 SanDisk Corp. and/or all its affiliates. All rights reserved.
+// Copyright (c) 2014-2016 SanDisk Corp. and/or all its affiliates. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -51,6 +51,16 @@
 #undef DID_BAD_TARGET
 #define DID_BAD_TARGET DID_NO_CONNECT
 #endif
+
+#if (KFIOC_HAS_SCSI_LUNID_UINT == 1) || defined(__VMKLNX__)
+#define PRILunId   "u"
+#else
+#define PRILunId   "llu"
+#endif
+/**
+ * @ingroup PORT_COMMON_LINUX
+ * @{
+ */
 
 static void fio_init_scsi_host_template(void);
 
@@ -110,7 +120,7 @@ int kfio_init_storage_interface(void)
     return 0;
 }
 
-/// @brief One-time cleanup of the SCSI driver.
+/// @brief One-time teardown of the SCSI driver.
 int kfio_teardown_storage_interface(void)
 {
     kfio_scsi_cleanup();
@@ -237,13 +247,15 @@ static struct scsi_device *fio_port_scsi_device_get(struct fio_port_scsi_host *p
 /// @brief Return a scsi_cmnd to the mid-layer before a fio_scsi_cmd was allocated.
 static void fio_scmd_immediate_error(struct scsi_cmnd *scmd, uint8_t host_byte, const char *why)
 {
-    dbgprint(DBGS_SCSI_ERROR, "%s: MidLayer <=E->fio-port: SCSI cmd [hid %u, tid %u, lun %u, opcode %02x, host byte %02x] was immediately failed because %s\n",
+    dbgprint(DBGS_SCSI_ERROR, "%s: MidLayer <=E->fio-port: SCSI cmd [hid %u, tid %u, lun %" PRILunId", opcode %02x, host byte %02x] was immediately failed because %s\n",
             fio_scsi_bus_name_from_scmd(scmd), (scmd->device && scmd->device->host)? scmd->device->host->unique_id : 999,
             scmd->device ? scmd->device->id : 999, scmd->device ? scmd->device->lun : 999, scmd->cmnd[0], host_byte, why);
 
     scmd->result = 0;
     set_host_byte(scmd, host_byte);
+#if KFIOC_HAS_NEW_QUEUECOMMAND_SIGNATURE
     scmd->scsi_done(scmd);
+#endif
 }
 
 #if KFIOC_HAS_NEW_QUEUECOMMAND_SIGNATURE
@@ -262,9 +274,6 @@ static int fio_shost_queuecommand(struct scsi_cmnd *scmd, void (*completor)(stru
 
     kassert(scmd != NULL);
 
-#if KFIOC_HAS_NEW_QUEUECOMMAND_SIGNATURE==0
-    scmd->scsi_done = completor;
-#endif
     kassert(scmd->scsi_done != NULL);
 
     sdev = scmd->device;
@@ -277,12 +286,18 @@ static int fio_shost_queuecommand(struct scsi_cmnd *scmd, void (*completor)(stru
     if (port_host == NULL)
     {
         fio_scmd_immediate_error(scmd, DID_NO_CONNECT, "host is unregistered");
+#if KFIOC_HAS_NEW_QUEUECOMMAND_SIGNATURE==0
+        completor(scmd);
+#endif
         return 0;
     }
 
     if (sdev->id != port_host->target_id)
     {
         fio_scmd_immediate_error(scmd, DID_NO_CONNECT, "invalid target for host");
+#if KFIOC_HAS_NEW_QUEUECOMMAND_SIGNATURE==0
+        completor(scmd);
+#endif
         return 0;
     }
 
@@ -300,6 +315,9 @@ static int fio_shost_queuecommand(struct scsi_cmnd *scmd, void (*completor)(stru
         if (lu == NULL)
         {
             fio_scmd_immediate_error(scmd, DID_TIME_OUT, "LU is not attached");
+#if KFIOC_HAS_NEW_QUEUECOMMAND_SIGNATURE==0
+            completor(scmd);
+#endif
             return 0;
         }
 
@@ -307,9 +325,13 @@ static int fio_shost_queuecommand(struct scsi_cmnd *scmd, void (*completor)(stru
         // FIXME This is fine for now because there is only 1 LUN per host (aka 1 VSU/device). However, I wonder if a more
         //       sophisticated mechanism would not yield better performance when there are more VSUs.
         num_luns = (uint32_t)fusion_atomic_read(&port_host->ref_count);
+#if KFIOC_HAS_SCSI_QD_CHANGE_FN
+        scsi_change_queue_depth(sdev, scsi_queue_depth/num_luns); // Max # SCSI commands this LUN can handle at a time.
+#else
         scsi_adjust_queue_depth(sdev, 0, scsi_queue_depth/num_luns); // Max # SCSI commands this LUN can handle at a time.
+#endif
 
-        dbgprint(DBGS_SCSI, "%s: SCSI hooked up sdev to LU [tid %u, lun %u]\n",
+        dbgprint(DBGS_SCSI, "%s: SCSI hooked up sdev to LU [tid %u, lun %" PRILunId "]\n",
             kfio_scsi_lu_get_bus_name(lu), sdev->id, sdev->lun);
         fusion_spin_lock_irqsave(&port_host->shost_lk);
         sdev->hostdata = lu;
@@ -327,19 +349,28 @@ static int fio_shost_queuecommand(struct scsi_cmnd *scmd, void (*completor)(stru
     if (ret == -ENOENT)
     {
         fio_scmd_immediate_error(scmd, DID_TIME_OUT, "LU just became detached");
+#if KFIOC_HAS_NEW_QUEUECOMMAND_SIGNATURE==0
+        completor(scmd);
+#endif
         return 0;
     }
 
     dbgprint_cdb(DBGS_SCSI_IO2, scmd->cmnd,
-        "%s: MidLayer ---> fio-port: SCSI cmd #%u [tid %u, lun %u, cdb %s]\n",
+        "%s: MidLayer ---> fio-port: SCSI cmd #%u [tid %u, lun %" PRILunId ", cdb %s]\n",
         kfio_scsi_cmd_get_bus_name(cmd), kfio_scsi_cmd_get_global_seq_num(cmd), sdev->id, sdev->lun, _cdb_str);
 
     scmd->host_scribble = (unsigned char *)cmd;
+
+#if KFIOC_HAS_NEW_QUEUECOMMAND_SIGNATURE==0
+    scmd->scsi_done = completor;
+#endif
 
     cmd_status = kfio_scsi_cmd_rcvd(cmd);
 
     if (cmd_status == -ENOMEM)
     {
+        infprint("%s: scsi command %02x was not be handled due to lack of memory resources\n",
+            fio_scsi_bus_name_from_scmd(scmd), scmd->cmnd[0]);
         return SCSI_MLQUEUE_HOST_BUSY;
     }
 
@@ -567,18 +598,18 @@ int kfio_port_scsi_new_lu(struct fio_scsi_lu *lu)
 
     fusion_spin_lock(&port_hosts_lk);
     port_host = fio_port_scsi_host_lookup_from_tid(target_id);
-    fusion_spin_unlock(&port_hosts_lk);
 
     if (port_host == NULL)
     {
         // Don't call out while locked because we cannot enforce non-blocking behavior.
+        fusion_spin_unlock(&port_hosts_lk);
         port_host = fio_port_scsi_host_create(target_id, (struct pci_dev *)kfio_scsi_lu_get_pci_dev(lu));
         if (port_host == NULL)
         {
             return -ENOMEM;
         }
-
         fusion_spin_lock(&port_hosts_lk);
+
         if ((other_thread_port_host = fio_port_scsi_host_lookup_from_tid(target_id)) != NULL)
         {
             // Another thread created this same host while we were unlocked. Destroy ours. Use his.
@@ -589,10 +620,12 @@ int kfio_port_scsi_new_lu(struct fio_scsi_lu *lu)
         {
             fusion_list_add_tail(&port_host->port_hosts_node, &port_hosts);
         }
-        fusion_spin_unlock(&port_hosts_lk);
     }
 
+    // Increment refcount inside lock protection in case other_thread_port_host != NULL and the other thread
+    // has an error and calls kfio_port_scsi_lu_gone(), prevent it from deleting our port_host.
     fusion_atomic_inc(&port_host->ref_count);
+    fusion_spin_unlock(&port_hosts_lk);
 
     // Force existing scsi_devices to recalculate their queue depth on the next command.
     fio_scsi_shost_unhook_devices_from_lus(port_host->shost);
@@ -677,8 +710,10 @@ void kfio_port_scsi_cmd_get_sense_buffer(void *port_cmd, uint8_t **buffer, uint3
 }
 
 /// @brief Call from fio-scsi layer when a command is complete.
-void kfio_port_scsi_cmd_completor(void *port_cmd, uint64_t bytes_xferred, enum fio_scsi_cmd_status scsi_status,
-                                 int driver_error)
+void kfio_port_scsi_cmd_completor(void *port_cmd,
+                                  uint64_t bytes_xferred,
+                                  enum fio_scsi_cmd_status scsi_status,
+                                  int driver_error)
 {
     struct scsi_cmnd *scmd;
     struct fio_port_scsi_host *port_host;
@@ -784,14 +819,14 @@ void kfio_port_scsi_cmd_completor(void *port_cmd, uint64_t bytes_xferred, enum f
     if (unlikely(scmd->result))
     {
         dbgprint_cdb(DBGS_SCSI_ERROR, scmd->cmnd,
-            "%s: MidLayer <=E= fio-port: SCSI cmd #%u [tid %u, lun %u, cdb %s] result %x\n",
+            "%s: MidLayer <=E= fio-port: SCSI cmd #%u [tid %u, lun %" PRILunId "cdb %s] result %x\n",
             kfio_scsi_cmd_get_bus_name(cmd), kfio_scsi_cmd_get_global_seq_num(cmd),
             scmd->device->id, scmd->device->lun, _cdb_str, scmd->result);
     }
     else
     {
         dbgprint_cdb(DBGS_SCSI_IO2, scmd->cmnd,
-            "%s: MidLayer <=== fio-port: SCSI cmd #%u [tid %u, lun %u, cdb %s] %lld/%llu bytes xferred\n",
+            "%s: MidLayer <=== fio-port: SCSI cmd #%u [tid %u, lun %" PRILunId ", cdb %s] %lld/%llu bytes xferred\n",
             kfio_scsi_cmd_get_bus_name(cmd), kfio_scsi_cmd_get_global_seq_num(cmd),
             scmd->device->id, scmd->device->lun, _cdb_str, bytes_xferred, (uint64_t)scsi_bufflen(scmd));
     }
@@ -802,3 +837,8 @@ void kfio_port_scsi_cmd_completor(void *port_cmd, uint64_t bytes_xferred, enum f
         scmd->scsi_done(scmd);
     }
 }
+
+/**
+ * @}
+ */
+

@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------
 // Copyright (c) 2006-2014, Fusion-io, Inc.(acquired by SanDisk Corp. 2014)
-// Copyright (c) 2014 SanDisk Corp. and/or all its affiliates. All rights reserved.
+// Copyright (c) 2014-2016 SanDisk Corp. and/or all its affiliates. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -54,21 +54,6 @@
 #define IODRIVE_DMA_DIR_READ       1
 #define IODRIVE_DMA_DIR_INVALID   -1
 
-/**
- * @struct fusion_dma_t
- * @brief placeholder struct that is large enough for the @e real OS-specific
- * structure:
- * Linux => dma_addr_t (size 4 for x86, size 8 for x64)
- * Solaris => struct of ddi_dma_handle_t & ddi_acc_handle_t
- * FreeBSD => struct of bus_dma_map_t (8 bytes) & bus_dmamap_t (8 bytes)
- * OSX     => IOBufferMemoryDescriptor * (8)
- * HPUX    => various mapping structures
- */
-struct fusion_dma_t {
-    uint64_t phys_addr;
-    uint64_t _private[96/sizeof(uint64_t)];
-};
-
 typedef struct __fusion_page *fusion_page_t;
 typedef struct __fusion_user_page *fusion_user_page_t;
 
@@ -78,13 +63,6 @@ typedef struct __fusion_user_page *fusion_user_page_t;
 #else
 # define FUSION_ALLOCATION_TRIPWIRE_TEST() ;
 #endif
-
-extern void *kfio_dma_alloc_coherent(kfio_pci_dev_t *pdev, unsigned int size,
-                                     struct fusion_dma_t *dma_handle);
-
-extern void kfio_dma_free_coherent(kfio_pci_dev_t *pdev, unsigned int size,
-                                   void *vaddr, struct fusion_dma_t *dma_handle);
-
 
 // Limit to the size that can be allocated via kfio_malloc()
 // This limitation is imposed by Linux
@@ -137,9 +115,5 @@ static inline void kfio_put_user_pages(fusion_user_page_t *pages, int nr_pages)
 {
 }
 #endif
-
-#define KFIO_DMA_SYNC_FOR_DRIVER 1
-#define KFIO_DMA_SYNC_FOR_DEVICE 2
-extern int kfio_dma_sync(struct fusion_dma_t *dma_hdl, uint64_t offset, size_t length, unsigned type);
 
 #endif //__FIO_PORT_KMEM_H__

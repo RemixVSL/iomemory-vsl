@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------
 // Copyright (c) 2011-2014, Fusion-io, Inc.(acquired by SanDisk Corp. 2014)
-// Copyright (c) 2014 SanDisk Corp. and/or all its affiliates. All rights reserved.
+// Copyright (c) 2014-2016 SanDisk Corp. and/or all its affiliates. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -27,22 +27,26 @@
 //-----------------------------------------------------------------------------
 
 #ifndef __FIO_PORT_KTYPES_H__
-#error "Please include <fio/port/ktypes.h> rather than this file directly."
+#error "Please include <fio/port/ktypes.h> before this file."
 #endif
+
 #ifndef __FIO_PORT_KCPU_H__
 #define __FIO_PORT_KCPU_H__
 
-extern kfio_cpu_t kfio_current_cpu(void);
+#include <fio/port/errno.h>
+#include <fio/port/kpci.h>
 
-#if defined(PORT_SUPPORTS_PER_CPU) && PORT_SUPPORTS_PER_CPU
+#if PORT_SUPPORTS_PER_CPU
+
+extern kfio_cpu_t kfio_current_cpu(void);
 extern kfio_cpu_t kfio_get_cpu(kfio_get_cpu_t *flags);
 extern void kfio_put_cpu(kfio_get_cpu_t *flags);
 extern unsigned int kfio_max_cpus(void);
 extern int kfio_cpu_online(kfio_cpu_t cpu);
 
 void kfio_create_kthread_on_cpu(fusion_kthread_func_t func, void *data,
-                            void *fusion_nand_device, kfio_cpu_t cpu,
-                            const char *fmt, ...);
+                                      void *fusion_nand_device, kfio_cpu_t cpu,
+                                      const char *fmt, ...);
 
 typedef void (kfio_cpu_notify_fn)(int new_cpu_flag, kfio_cpu_t cpu);
 extern void kfio_unregister_cpu_notifier(kfio_cpu_notify_fn *func);

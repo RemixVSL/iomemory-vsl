@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------
 // Copyright (c) 2006-2014, Fusion-io, Inc.(acquired by SanDisk Corp. 2014)
-// Copyright (c) 2014 SanDisk Corp. and/or all its affiliates. All rights reserved.
+// Copyright (c) 2014-2015 SanDisk Corp. and/or all its affiliates. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -26,22 +26,17 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //-----------------------------------------------------------------------------
 
-/*******************************************************************************
- * Supported platforms / OS:
- * x86_64 Linux, Solaris, FreeBSD
- * PPC_64 Linux
- * SPARC_64 Solaris
- * Apple OSX v 10.6+
- ******************************************************************************/
-#ifndef __FIO_PORT_KTYPES_H__
-#error Please include <fio/port/ktypes.h> rather than this file directly.
-#endif
-#ifndef __FIO_PORT_KCHUNK_H__
-#define __FIO_PORT_KCHUNK_H__
+#ifndef __FIO_PORT_LINUX_KPCI_H__
+#define __FIO_PORT_LINUX_KPCI_H__
 
-int fio_chunk_init (unsigned int chunk_size_mb);
-void fio_chunk_deinit (void);
-void * fio_chunk_alloc_page (void);
-int fio_chunk_free_page (void * pg);
+/**
+ * @ingroup PORT_COMMON_LINUX
+ * @{
+ */
 
-#endif //__FIO_PORT_KBMP_H__
+/**
+ * @}
+ */
+#endif /* __FIO_PORT_LINUX__KPCI_H__ */
+
+

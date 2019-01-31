@@ -34,8 +34,6 @@
 
 #define FIO_NUM_MINORS         16
 
-#include <fio/port/vectored.h>
-
 typedef enum
 {
     destroy_type_normal,
@@ -59,7 +57,6 @@ extern int  kfio_expose_disk(kfio_disk_t *dp, char *name, int major, int disk_in
                              uint64_t reported_capacity, uint32_t sector_size,
                              uint32_t max_sg_elements_per_request);
 extern void kfio_destroy_disk(kfio_disk_t *disk, destroy_type_t dt);
-extern kfio_bio_t *kfio_fetch_next_bio(kfio_disk_t *disk);
 
 extern void fio_bio_posted(struct fio_device *dev);
 

@@ -9,7 +9,7 @@ endif
 
 
 $(src)/license.c: $(src)/Kbuild
-	printf '#include "linux/module.h"\nMODULE_LICENSE("Proprietary");\n' >$@
+	printf '#include "linux/module.h"\nMODULE_LICENSE("GPL");\n' >$@
 
 
 obj-m := $(FIO_DRIVER_NAME).o
@@ -25,7 +25,8 @@ $(FIO_DRIVER_NAME)-y += state.o
 $(FIO_DRIVER_NAME)-y += kcache.o
 $(FIO_DRIVER_NAME)-y += kfile.o
 $(FIO_DRIVER_NAME)-y += kmem.o
-$(FIO_DRIVER_NAME)-y += kmisc.o
+$(FIO_DRIVER_NAME)-y += kfio_common.o
+$(FIO_DRIVER_NAME)-y += kcpu.o
 $(FIO_DRIVER_NAME)-y += kscatter.o
 $(FIO_DRIVER_NAME)-y += ktime.o
 $(FIO_DRIVER_NAME)-y += sched.o
@@ -42,16 +43,6 @@ $(FIO_DRIVER_NAME)-y += kcondvar.o
 $(FIO_DRIVER_NAME)-y += kinfo.o
 $(FIO_DRIVER_NAME)-y += kexports.o
 $(FIO_DRIVER_NAME)-y += khotplug.o
-
-ifeq ($(ARCH),powerpc)
-$(FIO_DRIVER_NAME)-y += kbitops.o
-endif
-
-ifeq ($(CC),mips64el-gentoo-linux-gnu-gcc)
-$(FIO_DRIVER_NAME)-y += kbitops.o
-$(FIO_DRIVER_NAME)-y += katomic.o
-endif
-
 $(FIO_DRIVER_NAME)-y += kcsr.o
 $(FIO_DRIVER_NAME)-y += $(patsubst %_shipped,%,$(KFIO_LIB))
 $(FIO_DRIVER_NAME)-y += module_param.o

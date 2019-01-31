@@ -31,12 +31,17 @@
 #endif
 
 #include "port-internal.h"
-#include <fio/port/kcondvar.h>
 #include <fio/port/dbgset.h>
+#include <fio/port/kcondvar.h>
+#include <fio/port/ktime.h>
 #if !defined(__VMKLNX__) && FUSION_DEBUG
 #include <linux/sched.h>    // for struct task_struct used in kassert
 #endif
 
+/**
+ * @ingroup PORT_COMMON_LINUX
+ * @{
+ */
 /*
   URGENT!!! Pay special attention to the wait state!
 
@@ -150,7 +155,7 @@ void noinline fusion_condvar_wait(fusion_condvar_t *cv,
 }
 KFIO_EXPORT_SYMBOL(fusion_condvar_wait);
 
-static int __fusion_condvar_timedwait(fusion_condvar_t *cv,
+int noinline __fusion_condvar_timedwait(fusion_condvar_t *cv,
                                       fusion_cv_lock_t *lock,
                                       int64_t timeout_us,
                                       int interruptible)
@@ -162,6 +167,7 @@ static int __fusion_condvar_timedwait(fusion_condvar_t *cv,
     int ret;
 
     is_irqsaved = fusion_cv_lock_is_irqsaved(lock);
+
     /* Linux wakes all threads in wake_up() unless
      * prepare_to_wait_exclusive() is called */
     if (interruptible)
@@ -196,7 +202,6 @@ static int __fusion_condvar_timedwait(fusion_condvar_t *cv,
     finish_wait(q, &_wait);
 
     return (ret == 0) ? FUSION_WAIT_TIMEDOUT : FUSION_WAIT_TRIGGERED;
-
 }
 
 /**
@@ -219,14 +224,13 @@ KFIO_EXPORT_SYMBOL(fusion_condvar_timedwait);
  */
 int noinline fusion_condvar_timedwait_noload(fusion_condvar_t *cv,
                                              fusion_cv_lock_t *lock,
-                                             int64_t timeout)
+                                             int64_t timeout_us)
 {
     /* Only safe from kernel threads! */
 #if !defined(__VMKLNX__)
     kassert(!current->mm);
 #endif
-
-    return __fusion_condvar_timedwait(cv, lock, timeout, 1);
+    return __fusion_condvar_timedwait(cv, lock, timeout_us, 1);
 }
 KFIO_EXPORT_SYMBOL(fusion_condvar_timedwait_noload);
 
@@ -237,12 +241,12 @@ KFIO_EXPORT_SYMBOL(fusion_condvar_timedwait_noload);
  */
 uint64_t noinline fusion_condvar_timedwait_noload_elapsed(fusion_condvar_t *cv,
                                                           fusion_cv_lock_t *lock,
-                                                          int64_t timeout)
+                                                          int64_t timeout_us)
 {
     int is_irqsaved;
     DEFINE_WAIT(_wait);
     wait_queue_head_t *q = (wait_queue_head_t *) cv;
-    int64_t tmo = fusion_usectohz(timeout);
+    int64_t tmo = fusion_usectohz(timeout_us);
     uint32_t ret;
 
     is_irqsaved = fusion_cv_lock_is_irqsaved(lock);
@@ -258,7 +262,6 @@ uint64_t noinline fusion_condvar_timedwait_noload_elapsed(fusion_condvar_t *cv,
     {
         fusion_cv_unlock(lock);
     }
-
     ret = schedule_timeout(tmo);
 
     if (is_irqsaved)
@@ -272,7 +275,7 @@ uint64_t noinline fusion_condvar_timedwait_noload_elapsed(fusion_condvar_t *cv,
 
     finish_wait(q, &_wait);
 
-    return (timeout - fusion_hztousec(ret));
+    return (timeout_us - fusion_hztousec(ret));
 }
 KFIO_EXPORT_SYMBOL(fusion_condvar_timedwait_noload_elapsed);
 
@@ -282,3 +285,7 @@ void noinline fusion_cond_resched(void)
     cond_resched();
 }
 KFIO_EXPORT_SYMBOL(fusion_cond_resched);
+
+/**
+ * @}
+ */

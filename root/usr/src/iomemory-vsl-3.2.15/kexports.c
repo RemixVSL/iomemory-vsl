@@ -37,9 +37,10 @@
 //        here temporarily.
 
 #include "port-internal.h"
+#include <fio/port/kblock.h>
+#include <fio/port/kcache.h>
 #include <fio/port/kfio.h>
 #include <fio/port/common-linux/kblock.h>
-#include <fio/port/vectored.h>
 
 // Export symbols from internal fio-dircache.h functions.
 typedef struct dc_stats dircache_stats;

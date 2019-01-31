@@ -32,6 +32,11 @@
 #include <fio/port/kinfo.h>
 #include <fio/port/common-linux/kfile.h>
 
+/**
+ * @ingroup PORT_LINUX
+ * @{
+ */
+
 static fusion_file_operations_t kfio_info_type_fops;
 static fusion_file_operations_t kfio_info_text_fops;
 static fusion_file_operations_t kfio_info_seqf_fops;
@@ -387,14 +392,17 @@ static int kfio_info_seqf_open(fusion_inode *inode, fusion_file *file)
     return retval;
 }
 
+/**
+ * @brief Global initialization for the OS-specific kinfo backend.
+ */
 static void kfio_info_os_init(void)
 {
     /* Initialize file ops used to handle fixed types. */
-    kfio_set_file_ops_owner(&kfio_info_type_fops, fusion_get_this_module());
+    kfio_set_file_ops_owner(&kfio_info_type_fops, THIS_MODULE);
     kfio_set_file_ops_write_handler(&kfio_info_type_fops, kfio_info_os_type_write);
     kfio_set_file_ops_read_handler (&kfio_info_type_fops, kfio_info_os_type_read);
 
-    kfio_set_file_ops_owner(&kfio_info_seqf_fops, fusion_get_this_module());
+    kfio_set_file_ops_owner(&kfio_info_seqf_fops, THIS_MODULE);
     kfio_set_file_ops_open_handler   (&kfio_info_seqf_fops, kfio_info_seqf_open);
     kfio_set_file_ops_read_handler   (&kfio_info_seqf_fops, kfio_seq_read);
     kfio_set_file_ops_llseek_handler (&kfio_info_seqf_fops, kfio_seq_lseek);
@@ -507,8 +515,8 @@ void kfio_info_os_remove_node(kfio_info_node_t *parent, kfio_info_node_t *nodep)
     kfio_info_node_set_os_private(nodep, NULL);
 
     /*
-     * If dir node we are creating has no parent, this is the first
-     * time this code is being called. Use the opportunity to initialize
+     * If dir node we are creating has no parent, this is the last
+     * time this code is being called. Use the opportunity to destroy
      * few globals.
      */
     if (parent == NULL)
@@ -533,4 +541,6 @@ KFIO_EXPORT_SYMBOL(kfio_info_create_proc);
 KFIO_EXPORT_SYMBOL(kfio_info_printf);
 KFIO_EXPORT_SYMBOL(fusion_info_root);
 
-
+/**
+ * @}
+ */

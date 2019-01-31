@@ -15,7 +15,6 @@ usr/src/iomemory-vsl-3.2.15/check_target_kernel.conf
 usr/src/iomemory-vsl-3.2.15/check_target_kernel.sh
 usr/src/iomemory-vsl-3.2.15/include/fio/port/kfio.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/dbgset.h
-usr/src/iomemory-vsl-3.2.15/include/fio/port/kbitops.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/port_config.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/unaligned.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/compiler.h
@@ -31,12 +30,9 @@ usr/src/iomemory-vsl-3.2.15/include/fio/port/ktypes.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/kglobal.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/ufio.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/fio-poppack.h
-usr/src/iomemory-vsl-3.2.15/include/fio/port/vectored.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/kcsr.h
-usr/src/iomemory-vsl-3.2.15/include/fio/port/kchunk.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/kcondvar.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/ifio.h
-usr/src/iomemory-vsl-3.2.15/include/fio/port/kmisc.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/byteswap.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/kbio.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/cdev.h
@@ -50,7 +46,6 @@ usr/src/iomemory-vsl-3.2.15/include/fio/port/sched.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/bitops.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/common-linux/div64.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/common-linux/kfio.h
-usr/src/iomemory-vsl-3.2.15/include/fio/port/common-linux/compiler.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/common-linux/kfile.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/common-linux/errno.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/common-linux/ufio.h
@@ -62,10 +57,9 @@ usr/src/iomemory-vsl-3.2.15/include/fio/port/common-linux/kscsi_host.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/common-linux/kblock.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/common-linux/commontypes.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/vararg.h
-usr/src/iomemory-vsl-3.2.15/include/fio/port/kbmp.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/csr_simulator.h
-usr/src/iomemory-vsl-3.2.15/include/fio/port/kdebug.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/gcc/align.h
+usr/src/iomemory-vsl-3.2.15/include/fio/port/gcc/compiler.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/trim_completion.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/atomic_list.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/ktime.h
@@ -93,12 +87,10 @@ usr/src/iomemory-vsl-3.2.15/include/fio/port/list.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/utypes.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/fio-stat.h
 usr/src/iomemory-vsl-3.2.15/include/fio/port/state.h
-usr/src/iomemory-vsl-3.2.15/kmisc.c
 usr/src/iomemory-vsl-3.2.15/state.c
 usr/src/iomemory-vsl-3.2.15/errno.c
 usr/src/iomemory-vsl-3.2.15/khotplug.c
 usr/src/iomemory-vsl-3.2.15/kfio/x86_64_cc*
-usr/src/iomemory-vsl-3.2.15/kbitops.c
 usr/src/iomemory-vsl-3.2.15/dkms.conf
 usr/src/iomemory-vsl-3.2.15/kblock.c
 usr/src/iomemory-vsl-3.2.15/kcondvar.c
@@ -106,7 +98,6 @@ usr/src/iomemory-vsl-3.2.15/module_param.c
 usr/src/iomemory-vsl-3.2.15/cdev.c
 usr/src/iomemory-vsl-3.2.15/Makefile
 usr/src/iomemory-vsl-3.2.15/kscsi_host.c
-usr/src/iomemory-vsl-3.2.15/katomic.c
 usr/src/iomemory-vsl-3.2.15/kscsi.c
 usr/src/iomemory-vsl-3.2.15/license.c
 usr/src/iomemory-vsl-3.2.15/kmem.c

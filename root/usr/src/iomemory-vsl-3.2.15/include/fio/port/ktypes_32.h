@@ -33,8 +33,8 @@
 #define ptr_to_u64(ptr) ((uint64_t)((fio_uintptr_t)(ptr)))
 
 #define u64_to_ptr(u64, type) ({                \
-            uint64_t _u64 = (u64);              \
-            kassert(_u64 < 0xffffffffULL);      \
+            uint64_t _u64 = (u64);                \
+            kassert(_u64 < 0xffffffffULL);        \
             (type)((fio_uintptr_t)_u64);        \
         })
 
@@ -52,7 +52,7 @@
 #define UINTMAX_C(c)    c ## ULL
 #endif
 
-#if defined(WINNT) || defined(WIN32)
+#if defined(_MSC_VER)
 #define FUSION_ALIGN(x)        __declspec(align(4)) x
 #else
 #define FUSION_ALIGN(x)        x __attribute__((aligned(4)))

@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------
 // Copyright (c) 2006-2014, Fusion-io, Inc.(acquired by SanDisk Corp. 2014)
-// Copyright (c) 2014-2015, SanDisk Corp. and/or all its affiliates. All rights reserved.
+// Copyright (c) 2014-2016 SanDisk Corp. and/or all its affiliates. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -24,8 +24,10 @@
 // WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+
 #include "port-internal.h"
+#include <fio/port/ktime.h>
 
 #include <linux/jiffies.h>
 #include <linux/time.h>
@@ -33,6 +35,11 @@
 #ifndef __KERNEL__
 #include <unistd.h>
 #endif
+
+/**
+ * @ingroup PORT_COMMON_LINUX
+ * @{
+ */
 
 /**
  * @brief delays in kernel context
@@ -123,7 +130,13 @@ KFIO_EXPORT_SYMBOL(fusion_getmicrotime);
 /// @brief return current UTC wall clock time in seconds since the Unix epoch (Jan 1 1970).
 uint64_t noinline fusion_getwallclocktime(void)
 {
+#if KFIOC_HAS_COARSE_REAL_TS
+    struct timespec64 ts;
+
+    ktime_get_coarse_real_ts64(&ts);
+#else
     struct timespec ts = current_kernel_time();
+#endif
 
     return (uint64_t)ts.tv_sec;
 }
@@ -199,7 +212,8 @@ void noinline fusion_set_timer_data(struct fusion_timer_list* timer, fio_uintptr
 KFIO_EXPORT_SYMBOL(fusion_set_timer_data);
 
 /**
- * @note t in ticks
+ * @param timer the timer
+ * @param t is in ticks
  */
 void noinline fusion_set_relative_timer(struct fusion_timer_list* timer, uint64_t t)
 {
@@ -214,3 +228,7 @@ void noinline fusion_del_timer(struct fusion_timer_list* timer)
     del_timer_sync((struct timer_list *) timer);
 }
 KFIO_EXPORT_SYMBOL(fusion_del_timer);
+
+/**
+ * @}
+ */

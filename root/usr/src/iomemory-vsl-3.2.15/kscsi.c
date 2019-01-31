@@ -37,6 +37,11 @@
 #include <fio/port/common-linux/kscsi_config.h>
 #include <linux/blkdev.h>
 
+/**
+ * @ingroup PORT_LINUX
+ * @{
+ */
+
 /*
  * Register the host with the operating system
  */
@@ -105,3 +110,7 @@ void kfio_set_write_holdoff(struct kfio_disk *disk) { }
 void kfio_clear_write_holdoff(struct kfio_disk *disk) { }
 void kfio_mark_lock_pending(struct kfio_disk *disk) { }
 void kfio_unmark_lock_pending(struct kfio_disk *disk) { }
+
+/**
+ * @}
+ */

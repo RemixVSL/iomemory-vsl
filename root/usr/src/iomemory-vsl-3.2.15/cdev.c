@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------
-// Copyright (c) 2006-2014, Fusion-io, Inc.(acquired by SanDisk Corp. 2014)
-// Copyright (c) 2014-2015, SanDisk Corp. and/or all its affiliates. All rights reserved.
+// Copyright (c) 2006-2014 Fusion-io, Inc. (acquired by SanDisk Corp. 2014)
+// Copyright (c) 2014-2015 SanDisk Corp. and/or all its affiliates. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -28,6 +28,8 @@
 
 #include "port-internal.h"
 #include <fio/port/dbgset.h>
+#include <fio/port/cdev.h>
+#include <fio/port/common-linux/kfile.h>
 
 #if !defined (__linux__)
 #error This file supports linux only
@@ -37,31 +39,24 @@
 #include <linux/poll.h>
 
 /**
+ * @ingroup PORT_COMMON_LINUX
+ * @{
+ */
+
+/**
 * @brief given a pointer to struct file returns a pointer to
 * the private_data member of the file structure
 */
+/* MST maybe not needed any more ... defined inside kfile.c
 static inline void *kfio_fs_private_data(struct file *fp)
 {
     return fp->private_data;
 }
-
-/*******************************************************************************
-* The constraints include not requiring recompilation for different versions
-* (debug/release, linux kernel versions &c.) for our proprietary portion of the
-* code.  Many internal FusionIO structures include fusion_event_t stuctures as
-* a (non dynamically allocated) member.  We can either create and require using
-* dynamic allocators/deallocators and internally use pointers to structures, or
-* define a character structure large enough to accommodate the platform-specific
-* structure of any supported platforms.  The latter is ugly, but the one in use.
-*
-* A corollary to the above is that OS-specific header files should be included
-* in the porting layer's source files but _not_ in header files accessed by
-* non- porting layer include or source files.
-******************************************************************************/
+*/
 
 /**
- * Return events that are set.  If nand_dev->active_alert has nothing yet
- * set, this waits using the nand_dev->poll_queue, so the user-land application
+ * Return events that are set.  If the cdev is not alerted,
+ * this waits using the cdev's poll_queue, so the user-land application
  * that has called poll(), epoll(), or select() will get notified when something
  * interesting happens.  After return an ioctl needs to be called to get the
  * actual event data.
@@ -197,18 +192,14 @@ void kfio_poll_wake(kfio_poll_struct *p)
 */
 static void misc_dev_init(struct miscdevice *md, char *dev_name)
 {
-    fusion_control_ops.owner = fusion_get_this_module();
+    fusion_control_ops.owner = THIS_MODULE;
     kfio_memset(md, 0, sizeof(*md));
     md->minor = MISC_DYNAMIC_MINOR;
     md->name  = dev_name;
     md->fops  = &fusion_control_ops;
 }
 
-/******************************************************************************
-* @brief OS-specific init for char device.
-* For Solaris, node gets created for char device.
-* called from fio-dev/device.c fusion_register_device()
-*/
+/// @brief OS-specific init for char device.
 int fusion_create_control_device(struct fusion_nand_device *nand_dev)
 {
     struct miscdevice *misc;
@@ -228,6 +219,21 @@ int fusion_create_control_device(struct fusion_nand_device *nand_dev)
 #endif
         result = misc_register(misc);
 #if defined(__VMKLNX__)
+        /*
+         * Yet another ugly hack for ESX: misc_register does not return 0 on success.
+         * From the comments in misc_register() in the ESX 4.0 DDK:
+         *  ESX Deviation Notes:
+         *  On ESX, misc_register returns the assigned character-device major
+         *  associated with the device (which is always MISC_MAJOR) upon a
+         *  successful registration. For failure, a negative error code is
+         *  returned.
+         *  ....
+         *  This is a deviation from Linux - should return 0 for success
+         */
+        if (result > 0)
+        {
+            result = 0;
+        }
     }
     while (result < 0 && minor > 0);
 #endif
@@ -245,10 +251,6 @@ int fusion_create_control_device(struct fusion_nand_device *nand_dev)
     return result;
 }
 
-/******************************************************************************
-*
-* called from int fusion_unregister_device()
-*/
 int fusion_destroy_control_device(struct fusion_nand_device *nand_dev)
 {
     struct miscdevice *misc;
@@ -264,3 +266,6 @@ int fusion_destroy_control_device(struct fusion_nand_device *nand_dev)
     return 0;
 }
 
+/**
+ * @}
+ */

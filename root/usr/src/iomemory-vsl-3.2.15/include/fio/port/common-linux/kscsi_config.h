@@ -99,14 +99,12 @@ static inline void *shost_priv(struct Scsi_Host *shost) UNSUPR(NULL)
 // implementation for 2.6.18
 static inline int scsi_sg_copy_from_buffer(struct scsi_cmnd *cmd, void *buf, int buflen)
 {
-    kassert(cmd->scatterlen == 0);
     memcpy(cmd->request_buffer, buf, buflen);
     return 0;
 }
 
 static inline int scsi_sg_copy_to_buffer(struct scsi_cmnd *cmd, void *buf, int buflen)
 {
-    kassert(cmd->scatterlen == 0);
     memcpy(buf, cmd->request_buffer, buflen);
     return 0;
 }

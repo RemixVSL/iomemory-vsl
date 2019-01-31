@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------
 // Copyright (c) 2006-2014, Fusion-io, Inc.(acquired by SanDisk Corp. 2014)
-// Copyright (c) 2014 SanDisk Corp. and/or all its affiliates. All rights reserved.
+// Copyright (c) 2014-2016 SanDisk Corp. and/or all its affiliates. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -66,28 +66,25 @@
 
 #if defined(USERSPACE_KERNEL)
 #include <fio/port/userspace/ktypes.h>
+#elif defined(UEFI)
+#include <fio/port/uefi/ktypes.h>
 #elif defined(__ESXI5__)
 #include <fio/port/esxi5/ktypes.h>
+#elif defined(__ESXI6__)
+#include <fio/port/esxi6/ktypes.h>
 #elif defined(__linux__)
 #include <fio/port/linux/ktypes.h>
 #elif defined(__SVR4) && defined(__sun)
 #include <fio/port/bitops.h>
 #include <fio/port/solaris/ktypes.h>
-#elif defined(__hpux__)
-#include <fio/port/bitops.h>
-#include <fio/port/hpux/ktypes.h>
 #elif defined(__FreeBSD__)
 #include <fio/port/bitops.h>
 #include <fio/port/freebsd/ktypes.h>
-#elif defined(_AIX)
-#include <fio/port/aix/ktypes.h>
 #elif defined(__OSX__)
 #include <fio/port/bitops.h>
 #include <fio/port/osx/ktypes.h>
 #elif defined(WINNT) || defined(WIN32)
 #include <fio/port/windows/ktypes.h>
-#elif defined(UEFI)
-#include <fio/port/uefi/ktypes.h>
 #else
 #error "Unsupported OS - if you are porting, try starting with a copy of stubs"
 #endif
@@ -103,30 +100,6 @@
 #else
 #error Unsupported wordsize!
 #endif
-
-/*
- * Shared type for now. We'll likely need accessor functions to iterate
- * CPUs on Windows, so it's a good idea to have a fixed type to use for this.
- */
-typedef int kfio_cpu_t;
-
-/**** common, OS-independent includes for abstracted structures and functions ***/
-#include <fio/port/kbitops.h>
-#include <fio/port/kblock.h>
-#include <fio/port/kmisc.h>
-#include <fio/port/cdev.h>
-
-#include <fio/port/kcondvar.h>
-#include <fio/port/kdebug.h>
-#include <fio/port/kmem.h>
-#include <fio/port/kchunk.h>
-#include <fio/port/kbmp.h>
-#include <fio/port/kscatter.h>
-#include <fio/port/ktime.h>
-#include <fio/port/sched.h>
-#include <fio/port/kinfo.h>
-#include <fio/port/kcache.h>
-#include <fio/port/kbio.h>
 
 #ifndef KFIO_INT_MAX
 #define KFIO_INT_MAX       2147483647
@@ -195,7 +168,13 @@ static inline int32_t safe_i32(uint64_t v)
 # define KFIO_CACHE_LINE_SIZE_BYTES 64
 #endif
 
+/*
+ * Shared type for now. We'll likely need accessor functions to iterate
+ * CPUs on Windows, so it's a good idea to have a fixed type to use for this.
+ */
+typedef int kfio_cpu_t;
+
 #include <fio/port/byteswap.h>
-#include <fio/port/unaligned.h>
+#include <fio/port/kcondvar.h>
 
 #endif /* __FIO_PORT_KTYPES_H__ */

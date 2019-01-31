@@ -28,7 +28,7 @@
 
 // NOTE: There is a similar error trap define in include/fio/dev/types.h.
 
-#if defined(WIN32) || defined(WINNT) || defined(UEFI)
+#if defined(_MSC_VER)
 #include <fio/port/windows/poppack.h>
 #endif
 

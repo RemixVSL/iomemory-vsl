@@ -116,14 +116,14 @@ extern int  fusion_atomic_exchange(fusion_atomic_t *atomp, volatile int val);
 #  endif
 
 # else
-
-# error You must define bit operations for your platform.
-
+# error "You must define bit operations for your platform."
 # endif
+
+/*---------------------------------------------------------------------------*/
 
 // If we are using GCC, there are builtins for bitcounting which can exploit
 // magic processor instructions. However these require library support which
-// is not available in-kernel (or anywhere at all in AIX).
+// is not available in-kernel.
 # if defined(__GNUC__) && !defined(__KERNEL__) && !defined(_AIX)
 
 /// @brief return number of bits set in the given 8 bit quantity.
@@ -139,7 +139,7 @@ static inline unsigned fio_bitcount32(uint32_t val)
 }
 
 /// @brief return number of bits set in the given 64 bit quantity.
-static inline unsigned fio_bitcount64(int64_t val)
+static inline unsigned fio_bitcount64(uint64_t val)
 {
     return (uint32_t)__builtin_popcountl(val);
 }
@@ -223,3 +223,4 @@ static inline int32_t fio_get_top_bit_set_index32(const uint32_t val)
 }
 
 #endif /* __FIO_PORT_BITOPS_H__  */
+

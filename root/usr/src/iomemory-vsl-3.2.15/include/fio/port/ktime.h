@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------
 // Copyright (c) 2006-2014, Fusion-io, Inc.(acquired by SanDisk Corp. 2014)
-// Copyright (c) 2014 SanDisk Corp. and/or all its affiliates. All rights reserved.
+// Copyright (c) 2014-2016 SanDisk Corp. and/or all its affiliates. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -26,7 +26,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //-----------------------------------------------------------------------------
 
-/** @file include/fio/port/ktime.h
+/** @file
  *     NO OS-SPECIFIC REFERENCES ARE TO BE IN THIS FILE
  *
  */
@@ -43,7 +43,6 @@
 #endif
 #ifndef __FIO_PORT_KTIME_H__
 #define __FIO_PORT_KTIME_H__
-
 
 #ifndef kfio_typecheck
 #define kfio_typecheck(type,x)                  \
@@ -76,15 +75,15 @@
 #endif /* kfio_time_after64 */
 
 /* convert milliseconds to microseconds */
-#define MILLI_SECONDS_TO_MICRO_SECONDS(x) ((uint64_t)x * 1000ULL)
+#define FIO_MSEC_TO_USEC(x) ((uint64_t)x * 1000ULL)
 
 /*
  * Test if *now* is after the given starting time + a period
  * *now* and *then* are in microsecond units
  * *period* is in millisecond units
  */
-#define PERIOD_OVER(now, then, period) \
-    kfio_time_after64((now), (uint64_t)(then + MILLI_SECONDS_TO_MICRO_SECONDS(period)))
+#define PERIOD_OVER(now, then, period_msec) \
+    kfio_time_after64((now), (uint64_t)((then) + FIO_MSEC_TO_USEC(period_msec)))
 
 /**
  * @brief wrapper struct around:
@@ -106,43 +105,21 @@ extern void kfio_msleep_noload(unsigned int millisecs);
 extern uint32_t kfio_get_seconds(void);
 extern uint64_t fusion_get_lbolt(void);
 extern int fusion_HZ(void);
-extern uint64_t fusion_usectohz(uint64_t microsecs);
 extern uint64_t fusion_hztousec(uint64_t hertz);
 
-// Milliseconds to microseconds
-#define fusion_msectousec(x)  ((x) * 1000LL)
-
-// seconds to milliseconds
-#define fusion_sectomsec(x)  ((x) * 1000)
-
-// seconds to microseconds
-#define fusion_sectousec(x)  ((x) * 1000000LL)
-
-#ifndef SEC_PER_MIN
-#define SEC_PER_MIN    60
-#endif
-
-#ifndef MIN_PER_HOUR
-#define MIN_PER_HOUR   60
-#endif
-
-/* Solaris defines this already.  It *is* hard to guess what 24 stands
-for in an equation about time, you know */
-#ifndef HOURS_PER_DAY
-#define HOURS_PER_DAY  24
-#endif
-
-// seconds to days
-#define fusion_sectodays(x)  ((x) / (SEC_PER_MIN * MIN_PER_HOUR * HOURS_PER_DAY))
-#define fusion_usectodays(x)  ((x) / (1000000LL * SEC_PER_MIN * MIN_PER_HOUR * HOURS_PER_DAY))
+// Microseconds to hz
+extern uint64_t fusion_usectohz(uint64_t microsecs);
 
 // Milliseconds to hz
-#define fusion_msectohz(x)   fusion_usectohz((x) * 1000)
+#define fusion_msectohz(x)   fusion_usectohz(FIO_MSEC_TO_USEC(x))
+
 // Seconds to hz
 #define fusion_sectohz(x)    fusion_usectohz((x) * 1000000)
 
 #define fusion_get_lbolt_usec()   fusion_hztousec(fusion_get_lbolt())
 
+// NOTE: the init_timer() API is way old, replaced by a setup_timer() API and now in 4.15 by the timer_setup() API.
+//   SO...if you want to use kernel timers, change them to use the latest API BEFORE use.
 extern void fusion_init_timer(struct fusion_timer_list* timer);
 extern void fusion_set_relative_timer(struct fusion_timer_list* timer, uint64_t t);
 extern void fusion_add_timer(struct fusion_timer_list* timer);
@@ -151,6 +128,7 @@ extern void fusion_set_timer_function(struct fusion_timer_list* timer,
                                       void (*f) (fio_uintptr_t));
 extern void fusion_set_timer_data(struct fusion_timer_list* timer, fio_uintptr_t d);
 extern void fusion_del_timer(struct fusion_timer_list* timer);
+
 extern uint64_t fusion_getnanotime(void);
 extern uint64_t fusion_getmicrotime(void);
 extern uint64_t fusion_getwallclocktime(void);
