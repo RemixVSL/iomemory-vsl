@@ -14,11 +14,9 @@ it is more mature than the master. Especially it fixes several known bugs:
 - BIO status handling
 
 ## Important note!!!
-Only the version and next_generation branches are tested, nothing else. 
-The driver may in fact work with older or newer kernels. The next_generation 
-branch is currently running in a CEPH cluster with official LTS kernel 4.14 and 
-works quite well. Testing and running with the kernel module has been done on 
-Ubuntu and Redhat.
+Only the master branch is tested, nothing else. It is currently running in a 
+CEPH cluster with official LTS kernel 4.14 and works quite well. Testing and 
+running with the kernel module has been done on Ubuntu and Redhat.
 *** the untested branch has only been compiled and loaded not device tested ***
 
 ## Background
@@ -35,7 +33,6 @@ If you are on CentOS or similiar distribution simply run
 ```
 git clone https://github.com/snuf/iomemory-vsl
 cd iomemory-vsl/
-git checkout next_generation
 rpmbuild -ba fio-driver.spec
 ```
 Otherwise module building can be done according to the original README.
