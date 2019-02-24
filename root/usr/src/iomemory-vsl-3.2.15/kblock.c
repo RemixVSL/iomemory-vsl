@@ -78,6 +78,11 @@ extern int use_workqueue;
 static int fio_major;
 #endif
 
+#if !KFIOC_HAS_BLK_QUEUE_MAX_SEGMENTS
+// About the same time blk_queue_max_segments() came to be, the inline to extract it appeared as well.
+#define queue_max_segments(q)   (q->limits.max_segments)
+#endif
+
 #if KFIOC_HAS_BIOVEC_ITERATORS
 #define BI_SIZE(bio) (bio->bi_iter.bi_size)
 #define BI_SECTOR(bio) (bio->bi_iter.bi_sector)
@@ -133,14 +138,6 @@ enum {
 #define KFIOC_BARRIER   0
 #endif
 
-#if KFIOC_REQ_HAS_ERRORS
-#define KFIOC_ERROR req->errors
-#elif KFIOC_REQ_HAS_ERROR_COUNT
-#define KFIOC_ERROR req->error_count
-#elif KFIOC_BIO_HAS_ERROR
-#define KFIOC_ERROR bio->errors
-#endif
-
 /*
  * Enable tag flush barriers by default, and default to safer mode of
  * operation on cards that don't have powercut support. Barrier mode can
@@ -157,10 +154,13 @@ int iodrive_barrier_sync = 0;
 extern int enable_discard;
 #endif
 
-#if KFIOC_HAS_SEPARATE_OP_FLAGS
-#if !defined(bio_flags)
-// bi_opf defined in kernel 4.8, but bio_flags not defined till 4.9
-#define bio_flags(bio)  (bio)->bi_opf
+#if KFIOC_HAS_SEPARATE_OP_FLAGS && !defined(bio_flags)
+/* bi_opf defined in kernel 4.8, but bio_flags not defined until 4.9
+   (and then disappeared in v4.10) */
+#if defined(BIO_OP_SHIFT)
+#define bio_flags(bio) ((bio)->bi_opf & ((1 << BIO_OP_SHIFT) - 1))
+#else
+#define bio_flags(bio) ((bio)->bi_opf & REQ_OP_MASK)
 #endif
 #endif
 
@@ -172,7 +172,7 @@ extern int enable_discard;
 extern int kfio_sgl_map_bio(kfio_sg_list_t *sgl, struct bio *bio);
 
 
-static void kfio_blk_complete_request(struct request *req);
+static void kfio_blk_complete_request(struct request *req, int error);
 static kfio_bio_t *kfio_request_to_bio(kfio_disk_t *disk, struct request *req,
                                        bool can_block);
 
@@ -421,7 +421,7 @@ static struct request_queue *kfio_init_queue(struct kfio_disk *dp, kfio_numa_nod
 static void kfio_do_request(struct request_queue *queue);
 static struct request *kfio_blk_fetch_request(struct request_queue *q);
 static void kfio_restart_queue(struct request_queue *q);
-static void kfio_end_request(struct request *req, int uptodate);
+static void kfio_end_request(struct request *req, int error);
 #else
 static void kfio_restart_queue(struct request_queue *q)
 {
@@ -485,8 +485,7 @@ kfio_bio_t *kfio_fetch_next_bio(struct kfio_disk *disk)
             fbio = kfio_request_to_bio(disk, creq, true);
             if (fbio == NULL)
             {
-                fbio->fbio_error = -EIO;
-                kfio_blk_complete_request(creq);
+                kfio_blk_complete_request(creq, -EIO);
             }
             return fbio;
         }
@@ -645,6 +644,7 @@ int kfio_create_disk(struct fio_device *dev, kfio_pci_dev_t *pdev, uint32_t sect
     if (enable_discard)
     {
         infprint("enable_discard set but discard not supported on this linux version\n");
+        enable_discard = 0;         // Seems like a good idea to also disable our discard code.
     }
 #endif
 
@@ -656,9 +656,6 @@ int kfio_create_disk(struct fio_device *dev, kfio_pci_dev_t *pdev, uint32_t sect
      * Note on REQ_FUA: "strict_sync=1" needs to be set or this is ignored on cards w/o powercut support.
      */
     rq->flush_flags = REQ_FUA | REQ_FLUSH;
-/* as KFIOC_NEW_BARRIER_SCHEME exits with 2 on newer kernels... */
-#elif KFIOC_NEWER_BARRIER_SCHEME == 1
-    rq->queue_flags = REQ_FUA | REQ_PREFLUSH; 
 #elif KFIOC_BARRIER_USES_QUEUE_FLAGS
     queue_flag_set(QUEUE_FLAG_WC, rq);
 #elif KFIOC_BARRIER == 1
@@ -806,10 +803,19 @@ void kfio_destroy_disk(kfio_disk_t *disk, destroy_type_t dt)
          */
         blk_stop_queue(disk->rq);
 
-        /* Fail all bio's already on internal bio queue. */
+        /*
+         * The queue is stopped and dead and no new user requests will be
+         * coming to it anymore. Fetch remaining already queued requests
+         * and fail them,
+         */
+        if (use_workqueue == USE_QUEUE_RQ)
+        {
+            kfio_kill_requests(disk->rq);
+        }
 #if !defined(__VMKLNX__)
         if (use_workqueue != USE_QUEUE_RQ)
         {
+            /* Fail all bio's already on internal bio queue. */
             struct bio *bio;
 
             while ((bio = disk->bio_head) != NULL)
@@ -821,15 +827,6 @@ void kfio_destroy_disk(kfio_disk_t *disk, destroy_type_t dt)
         }
 #endif
 
-        /*
-         * The queue is stopped and dead and no new user requests will be
-         * coming to it anymore. Fetch remaining already queued requests
-         * and fail them,
-         */
-        if (use_workqueue == USE_QUEUE_RQ)
-        {
-            kfio_kill_requests(disk->rq);
-        }
 
         fusion_spin_unlock_irqrestore(disk->queue_lock);
 
@@ -851,7 +848,6 @@ void kfio_destroy_disk(kfio_disk_t *disk, destroy_type_t dt)
     // XXX Temporary workaround to avoid crashing on shutdown with LVM (see CRT-10)
     if (dt == destroy_type_normal)
     {
-        errprint("sometimes crash on later kernels");
         kfio_free(disk, sizeof(*disk));
     }
 }
@@ -859,19 +855,14 @@ void kfio_destroy_disk(kfio_disk_t *disk, destroy_type_t dt)
 static void kfio_invalidate_bdev(struct block_device *bdev)
 {
 #if !defined(__VMKLNX__)
-    struct address_space *mapping = bdev->bd_inode->i_mapping;
-    errprint("pages: %i", mapping->nrpages == 0);
-    invalidate_mapping_pages(mapping, 0, -1);
 #if ! KFIOC_INVALIDATE_BDEV_REMOVED_DESTROY_DIRTY_BUFFERS
     invalidate_bdev(bdev, 0);
 #else
     invalidate_bdev(bdev);
 #endif /* KFIOC_INVALIDATE_BDEV_REMOVED_DESTROY_DIRTY_BUFFERS */
 #else
-    errprint("API invalidate_bdev missing.");
     /* XXXesx missing API */
 #endif
-    errprint("pages after invaldiation: %i", mapping->nrpages == 0);
 }
 
 static void kfio_bdput(struct block_device *bdev)
@@ -985,7 +976,7 @@ int kfio_get_gd_in_flight(kfio_disk_t *fgd, int rw)
 {
     struct gendisk *gd = fgd->gd;
 #if KFIOC_PARTITION_STATS
-#if KFIOC_HAS_INFLIGHT_RW || KFIOC_HAS_INFLIGHT_RW_ATOMIC 
+#if KFIOC_HAS_INFLIGHT_RW || KFIOC_HAS_INFLIGHT_RW_ATOMIC
     int dir = 0;
 
     // In the Linux kernel the direction isn't explicitly defined, however
@@ -1033,9 +1024,9 @@ void kfio_set_gd_in_flight(kfio_disk_t *fgd, int rw, int in_flight)
 #else
         gd->part0.in_flight = in_flight;
 #endif
-# else
+#else
         gd->in_flight = in_flight;
-# endif
+#endif
     }
 }
 
@@ -1200,6 +1191,16 @@ static blk_status_t kfio_errno_to_blk_status(int error)
 }
 #endif /* KFIOC_BIO_ERROR_CHANGED_TO_STATUS */
 
+#if KFIOC_HAS_END_REQUEST
+static int errno_to_uptodate(int error)
+{
+    // Convert an errno value to an uptodate value.
+    // uptodate defines 1=success, 0=general error (EIO) and <0=specific error.
+    // In this case we'll never have the general error returned, only success (0) or specific errno values.
+    return error == 0? 1 : error;
+}
+#endif  /* KFIOC_HAS_END_REQUEST */
+
 static void __kfio_bio_complete(struct bio *bio, uint32_t bytes_complete, int error)
 {
 #if KFIOC_BIO_ENDIO_REMOVED_ERROR
@@ -1317,11 +1318,11 @@ static kfio_bio_t *kfio_map_to_fbio(struct request_queue *queue, struct bio *bio
         ((BI_SIZE(bio) & disk->sector_mask) != 0))
     {
 #if KFIOC_HAS_SEPARATE_OP_FLAGS
-    engprint("Rejecting malformed bio %p sector %lu size 0x%08x flags 0x%08lx op 0x%08x op_flags 0x%04x\n", bio,
-             (unsigned long)BI_SECTOR(bio), BI_SIZE(bio), (unsigned long)bio->bi_flags, bio_op(bio), bio_flags(bio));
+        engprint("Rejecting malformed bio %p sector %lu size 0x%08x flags 0x%08lx op 0x%08x op_flags 0x%04x\n", bio,
+                 (unsigned long)BI_SECTOR(bio), BI_SIZE(bio), (unsigned long)bio->bi_flags, bio_op(bio), bio_flags(bio));
 #else
-    engprint("Rejecting malformed bio %p sector %lu size 0x%08x flags 0x%08lx rw 0x%08lx\n", bio,
-             (unsigned long)BI_SECTOR(bio), BI_SIZE(bio), (unsigned long)bio->bi_flags, bio->bi_rw);
+        engprint("Rejecting malformed bio %p sector %lu size 0x%08x flags 0x%08lx rw 0x%08lx\n", bio,
+                 (unsigned long)BI_SECTOR(bio), BI_SIZE(bio), (unsigned long)bio->bi_flags, bio->bi_rw);
 #endif
         return NULL;
     }
@@ -1579,7 +1580,8 @@ static void kfio_unplug_cb(struct blk_plug_cb *cb)
  * this is used once while we create the block device,
  * just to make sure unplug callbacks aren't run with irqs off
  */
-struct test_plug {
+struct test_plug 
+{
     struct blk_plug_cb cb;
     int safe;
 };
@@ -1593,9 +1595,9 @@ static void safe_unplug_cb(struct blk_plug_cb *cb)
     struct test_plug *test_plug = container_of(cb, struct test_plug, cb);
 
     if (irqs_disabled())
-    test_plug->safe = 0;
+        test_plug->safe = 0;
     else
-    test_plug->safe = 1;
+        test_plug->safe = 1;
 }
 
 /*
@@ -1638,10 +1640,10 @@ static void test_safe_plugging(void)
 
     /* if we failed the safety test, set our global to disable plugging */
     if (test_plug.safe == 0) {
-    infprint("Unplug callbacks are run with irqs off.  Plugging disabled\n");
-    dangerous_plugging_callback = 1;
+        infprint("Unplug callbacks are run with irqs off.  Plugging disabled\n");
+        dangerous_plugging_callback = 1;
     } else {
-    dangerous_plugging_callback = 0;
+        dangerous_plugging_callback = 0;
     }
 }
 #endif
@@ -2028,7 +2030,7 @@ static unsigned long kfio_get_req_hard_nr_sectors(struct request *req)
 #endif
 }
 
-static int kfio_end_that_request_first(struct request *req, int success, int count)
+static int kfio_end_that_request_first(struct request *req, int error, int count)
 {
 #if defined(__VMKLNX__)
     return 0;
@@ -2037,35 +2039,54 @@ static int kfio_end_that_request_first(struct request *req, int success, int cou
     kassert(use_workqueue == USE_QUEUE_RQ);
 
 # if KFIOC_HAS_END_REQUEST
-    return end_that_request_first(req, success, count);
+    // end_that_request_first() takes an 'uptodate' parameter where 1=success, 0=generic error, <0=specific error.
+    // Convert our incoming error value to an 'uptodate' value first.
+    return end_that_request_first(req, errno_to_uptodate(error), count);
 # else
-    // We are already holding the queue lock so we call __blk_end_request
-    // If we ever decide to call this _without_ holding the lock, we should
-    // use blk_end_request() instead.
-    return __blk_end_request(req, success == 1 ? 0 : success, blk_rq_bytes(req));
+    {
+#if KFIOC_BIO_ERROR_CHANGED_TO_STATUS
+        // bi_status is type blk_status_t, not an int errno, so must translate as necessary.
+        blk_status_t bio_status = BLK_STS_OK;
+
+        if (unlikely(error != 0))
+        {
+            bio_status = kfio_errno_to_blk_status(error);
+        }
+#else
+        int bio_status = error;
+#endif /* KFIOC_BIO_ERROR_CHANGED_TO_STATUS */
+
+        // We are already holding the queue lock so we call __blk_end_request
+        // If we ever decide to call this _without_ holding the lock, we should
+        // use blk_end_request() instead.
+        kassert(spin_is_locked(req->q->queue_lock));
+        return __blk_end_request(req, bio_status, blk_rq_bytes(req));
+    }
 # endif /* KFIOC_HAS_END_REQUEST */
 #endif /* __VMKLNX__ */
 }
 
-static void kfio_end_that_request_last(struct request *req, int uptodate)
+static void kfio_end_that_request_last(struct request *req, int error)
 {
 #if !KFIOC_USE_NEW_IO_SCHED
     kassert(use_workqueue == USE_QUEUE_RQ);
 
 #if KFIOC_HAS_END_REQUEST
-    end_that_request_last(req, uptodate);
+    // end_that_request_last() takes an 'uptodate' value, which is <=0 is failure, 1=success.
+    //  Must convert our error value to an uptodate value first.
+    end_that_request_last(req, errno_to_uptodate(error));
 #endif
 #endif
 }
 
-static void kfio_end_request(struct request *req, int uptodate)
+static void kfio_end_request(struct request *req, int error)
 {
 
-    if (kfio_end_that_request_first(req, uptodate, kfio_get_req_hard_nr_sectors(req)))
+    if (kfio_end_that_request_first(req, error, kfio_get_req_hard_nr_sectors(req)))
     {
         kfail();
     }
-    kfio_end_that_request_last(req, uptodate);
+    kfio_end_that_request_last(req, error);
 }
 
 static void kfio_restart_queue(struct request_queue *q)
@@ -2111,7 +2132,7 @@ static int kfio_has_pending_requests(struct request_queue *q)
 /*
  * Splice completion list to local list and handle them
  */
-static int complete_list_entries(struct request_queue *q, struct kfio_disk *dp)
+static int complete_list_entries(struct request_queue *q, int error, struct kfio_disk *dp)
 {
     struct request *req;
     struct fio_atomic_list list;
@@ -2126,7 +2147,7 @@ static int complete_list_entries(struct request_queue *q, struct kfio_disk *dp)
     fusion_atomic_list_for_each(entry, tmp, &list)
     {
         req = void_container(entry, struct request, special);
-        kfio_end_request(req, KFIOC_ERROR < 0 ? KFIOC_ERROR : 1);
+        kfio_end_request(req, error);
         completed++;
     }
 
@@ -2135,7 +2156,7 @@ static int complete_list_entries(struct request_queue *q, struct kfio_disk *dp)
     return completed;
 }
 
-static void kfio_blk_complete_request(struct request *req)
+static void kfio_blk_complete_request(struct request *req, int error)
 {
     struct request_queue *q = req->q;
     struct kfio_disk *dp = q->queuedata;
@@ -2190,7 +2211,7 @@ static void kfio_blk_complete_request(struct request *req)
     fio_set_bit(KFIO_DISK_COMPLETION, &dp->disk_state);
     for (i = 0; i < 8; i++)
     {
-        if (!complete_list_entries(q, dp))
+        if (!complete_list_entries(q, error, dp))
         {
             break;
         }
@@ -2201,7 +2222,7 @@ static void kfio_blk_complete_request(struct request *req)
      * someone adding entries.
      */
     fio_clear_bit(KFIO_DISK_COMPLETION, &dp->disk_state);
-    complete_list_entries(q, dp);
+    complete_list_entries(q, error, dp);
 
     /*
      * We usually don't have to re-kick the queue, it happens automatically.
@@ -2227,14 +2248,13 @@ static void kfio_blk_do_softirq(struct request *req)
 
     rq = req->q;
     dp = rq->queuedata;
-    bi = req->bio;
 
     fusion_spin_lock_irqsave(dp->queue_lock);
-    kfio_end_request(req, KFIOC_ERROR < 0 ? KFIOC_ERROR : 1);
+    kfio_end_request(req, error);
     fusion_spin_unlock_irqrestore(dp->queue_lock);
 }
 
-static void kfio_blk_complete_request(struct request *req)
+static void kfio_blk_complete_request(struct request *req, int error)
 {
     // On ESX completions must be done through the softirq handler.
     blk_complete_request(req);
@@ -2249,9 +2269,9 @@ static void kfio_elevator_change(struct request_queue *q, char *name)
 #if KFIOC_HAS_ELEVATOR_INIT
 #if KFIOC_ELEVATOR_EXIT_HAS_REQQ_PARAM
     elevator_exit(q, q->elevator);
-# else
+#else
     elevator_exit(q->elevator);
-# endif
+#endif
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,32)
     q->elevator = NULL;
 # endif
@@ -2405,13 +2425,9 @@ static struct request *kfio_blk_fetch_request(struct request_queue *q)
 static void kfio_req_completor(kfio_bio_t *fbio, uint64_t bytes_done, int error)
 {
     struct request *req = (struct request *)fbio->fbio_parameter;
-    // struct bio *bio = req->bio;
 
     if (fbio->fbio_cmd == KBIO_CMD_READ || fbio->fbio_cmd == KBIO_CMD_WRITE)
         kfio_sgl_dma_unmap(fbio->fbio_sgl);
-
-    // bio->bi_error = error;
-    KFIOC_ERROR = error;
 
     if (unlikely(fbio->fbio_flags & KBIO_FLG_DUMP))
     {
@@ -2421,7 +2437,7 @@ static void kfio_req_completor(kfio_bio_t *fbio, uint64_t bytes_done, int error)
 #endif
     }
 
-    kfio_blk_complete_request(req);
+    kfio_blk_complete_request(req, error);
 }
 
 #if defined(__VMKLNX__) || KFIOC_HAS_RQ_FOR_EACH_BIO == 0
@@ -2529,7 +2545,7 @@ static kfio_bio_t *kfio_request_to_bio(kfio_disk_t *disk, struct request *req,
 
             fbio->fbio_cmd = KBIO_CMD_WRITE;
 
-#if KFIOC_NEW_BARRIER_SCHEME == 1 || KFIOC_BARRIER_USES_QUEUE_FLAGS == 1 || KFIOC_NEW_BARRIER_SCHEME == 1
+#if KFIOC_NEW_BARRIER_SCHEME == 1 || KFIOC_BARRIER_USES_QUEUE_FLAGS == 1
             sync_write |= req->cmd_flags & REQ_FUA;
 #endif
 
@@ -2691,10 +2707,10 @@ static void kfio_do_request(struct request_queue *q)
 
 #if KFIOC_HAS_BLK_FS_REQUEST
                 if (blk_fs_request(req))
-#elif KFIOC_HAS_BLK_RQ_IS_PASSTHROUGH
-                if (!blk_rq_is_passthrough(req))
-#else
+#elif KFIOC_REQUEST_HAS_CMD_TYPE
                 if (req->cmd_type == REQ_TYPE_FS)
+#else
+                if (!blk_rq_is_passthrough(req))
 #endif
                 {
                     // Do not allow improperly aligned requests to go through. OS should
@@ -2748,9 +2764,13 @@ static void kfio_do_request(struct request_queue *q)
 
             fbio = req->special;
             if (!fbio)
+            {
                 fbio = kfio_request_to_bio(disk, req, false);
+            }
             if (!fbio)
+            {
                 break;
+            }
 
             list_del_init(&req->queuelist);
             fbio->fbio_flags |= KBIO_FLG_NONBLOCK;
@@ -2773,6 +2793,9 @@ static void kfio_do_request(struct request_queue *q)
             }
             queued++;
         }
+
+        // Give up a little time to keep the Soft Lockup complaints a rest
+        fusion_cond_resched();
 
         spin_lock_irq(q->queue_lock);
         if (!list_empty(&list))
