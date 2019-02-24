@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------
 // Copyright (c) 2006-2014, Fusion-io, Inc.(acquired by SanDisk Corp. 2014)
-// Copyright (c) 2014-2017 SanDisk Corp. and/or all its affiliates. (acquired by Western Digital Corp. 2016)
+// Copyright (c) 2014-2016 SanDisk Corp. and/or all its affiliates. (acquired by Western Digital Corp. 2016)
 // Copyright (c) 2016-2018 Western Digital Technologies, Inc. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -33,11 +33,6 @@
 #include <fio/port/ktime.h>
 #include <linux/version.h>
 
-/**
- * @ingroup PORT_LINUX
- * @{
- */
-
 #ifndef MIN
 #define MIN(a, b)   (((a) < (b)) ? (a) : (b))
 #endif
@@ -47,13 +42,12 @@ struct linux_sgentry
 #if defined(__VMKLNX__)
     fusion_page_t       orig_page; /* pointer to original page in case of double buffering */
     uint32_t            orig_off;  /* offset from above page */
-#endif
     uint32_t            flags;
+#endif
+    char                *dummy; /* make the struct non-empty */
 };
 
 #define SGE_BUFFERED    0x1
-#define SGE_USER        0x2     /* SGE is from a page mapped from user process */
-#define SGE_READ_MAPPED 0x4     /* SGE has been mapped at least once for reading */
 
 struct kfio_dma_map
 {
@@ -103,24 +97,17 @@ static inline void sg_set_page(struct scatterlist *sg, struct page *page,
 #endif
 #endif
 
-uint32_t kfio_sgl_size_bytes(uint32_t nvecs)
-{
-    return sizeof(struct linux_sgl) +
-        nvecs * (sizeof(struct linux_sgentry) + sizeof(struct scatterlist));
-}
-
 int kfio_sgl_alloc_nvec(kfio_pci_dev_t *pcidev, kfio_numa_node_t node, kfio_sg_list_t **sgl, int nvecs)
 {
-    uint32_t sgl_bytes = kfio_sgl_size_bytes(nvecs);
     struct linux_sgl *lsg;
 
 #if defined(__VMKLNX__)
-    // kmalloc pool is very limited on ESX and gets depleted with more than 7 or so cards.
-    lsg = kfio_vmalloc(sgl_bytes);
+    // kmalloc pool is very limited on ESX and gets depleted with more
+    // than 7 or so cards.
+    lsg = kfio_vmalloc(sizeof(*lsg) + nvecs * (sizeof(struct linux_sgentry) + sizeof(struct scatterlist)));
 #else
-    lsg = kfio_malloc_node(sgl_bytes, node);
+    lsg = kfio_malloc_node(sizeof(*lsg) + nvecs * (sizeof(struct linux_sgentry) + sizeof(struct scatterlist)), node);
 #endif
-
     if (NULL == lsg)
     {
         return -ENOMEM;
@@ -197,7 +184,7 @@ int kfio_sgl_map_bytes(kfio_sg_list_t *sgl, const void *buffer, uint32_t size)
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,25)
     vmalloc_buffer = is_vmalloc_addr(buffer);
-#else
+# else
     vmalloc_buffer = (((fio_uintptr_t)buffer) >= VMALLOC_START &&
                       ((fio_uintptr_t)buffer) < VMALLOC_END);
 #endif /* is_vmalloc_addr */
@@ -214,11 +201,12 @@ int kfio_sgl_map_bytes(kfio_sg_list_t *sgl, const void *buffer, uint32_t size)
         sge = &lsg->sge[lsg->num_entries];
         sl = &lsg->sl[lsg->num_entries];
 
-        sge->flags     = 0;
 #if defined(__VMKLNX__)
+        sge->flags     = 0;
         sge->orig_page = NULL;
         sge->orig_off  = 0;
 #endif
+
         if (lsg->num_entries >= lsg->max_entries)
         {
             engprint("%s: too few sg entries (cnt: %d nvec: %d size: %d)\n",
@@ -229,23 +217,21 @@ int kfio_sgl_map_bytes(kfio_sg_list_t *sgl, const void *buffer, uint32_t size)
 
         page_offset    = (uint32_t)((fio_uintptr_t)bp % FUSION_PAGE_SIZE);
         page_remainder = FUSION_PAGE_SIZE - page_offset;
-        mapped_bytes   = MIN(size, page_remainder);
+        mapped_bytes   = page_remainder > size ? size : page_remainder;
 
-        {
 #if !defined(__VMKLNX__)
-            if (vmalloc_buffer)
-            {
-                /*
-                 * Do extra casting to get rid of const not expected by
-                 * vmalloc_to_page on older Linux kernels.
-                 */
-                page = (fusion_page_t) vmalloc_to_page((void *)(fio_uintptr_t)bp);
-            }
-            else
+        if (vmalloc_buffer)
+        {
+            /*
+             * Do extra casting to get rid of const not expected by
+             * vmalloc_to_page on older Linux kernels.
+             */
+            page = (fusion_page_t) vmalloc_to_page((void *)(fio_uintptr_t)bp);
+        }
+        else
 #endif
-            {
-                page = (fusion_page_t) virt_to_page((void *)(fio_uintptr_t)bp);
-            }
+        {
+            page = (fusion_page_t) virt_to_page((void *)(fio_uintptr_t)bp);
         }
 
         kassert_release(page != NULL);
@@ -258,6 +244,7 @@ int kfio_sgl_map_bytes(kfio_sg_list_t *sgl, const void *buffer, uint32_t size)
         lsg->num_entries++;
         lsg->sgl_size += mapped_bytes;
     }
+
     return 0;
 }
 
@@ -275,14 +262,10 @@ int kfio_sgl_map_page(kfio_sg_list_t *sgl, fusion_page_t page,
     struct linux_sgl *lsg = sgl;
     struct linux_sgentry *sge;
     struct scatterlist *sl;
-#if defined(__VMKLNX__)
-    uint32_t alignment = 8; // Should be alignment that's passed in, but that's an API change
-#endif
 
     if (unlikely(lsg->num_entries >= lsg->max_entries))
     {
-        engprint("No room to map page num_entries: %d max_entries: %d\n",
-                 lsg->num_entries, lsg->max_entries);
+        dbgprint(DBGS_GENERAL, "No room to map request_page\n");
         return -EINVAL;
     }
 
@@ -300,49 +283,46 @@ int kfio_sgl_map_page(kfio_sg_list_t *sgl, fusion_page_t page,
 
         if (this_page + 1 != page_plus_one)
         {
-            errprint(
-                         "Attempt to map too great a span: this_page=%llx page_plus_one=%llx\n",
-                         (uint64_t)this_page, (uint64_t)page_plus_one);
+            errprint("Attempt to map too great a span: this_page=%llx page_plus_one=%llx\n",
+                     (uint64_t)this_page, (uint64_t)page_plus_one);
             return -EINVAL;
         }
 #elif !defined(DMA_X_PAGE_BOUNDARY)
-        engprint("Attempt to map too great a span\n");
+        dbgprint(DBGS_GENERAL, "Attempt to map too great a span\n");
         return -EINVAL;
 #endif
     }
 
     sge = &lsg->sge[lsg->num_entries];
     sl = &lsg->sl[lsg->num_entries];
-    sge->flags     = 0;
 
 #if defined(__VMKLNX__)
     // Special handling for unaligned buffers on ESX
+    sge->flags     = 0;
     sge->orig_page = NULL;
     sge->orig_off  = offset;
 
     // Reject any unaligned DMA with size not multiple of 8.
     // The block layer constraint sgElemSizeMult=8 should prevent this,
     // but better be safe here.
-    if (unlikely(size & (alignment - 1)))
+    if (unlikely(size & 0x7))
     {
-        errprint(
-                     "%s: Unaligned DMA size: 0x%x page=0x%llx offset=0x%x, rejecting I/O\n",
-                     __FUNCTION__, size, (uint64_t)page, offset);
+        errprint("%s: Unaligned DMA size: 0x%x page=0x%llx offset=0x%x, rejecting I/O\n",
+                 __FUNCTION__, size, (uint64_t)page, offset);
         return -EINVAL;
     }
 
     // Check for unaligned addresses.
     // The block layer constraint sgElemAlignment=8 should prevent this,
     // but this old code is left here as a backup.
-    if (unlikely(offset & (alignment - 1)))
+    if (unlikely(offset & 0x7))
     {
         /* Firmware can't handle nonzero offsets unless they are double-word aligned.
          * This operation will require double buffering.
          */
 
-        errprint(
-                     "Handling unaligned DMA: page=%llx offset=%x size=%x\n",
-                     (uint64_t)page, offset, size);
+        errprint("Handling unaligned DMA: page=%llx offset=%x size=%x\n",
+                 (uint64_t)page, offset, size);
 
         // We can get unaligned multi-page DMA requests in ESX, so we need to loop and create
         // more sg entries as needed.
@@ -353,9 +333,8 @@ int kfio_sgl_map_page(kfio_sg_list_t *sgl, fusion_page_t page,
 
             if (lsg->num_entries >= lsg->max_entries)
             {
-                errprint(
-                             "%s: too few sg entries (cnt=%d nvec=%d size=0x%x)\n",
-                             __FUNCTION__, lsg->num_entries, lsg->max_entries, size);
+                errprint("%s: too few sg entries (cnt=%d nvec=%d size=0x%x)\n",
+                       __FUNCTION__, lsg->num_entries, lsg->max_entries, size);
                 return -ENOMEM;
             }
 
@@ -365,8 +344,8 @@ int kfio_sgl_map_page(kfio_sg_list_t *sgl, fusion_page_t page,
 
             if (size + offset > FUSION_PAGE_SIZE)
             {
-                mapped_bytes = FUSION_PAGE_SIZE - (offset & ~(alignment - 1));
-                offset = offset & (alignment - 1);
+                mapped_bytes = FUSION_PAGE_SIZE - (offset & ~0x7);
+                offset = offset & 0x7;
             }
             else
             {
@@ -423,10 +402,10 @@ int kfio_sgl_map_bio(kfio_sg_list_t *sgl, struct bio *pbio)
 
     // Make sure combining this pbio into the current sgl won't result in too many sg vectors.
     // The bio_for_each_segment() loop below will catch this, but it seems more efficient to catch it here.
-
-
-
-
+    if (lsg->num_entries + pbio->bi_phys_segments > lsg->max_entries)
+    {
+        return -EAGAIN;                 // Too many segments. Try the pbio again.
+    }
 
     /* Remember SGL vitals in case we need to back out. */
     if (lsg->num_entries > 0)
@@ -464,7 +443,7 @@ int kfio_sgl_map_bio(kfio_sg_list_t *sgl, struct bio *pbio)
             if (unlikely(lsg->num_entries >= lsg->max_entries))
             {
                 // Returning a non-zero value should cause callers to split the bio and re-submit it to us.
-                rval = -EINVAL;
+                rval = -EAGAIN;
                 break;
             }
         }
@@ -528,6 +507,8 @@ int kfio_sgl_dma_map(kfio_sg_list_t *sgl, kfio_dma_map_t *dmap, int dir)
         sl = &lsg->sl[i];
 
 #if defined(__VMKLNX__)
+        /* ESX 4 doesn't do anything in pci_map_sg if dma_address isn't 0 */
+        sl->dma_address = 0;
         if (sge->flags & SGE_BUFFERED && dir == IODRIVE_DMA_DIR_WRITE)
         {
             kfio_memcpy(((char *)kfio_page_address((fusion_page_t)sg_page(sl))) + sl->offset,
@@ -544,6 +525,7 @@ int kfio_sgl_dma_map(kfio_sg_list_t *sgl, kfio_dma_map_t *dmap, int dir)
     {
         goto bail;
     }
+
 
     /*
      * Fill in a map covering the whole scatter-gather list if caller is
@@ -580,7 +562,6 @@ int kfio_sgl_dma_unmap(kfio_sg_list_t *sgl)
 
         sge = &lsg->sge[i];
         sl = &lsg->sl[i];
-
 #if defined(__VMKLNX__)
         if (sge->flags & SGE_BUFFERED)
         {
@@ -599,9 +580,7 @@ int kfio_sgl_dma_unmap(kfio_sg_list_t *sgl)
                  lsg->pci_dir == IODRIVE_DMA_DIR_READ ? PCI_DMA_FROMDEVICE : PCI_DMA_TODEVICE);
     }
     lsg->num_mapped = 0;
-
     lsg->pci_dir = 0;
-
     return 0;
 }
 KFIO_EXPORT_SYMBOL(kfio_sgl_dma_unmap);
@@ -774,8 +753,7 @@ void kfio_dma_map_free(kfio_dma_map_t *dmap)
     }
 }
 
-int kfio_sgl_dma_slice(kfio_sg_list_t *sgl, kfio_dma_map_t *dmap,
-                       uint32_t offset, uint32_t length)
+int kfio_sgl_dma_slice(kfio_sg_list_t *sgl, kfio_dma_map_t *dmap, uint32_t offset, uint32_t length)
 {
     struct linux_sgl *lsg = sgl;
     uint32_t          i;
@@ -839,12 +817,13 @@ uint32_t kfio_dma_map_size(kfio_dma_map_t *dmap)
 kfio_sgl_iter_t kfio_dma_map_first(kfio_dma_map_t *dmap, kfio_sgl_phys_t *segp)
 {
     struct linux_sgentry *sge = dmap->sge_first;
-    struct scatterlist *sl = sge_to_sl(dmap->lsg, sge);
+    struct scatterlist *sl;
 
     if (sge != NULL)
     {
         if (segp != NULL)
         {
+            sl = sge_to_sl(dmap->lsg, sge);
             segp->addr = sg_dma_address(sl) + dmap->sge_skip;
             segp->len  = sl->length - dmap->sge_skip;
 
@@ -919,7 +898,7 @@ int kfio_sgl_map_user_pages(kfio_sg_list_t *sgl, fusion_user_page_t *pages,
 
         page_offset    = (uint32_t)((fio_uintptr_t)offset % FUSION_PAGE_SIZE);
         page_remainder = FUSION_PAGE_SIZE - page_offset;
-        mapped_bytes   = MIN(size, page_remainder);
+        mapped_bytes   = page_remainder > size ? size : page_remainder;
 
         sg_set_page(sl, (struct page *)pages[i++], mapped_bytes, offset);
         offset = 0;
@@ -935,8 +914,8 @@ int kfio_sgl_map_user_pages(kfio_sg_list_t *sgl, fusion_user_page_t *pages,
 #if PORT_SUPPORTS_SGLIST_COPY
 /// @brief Copy data between scatter gather lists.
 ///
+/// @param src     the data source
 /// @param dst     the destination scatter-gather list.
-/// @param src     the source scatter-gather list.
 /// @param length  number of bytes to copy from source to destination
 ///                scatter-gather list.
 /// Note: the entries in linux_sgl for src and dst should be updated by the
@@ -1010,7 +989,3 @@ int kfio_sgl_copy_data(kfio_sg_list_t *dst, kfio_sg_list_t *src, uint32_t length
     return 0;
 }
 #endif
-
-/**
- * @}
- */
