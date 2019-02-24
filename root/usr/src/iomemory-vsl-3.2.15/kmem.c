@@ -716,6 +716,13 @@ fusion_page_t noinline kfio_alloc_0_page(kfio_maa_t flags)
     #define GET_USER_PAGES_TASK
 #endif
 
+/* Newer kernels combine the write and force flags into a single parameter */
+#if KFIOC_GET_USER_PAGES_HAS_GUP_FLAGS
+    #define GET_USER_PAGES_FLAGS(write, force) (write? FOLL_WRITE : 0 | force? FOLL_FORCE : 0)
+#else
+    #define GET_USER_PAGES_FLAGS(write, force) write, force
+#endif
+
 #if PORT_SUPPORTS_USER_PAGES
 /// @brief Pin the user pages in memory.
 /// Note:  This needs to be called from within a process
@@ -731,11 +738,7 @@ int kfio_get_user_pages(fusion_user_page_t *pages, int nr_pages, fio_uintptr_t s
     int retval;
 
     down_read(&current->mm->mmap_sem);
-#if KFIOC_GET_USER_PAGES_HAS_GUP_FLAGS
-    retval = get_user_pages(GET_USER_PAGES_TASK start, nr_pages, write, (struct page **) pages, NULL);
-#else
-    retval = get_user_pages(GET_USER_PAGES_TASK start, nr_pages, write, 0, (struct page **) pages, NULL);
-#endif
+    retval =  get_user_pages(GET_USER_PAGES_TASK start, nr_pages, GET_USER_PAGES_FLAGS(write, 0), (struct page **) pages, NULL);
     up_read(&current->mm->mmap_sem);
     return retval;
 }
@@ -753,10 +756,11 @@ void kfio_put_user_pages(fusion_user_page_t *pages, int nr_pages)
     int i;
     for (i = 0; i < nr_pages; i++)
     {
-        if (pages[i])
+        if (!pages[i])
         {
-        put_page((struct page *)pages[i]);
+            break;
         }
+        put_page((struct page *)pages[i]);
     }
 }
 

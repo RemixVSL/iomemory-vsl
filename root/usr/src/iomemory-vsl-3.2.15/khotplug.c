@@ -142,9 +142,7 @@ void setup_first_hotplug_dyn_state(enum cpuhp_state desired_state)
     }
 }
 #endif  /* KFIOC_HAS_HOTPLUG_STATES_REMOVAL_BUG */
-#endif  /* CONFIG_SMP && PORT_SUPPORTS_PER_CPU */
 
-#if PORT_SUPPORTS_PER_CPU
 int kfio_register_cpu_notifier(kfio_cpu_notify_fn *func)
 {
 #ifdef CONFIG_SMP
