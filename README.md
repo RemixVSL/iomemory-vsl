@@ -6,7 +6,7 @@ Therefore it is NOT meant for production use, just for testing purposes.
 
 ## Current version
 The master branch is based on the 3.2.15 iomemory driver version with several
-enhancements from the 4.3.4 SX/PX Fusion card series. It is basically the
+enhancements from the 4.3.4 driver for SX/PX Fusion cards. It is basically the
 first version that does not silently drop IOs in newer Linux kernels.
 The next_generation branch is based on the 3.2.16 version. It is closer
 to the official version although with slightly rearranged file structure
