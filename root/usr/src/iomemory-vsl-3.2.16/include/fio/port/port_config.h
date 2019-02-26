@@ -185,7 +185,7 @@
 #define ENABLE_ECC 1
 
 /* The full version of this release */
-#define FUSION_VERSION "3.2.15"
+#define FUSION_VERSION "3.2.16"
 
 /* Memory limit in MiBytes for rmap rescan. */
 #define RMAP_MEMORY_LIMIT_MiB 3100
@@ -341,7 +341,7 @@
 #define DISABLE_MODULE_PARAM_EXPORT 0
 
 /* The micro version of this build */
-#define FUSION_MICRO_VERSION "15"
+#define FUSION_MICRO_VERSION "16"
 
 /* OEM formal name */
 #define FIO_OEM_NAME_FORMAL "Fusion-io"
