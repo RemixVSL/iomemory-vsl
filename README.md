@@ -12,7 +12,7 @@ The next_generation branch is based on the 3.2.16 version. It is closer
 to the official version although with slightly rearranged file structure
 to better match the 4.3.4 version.
 
-## Important note!!!
+## Stability
 The master version is currently powering a CEPH cluster with official LTS 
 kernel 4.14 and works quite well. Testing and running with the kernel module 
 has been done on Redhat.
