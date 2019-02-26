@@ -5,19 +5,17 @@ cards. It comes with no warranty, it may cause DATA LOSS or CORRUPTION.
 Therefore it is NOT meant for production use, just for testing purposes.
 
 ## Current version
-At the moment there is a lot of code redesign ongoing. You can find the
-bleeding edge development in the next_generation branch. Despite its name
-it is more mature than the master. Especially it fixes several known bugs:
-- silent IO drops
-- crashes during driver unload
-- SCSI queue settings
-- BIO status handling
+The master branch is based on the 3.2.15 iomemory driver version with several
+enhancements from the 4.3.4 SX/PX Fusion card series. It is basically the
+first version that does not silently drop IOs in newer Linux kernels.
+The next_generation branch is based on the 3.2.16 version. It is closer
+to the official version although with slightly rearranged file structure
+to better match the 4.3.4 version.
 
 ## Important note!!!
-Only the master branch is tested, nothing else. It is currently running in a 
-CEPH cluster with official LTS kernel 4.14 and works quite well. Testing and 
-running with the kernel module has been done on Ubuntu and Redhat.
-*** the untested branch has only been compiled and loaded not device tested ***
+The master version is currently powering a CEPH cluster with official LTS 
+kernel 4.14 and works quite well. Testing and running with the kernel module 
+has been done on Redhat.
 
 ## Background
 Driver support for FusionIO cards has been lagging behind kernel
@@ -32,6 +30,7 @@ quite a while ago.
 If you are on CentOS or similiar distribution simply run
 ```
 git clone https://github.com/snuf/iomemory-vsl
+git checkout next_generation (only for 3.2.16 version needed)
 cd iomemory-vsl/
 rpmbuild -ba fio-driver.spec
 ```
@@ -101,8 +100,7 @@ fiob    State: Online, Type: block device
 
 ## Other notes
 Installing the fio-util, fio-common, fio-preinstall and fio-sysvinit are
-recommended.
-When moving from source 2.3.11 to source 3.2.10 the firmware HAS TO BE UPDATED
-to 3.2.10.20150212. For the move to 3.2.15 from 3.2.10 I've not seen any issues
-with my card.
+recommended. When moving from source 2.3.11 to source 3.2.10 the firmware 
+HAS TO BE UPDATED to 3.2.10.20150212. For the move to 3.2.15 from 3.2.10 
+I've not seen any issues with my card.
 
