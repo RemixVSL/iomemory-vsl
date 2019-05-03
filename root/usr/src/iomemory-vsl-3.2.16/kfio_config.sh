@@ -1209,7 +1209,8 @@ KFIOC_DISCARD()
 
 
 void kfioc_test_blk_queue_set_discard(void) {
-	queue_flag_set_unlocked(QUEUE_FLAG_DISCARD,NULL);
+	int i;
+	i = QUEUE_FLAG_DISCARD;
 }
 '
 
@@ -1983,7 +1984,8 @@ KFIOC_QUEUE_HAS_NONROT_FLAG()
 #include <linux/blkdev.h>
 void kfioc_check_nonrot_flag(void)
 {
-    queue_flag_set_unlocked(QUEUE_FLAG_NONROT, NULL);
+    int i;
+    i = QUEUE_FLAG_NONROT;
 }
 '
     kfioc_test "$test_code" KFIOC_QUEUE_HAS_NONROT_FLAG 1 -Werror
@@ -1999,7 +2001,8 @@ KFIOC_QUEUE_HAS_RANDOM_FLAG()
 #include <linux/blkdev.h>
 void kfioc_check_random_flag(void)
 {
-    queue_flag_clear_unlocked(QUEUE_FLAG_ADD_RANDOM, NULL);
+    int i;
+    i = QUEUE_FLAG_ADD_RANDOM;
 }
 '
     kfioc_test "$test_code" KFIOC_QUEUE_HAS_RANDOM_FLAG 1 -Werror
@@ -2156,6 +2159,23 @@ void has_queue_flag_clear_unlocked(void)
 }
 '
     kfioc_test "$test_code" KFIOC_HAS_QUEUE_FLAG_CLEAR_UNLOCKED 1 -Werror
+}
+
+# flag:          KFIOC_HAS_BLK_QUEUE_FLAG_OPS
+# usage:         1   request queue limits structure has 'queue_flag_clear_unlocked' function.
+#                0   It does not
+KFIOC_HAS_BLK_QUEUE_FLAG_OPS()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/blkdev.h>
+void has_queue_blk_queue_flag_ops(void)
+{
+     struct request_queue q;
+     blk_queue_flag_clear(0, &q);
+}
+'
+    kfioc_test "$test_code" KFIOC_HAS_BLK_QUEUE_FLAG_OPS 1 -Werror
 }
 
 # flag:          KFIOC_HAS_BIO_COMP_CPU
