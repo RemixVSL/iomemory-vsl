@@ -638,7 +638,7 @@ int kfio_create_disk(struct fio_device *dev, kfio_pci_dev_t *pdev, uint32_t sect
 #endif  /* KFIOC_DISCARD_ZEROES_IN_LIMITS */
 
 #if KFIOC_HAS_BLK_QUEUE_FLAG_OPS
-	blk_queue_flag_set(QUEUE_FLAG_DISCARD, rq);
+        blk_queue_flag_set(QUEUE_FLAG_DISCARD, rq);
 #else
         queue_flag_set_unlocked(QUEUE_FLAG_DISCARD, rq);
 #endif

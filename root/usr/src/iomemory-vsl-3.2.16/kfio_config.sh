@@ -2176,7 +2176,7 @@ void has_queue_blk_queue_flag_ops(void)
      blk_queue_flag_clear(0, &q);
 }
 '
-    kfioc_test "$test_code" KFIOC_HAS_BLK_QUEUE_FLAG_OPS 1 -Werror
+    kfioc_test "$test_code" KFIOC_HAS_BLK_QUEUE_FLAG_OPS 1 "-Werror -Werror=frame-larger-than=4096"
 }
 
 # flag:          KFIOC_HAS_BIO_COMP_CPU
