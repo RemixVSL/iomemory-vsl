@@ -911,6 +911,11 @@ void kfio_disk_stat_write_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t 
         struct gendisk *gd = fgd->gd;
 #endif
 # if KFIOC_PARTITION_STATS
+# if KFIOC_PART_STAT_REQUIRES_CPU
+#define GD_PART cpu, &gd->part0
+# else /* #if KFIOC_PART_STAT_REQUIRES_CPU */
+#define GD_PART &gd->part0
+# endif /* #if KFIOC_PART_STAT_REQUIRES_CPU */
 # if !KFIOC_CONFIG_PREEMPT_RT && !KFIOC_CONFIG_TREE_PREEMPT_RCU
         int cpu;
 
@@ -919,12 +924,12 @@ void kfio_disk_stat_write_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t 
         * rcu_read_update which is GPL in the RT patch set.
         */
         cpu = part_stat_lock();
-        part_stat_inc(cpu, &gd->part0, ios[1]);
-        part_stat_add(cpu, &gd->part0, sectors[1], totalsize >> 9);
+        part_stat_inc(GD_PART, ios[1]);
+        part_stat_add(GD_PART, sectors[1], totalsize >> 9);
 # if KFIOC_HAS_DISK_STATS_NSECS
-        part_stat_add(cpu, &gd->part0, nsecs[1],   duration * 1000);
+        part_stat_add(GD_PART, nsecs[1],   duration * 1000);
 # else
-        part_stat_add(cpu, &gd->part0, ticks[1],   kfio_div64_64(duration * HZ, 1000000));
+        part_stat_add(GD_PART, ticks[1],   kfio_div64_64(duration * HZ, 1000000));
 # endif
         part_stat_unlock();
 # endif /* defined(KFIOC_CONFIG_PREEMPT_RT) */
@@ -961,18 +966,23 @@ void kfio_disk_stat_read_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t d
         struct gendisk *gd = fgd->gd;
 #endif
 # if KFIOC_PARTITION_STATS
+# if KFIOC_PART_STAT_REQUIRES_CPU
+#define GD_PART cpu, &gd->part0
+# else /* #if KFIOC_PART_STAT_REQUIRES_CPU */
+#define GD_PART &gd->part0
+# endif
 # if !KFIOC_CONFIG_PREEMPT_RT && !KFIOC_CONFIG_TREE_PREEMPT_RCU
         int cpu;
 
     /* part_stat_lock() with CONFIG_PREEMPT_RT can't be used!
        It ends up calling rcu_read_update which is GPL in the RT patch set */
         cpu = part_stat_lock();
-        part_stat_inc(cpu, &gd->part0, ios[0]);
-        part_stat_add(cpu, &gd->part0, sectors[0], totalsize >> 9);
+        part_stat_inc(GD_PART, ios[0]);
+        part_stat_add(GD_PART, sectors[0], totalsize >> 9);
 # if KFIOC_HAS_DISK_STATS_NSECS
-        part_stat_add(cpu, &gd->part0, nsecs[0],   duration * 1000);
+        part_stat_add(GD_PART, nsecs[0],   duration * 1000);
 # else
-        part_stat_add(cpu, &gd->part0, ticks[0],   kfio_div64_64(duration * HZ, 1000000));
+        part_stat_add(GD_PART, ticks[0],   kfio_div64_64(duration * HZ, 1000000));
 # endif
         part_stat_unlock();
 # endif /* KFIO_CONFIG_PREEMPT_RT */
@@ -1023,9 +1033,9 @@ int kfio_get_gd_in_flight(kfio_disk_t *fgd, int rw)
 #else
     return gd->part0.in_flight;
 #endif
-# else
+#else
     return gd->in_flight;
-# endif
+#endif
 }
 
 void kfio_set_gd_in_flight(kfio_disk_t *fgd, int rw, int in_flight)

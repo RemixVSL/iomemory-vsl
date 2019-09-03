@@ -95,6 +95,7 @@ KFIOC_STRUCT_FILE_HAS_PATH
 KFIOC_HAS_PATH_LOOKUP
 KFIOC_UNREGISTER_BLKDEV_RETURNS_VOID
 KFIOC_PARTITION_STATS
+KFIOC_PART_STAT_REQUIRES_CPU
 KFIOC_HAS_NEW_BLOCK_METHODS
 KFIOC_BLOCK_DEVICE_RELEASE_RETURNS_INT
 KFIOC_HAS_NEW_BLKDEV_METHODS
@@ -1103,6 +1104,25 @@ KFIOC_PARTITION_STATS()
     kfioc_test "$test_code" "$test_flag" 1
 }
 
+# flag:           KFIOC_PART_STAT_REQUIRES_CPU
+# values:
+#                 0     newer kernels don't need the cpu for stats
+#                 1     older kernels need the cpu for stats
+# git commit:
+# comments:       in newer
+KFIOC_PART_STAT_REQUIRES_CPU()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/genhd.h>
+struct gendisk *gd;
+void kfioc_test_part_stat_requires_cpu(void) {
+  part_stat_inc(1, &d->part0, ios[0]);
+}
+'
+
+    kfioc_test "$test_code" "$test_flag" 1
+}
 
 # flag:           KFIOC_HAS_NEW_BLOCK_METHODS
 # values:
