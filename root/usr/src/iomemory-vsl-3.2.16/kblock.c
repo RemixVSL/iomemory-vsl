@@ -448,14 +448,14 @@ kfio_bio_t *kfio_fetch_next_bio(struct kfio_disk *disk)
 
         // This is odd, 5.0.y complains it's not a pointer...
         // perhaps move to irqsave/irqrestore
-        spin_lock_irq(q->queue_lock);
+        spin_lock_irq(&q->queue_lock);
         if ((bio = disk->bio_head) != NULL)
         {
             disk->bio_head = bio->bi_next;
             if (disk->bio_head == NULL)
                 disk->bio_tail = NULL;
         }
-        spin_unlock_irq(q->queue_lock);
+        spin_unlock_irq(&q->queue_lock);
 
         if (bio != NULL)
         {
