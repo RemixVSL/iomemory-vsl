@@ -154,6 +154,7 @@ KFIOC_HAS_BIO_COMP_CPU
 KFIOC_BVEC_KMAP_IRQ_HAS_LONG_FLAGS
 KFIOC_MAKE_REQUEST_FN_VOID
 KFIOC_HAS_BLK_FS_REQUEST
+KFIOC_HAS_BLK_STOP_QUEUE
 KFIOC_REQUEST_HAS_CMD_TYPE
 KFIOC_KMAP_ATOMIC_NEEDS_TYPE
 KFIOC_HAS_BLK_ALLOC_QUEUE_NODE
@@ -1477,6 +1478,22 @@ int kfioc_has_blk_fs_request(struct request *req)
     kfioc_test "$test_code" KFIOC_HAS_BLK_FS_REQUEST 1 -Werror
 }
 
+# flag:          KFIOC_HAS_BLK_FS_REQUEST
+# usage:         1   Kernel has obsolete blk_fs_request macro
+#                0   It does not
+# kernel version 2.6.36 removed macro.
+KFIOC_HAS_BLK_STOP_QUEUE()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/blkdev.h>
+int kfioc_has_blk_stop_queue(struct request_queue *rq)
+{
+    return blk_stop_queue(rq);
+}
+'
+    kfioc_test "$test_code" KFIOC_HAS_BLK_STOP_QUEUE 1 -Werror
+}
 
 # flag:          KFIOC_REQUEST_HAS_CMD_TYPE
 # usage:         1   Kernel has older cmd_type element (and REQ_TYPE_FS)

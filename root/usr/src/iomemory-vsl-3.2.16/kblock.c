@@ -66,6 +66,7 @@
 #include <fio/port/common-linux/kblock.h>
 #include <fio/port/atomic_list.h>
 
+#include <linux/blk-mq.h>
 #include <linux/version.h>
 #include <linux/fs.h>
 #if !defined(__VMKLNX__)
@@ -825,13 +826,11 @@ void kfio_destroy_disk(kfio_disk_t *disk, destroy_type_t dt)
          * Prevent request_fn callback from interfering with
          * the queue shutdown.
          */
-
-        // https://elixir.bootlin.com/linux/v4.20.17/source/drivers/scsi/scsi_lib.c#L3137
-        // https://elixir.bootlin.com/linux/v5.0.21/source/drivers/scsi/scsi_lib.c#L2648
-        // This has changed to quesce queue_nowait it seems
-        // https://elixir.bootlin.com/linux/v5.0.21/source/block/blk-mq.c#L215
+#if defined(__VMKLNX__) || KFIOC_HAS_BLK_STOP_QUEUE
         blk_stop_queue(disk->rq);
-
+#else
+        blk_mq_stop_hw_queues(disk->rq);
+#endif
         /*
          * The queue is stopped and dead and no new user requests will be
          * coming to it anymore. Fetch remaining already queued requests
