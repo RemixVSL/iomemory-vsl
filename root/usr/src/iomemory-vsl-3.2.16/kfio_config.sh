@@ -87,6 +87,7 @@ KFIOC_HAS_BLK_UNPLUG
 KFIOC_HAS_BLK_DELAY_QUEUE
 KFIOC_REQUEST_QUEUE_HAS_UNPLUG_FN
 KFIOC_REQUEST_QUEUE_UNPLUG_FN_HAS_EXTRA_BOOL_PARAM
+KFIOC_REQUEST_QUEUE_HAS_REQUEST_FN
 KFIOC_BACKING_DEV_INFO_HAS_UNPLUG_IO_FN
 KFIOC_HAS_KMEM_CACHE
 KFIOC_HAS_MUTEX_SUBSYSTEM
@@ -270,7 +271,7 @@ EOF
 }
 
 
-kfioc_close_config() 
+kfioc_close_config()
 {
     cat <<EOF >> "${TMP_OUTPUTFILE}"
 #include <linux/slab.h>
@@ -334,7 +335,7 @@ collect_kfioc_results()
 }
 
 
-fio_create_makefile() 
+fio_create_makefile()
 {
     local kfioc_flag="$1"
     local extra_cflags="${2:-}"
@@ -651,7 +652,7 @@ void kfioc_test_pci_error_handlers(void) {
     (void)e;
 }
 '
-    
+
     kfioc_test "$test_code" "$test_flag" 1
 }
 
@@ -757,12 +758,12 @@ KFIOC_KMEM_CACHE_CREATE_REMOVED_DTOR()
     local test_flag="$1"
     local test_code='
 #include <linux/slab.h>
-    
+
 void kfioc_test_kmem_cache_create(void) {
     kmem_cache_create("foo", 0, 0, 0, NULL);
 }
 '
-    
+
     kfioc_test "$test_code" "$test_flag" 1
 }
 
@@ -897,6 +898,27 @@ KFIOC_REQUEST_QUEUE_HAS_UNPLUG_FN()
 
 void kfioc_test_request_queue_unplug(void) {
     struct request_queue q = { .unplug_fn = NULL };
+    (void)q;
+}
+'
+
+    kfioc_test "$test_code" "$test_flag" 1
+}
+
+# flag:           KFIOC_REQUEST_QUEUE_HAS_REQUEST_FN
+# values:
+#                 0     for newer kernels that don't have request_fn member in struct request_queue.
+#                 1     for older kernels that have request_fn member in struct request_queue.
+# git commit:     NA
+# comments:
+KFIOC_REQUEST_QUEUE_HAS_REQUEST_FN()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/blkdev.h>
+
+void kfioc_test_request_queue_request_fn(void) {
+    struct request_queue q = { .request_fn = NULL };
     (void)q;
 }
 '
@@ -1042,7 +1064,7 @@ void kfioc_has_path_lookup(void)
 #                 0     for kernels that return int from unregister_blkdev()
 #                 1     for newer kernels that return void from unregister_blkdev()
 # git commit:     f4480240f700587c15507b7815e75989b16825b2
-# comments:       
+# comments:
 KFIOC_UNREGISTER_BLKDEV_RETURNS_VOID()
 {
     local test_flag="$1"
@@ -1379,7 +1401,7 @@ void kfioc_hew_barrier_scheme(void)
 '
     kfioc_test "$test_code" KFIOC_NEW_BARRIER_SCHEME 1 -Werror
 }
- 
+
 # flag:          KFIOC_NEW_BARRIER_SCHEME
 # usage:         1   Kernel uses the new barrier scheme
 #                0   It does not
@@ -1478,7 +1500,7 @@ KFIOC_HAS_SPIN_LOCK_IRQSAVE_NESTED()
 #error spin_lock_irqsave_nested is missing
 #endif
 '
-    
+
     kfioc_test "$test_code" "$test_flag" 1
 }
 
@@ -1509,7 +1531,7 @@ module_param_array(test, charp, NULL, 0);
 #                 1     if the kernel does not have an "owner" data member in "struct proc_dir_entry"
 # git commit:     99b76233803beab302123d243eea9e41149804f3
 # kernel version: < 2.6.30
-KFIOC_OWNER_IN_STRUCT_PROC_DIR_ENTRY() 
+KFIOC_OWNER_IN_STRUCT_PROC_DIR_ENTRY()
 {
     local test_flag="$1"
     local test_code='
@@ -1520,7 +1542,7 @@ void kfioc_owner_in_struct_proc_dir_entry(void) {
     (void)dentry;
 }
 '
-    
+
     kfioc_test "$test_code" "$test_flag" 1
 }
 
@@ -1538,7 +1560,7 @@ KFIOC_CONFIG_PREEMPT_RT()
 #error Not running a PREEMPT_RT kernel
 #endif
 '
-    
+
     kfioc_test "$test_code" "$test_flag" 1
 }
 
@@ -1565,7 +1587,7 @@ KFIOC_CONFIG_TREE_PREEMPT_RCU()
 # usage:          undef for automatic selection by kernel version
 #                 0     if the kernel does not have the blk_queue_hardsect_size function
 #                 1     if the kernel has the function
-# git commit:     
+# git commit:
 # kernel version: < 2.6.31
 KFIOC_HAS_BLK_QUEUE_HARDSECT_SIZE()
 {
@@ -1608,7 +1630,7 @@ void kfioc_has_end_request(void){
 #                 0     if the kernel version is between 2.5.24 and 2.6.31
 #                           OR the blk_complete_request() function does not exist exactly as specified below.
 #                 1     if the kernel has the function
-# git commit:     
+# git commit:
 # kernel version: > 2.6.24 and < 2.6.31
 KFIOC_USE_IO_SCHED()
 {
@@ -1685,7 +1707,7 @@ void kfioc_has_bio_rw_flagged(void)
 
     kfioc_test "$test_code" "$test_flag" 1 -Werror-implicit-function-declaration
 }
- 
+
 
 # flag:           KFIOC_HAS_INFLIGHT_RW
 #                 1     if the kernel has part0.in_flight[rw]
@@ -1868,8 +1890,8 @@ void foo(void)
 }
 
 # flag:           KFIOC_HAS_RQ_POS_BYTES
-#                 1     if the driver should use 
-#                 0     if the driver should use 
+#                 1     if the driver should use
+#                 0     if the driver should use
 #                 Change introduced in 2e46e8b27aa57c6bd34b3102b40ee4d0144b4fab
 KFIOC_HAS_RQ_POS_BYTES()
 {
@@ -1888,8 +1910,8 @@ void foo(void)
 }
 
 # flag:           KFIOC_HAS_RQ_IS_SYNC
-#                 1     if the driver should use 
-#                 0     if the driver should use 
+#                 1     if the driver should use
+#                 0     if the driver should use
 #                 Change introduced in 1faa16d22877f4839bd433547d770c676d1d964c
 KFIOC_HAS_RQ_IS_SYNC()
 {
@@ -1907,8 +1929,8 @@ void foo(void)
 }
 
 # flag:           KFIOC_HAS_RQ_FOR_EACH_BIO
-#                 1     if the driver should use 
-#                 0     if the driver should use 
+#                 1     if the driver should use
+#                 0     if the driver should use
 #                 Change introduced in 5705f7021748a69d84d6567e68e8851dab551464
 KFIOC_HAS_RQ_FOR_EACH_BIO()
 {
@@ -1944,8 +1966,8 @@ int foo(void)
     kfioc_test "$test_code" "$test_flag" 1 -Werror
 }
 # flag:           KFIOC_BIOSET_CREATE_HAS_THIRD_ARG
-#                 1     if the driver should use 
-#                 0     if the driver should use 
+#                 1     if the driver should use
+#                 0     if the driver should use
 KFIOC_BIOSET_CREATE_HAS_THIRD_ARG()
 {
     local test_flag="$1"
@@ -2682,8 +2704,8 @@ void kfioc_bio_error_changed_to_status(struct bio* bi)
 
 
 # flag:           KFIOC_BIO_HAS_ERROR
-# usage:          1 if bio.bi_error does not exist, 0 if instead 
-# git commit:     
+# usage:          1 if bio.bi_error does not exist, 0 if instead
+# git commit:
 # kernel version: v4.14-rc4
 KFIOC_BIO_HAS_ERROR()
 {
@@ -2700,8 +2722,8 @@ void kfioc_bio_has_error(void) {
 }
 
 # flag:           KFIOC_REQ_HAS_ERRORS
-# usage:          1 if req.errors does not exist, 0 if instead 
-# git commit:     
+# usage:          1 if req.errors does not exist, 0 if instead
+# git commit:
 # kernel version: v4.10
 KFIOC_REQ_HAS_ERRORS()
 {
@@ -2718,7 +2740,7 @@ void kfioc_req_has_errors(void) {
 }
 
 # flag:           KFIOC_REQ_HAS_ERROR_COUNT
-# usage:          1 if req.error_count does not exist, 0 if instead  
+# usage:          1 if req.error_count does not exist, 0 if instead
 # git commit:
 # kernel version: v4.14-rc4
 KFIOC_REQ_HAS_ERROR_COUNT()
@@ -2738,7 +2760,7 @@ void kfioc_req_has_error_count(void) {
 # flag:           KFIOC_BOUNCE_H
 # usage:          1 if no bounce.h, 0 has bounce.h
 #                 bounce was seperated out from highmem
-# git commit:     
+# git commit:
 # kernel version: v4.14-rc4
 KFIOC_BOUNCE_H()
 {
@@ -2914,7 +2936,7 @@ KFIOC_HAS_HOTPLUG_STATES_REMOVAL_BUG()
 # flag:           KFIOC_HAS_TIMER_SETUP
 # usage:          1   linux/time.h has `timer_setup((struct timer_list *)  timer, fusion_timer_callback, 0)
 #                 0   not timer_setup, use function and data of timer instead
-# git commit:     
+# git commit:
 # kernel version: v4.15
 KFIOC_HAS_TIMER_SETUP() {
     local test_flag="$1"
@@ -3053,7 +3075,7 @@ void test_has_disk_stats_nsecs(void)
     (void)stat;
 }
 '
-    kfioc_test "$test_code" "$test_flag" 1 
+    kfioc_test "$test_code" "$test_flag" 1
 }
 
 # flag:            KFIOC_HAS_COARSE_REAL_TS

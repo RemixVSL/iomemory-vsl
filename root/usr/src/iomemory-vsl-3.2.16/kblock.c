@@ -446,6 +446,8 @@ kfio_bio_t *kfio_fetch_next_bio(struct kfio_disk *disk)
     {
         struct bio *bio;
 
+        // This is odd, 5.0.y complains it's not a pointer...
+        // perhaps move to irqsave/irqrestore
         spin_lock_irq(q->queue_lock);
         if ((bio = disk->bio_head) != NULL)
         {
@@ -613,6 +615,8 @@ int kfio_create_disk(struct fio_device *dev, kfio_pci_dev_t *pdev, uint32_t sect
 # endif
 #elif KFIOC_HAS_QUEUE_LIMITS_CLUSTER
     rq->limits.cluster = 0;
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
+// Linux from 5.0 > removed the limits.cluster: https://patchwork.kernel.org/patch/10716231/
 #else
 # ifndef __VMKLNX__
 #  error "Do not know how to disable request queue clustering for this kernel."
@@ -821,6 +825,11 @@ void kfio_destroy_disk(kfio_disk_t *disk, destroy_type_t dt)
          * Prevent request_fn callback from interfering with
          * the queue shutdown.
          */
+
+        // https://elixir.bootlin.com/linux/v4.20.17/source/drivers/scsi/scsi_lib.c#L3137
+        // https://elixir.bootlin.com/linux/v5.0.21/source/drivers/scsi/scsi_lib.c#L2648
+        // This has changed to quesce queue_nowait it seems
+        // https://elixir.bootlin.com/linux/v5.0.21/source/block/blk-mq.c#L215
         blk_stop_queue(disk->rq);
 
         /*
@@ -1600,7 +1609,7 @@ static void kfio_unplug_cb(struct blk_plug_cb *cb)
  * this is used once while we create the block device,
  * just to make sure unplug callbacks aren't run with irqs off
  */
-struct test_plug 
+struct test_plug
 {
     struct blk_plug_cb cb;
     int safe;
@@ -1718,6 +1727,10 @@ void kfio_clear_write_holdoff(struct kfio_disk *disk)
      * be called here with internal locks held and with IRQs
      * disabled.
      */
+    // These all moved out of the kernel, think it has to do with DMA drain, as said in the removal of the cluster FLAG article
+    // https://elixir.bootlin.com/linux/v5.0.21/source/include/linux/blkdev.h#L390
+    // https://elixir.bootlin.com/linux/v4.20.17/source/include/linux/blkdev.h#L440
+#if KFIOC_REQUEST_QUEUE_HAS_REQUEST_FN
     if (q->request_fn)
     {
 
@@ -1748,6 +1761,7 @@ void kfio_clear_write_holdoff(struct kfio_disk *disk)
 
         kfio_restart_queue(q);
     }
+#endif /* defined(KFIOC_REQUEST_QUEUE_HAS_REQUEST_FN) */
 }
 
 /*
@@ -1759,6 +1773,7 @@ void kfio_mark_lock_pending(kfio_disk_t *fgd)
     struct gendisk *gd = fgd->gd;
     struct request_queue *q = gd->queue;
 
+#if KFIOC_REQUEST_QUEUE_HAS_REQUEST_FN
     /*
      * Only the request_fn driven model issues requests in a non-blocking
      * manner. The direct queued model does not need this.
@@ -1769,6 +1784,7 @@ void kfio_mark_lock_pending(kfio_disk_t *fgd)
 
         atomic_inc(&disk->lock_pending);
     }
+#endif /* defined(KFIOC_REQUEST_QUEUE_HAS_REQUEST_FN) */
 #endif
 }
 
@@ -1780,7 +1796,7 @@ void kfio_unmark_lock_pending(kfio_disk_t *fgd)
 #if !defined(__VMKLNX__)
     struct gendisk *gd = fgd->gd;
     struct request_queue *q = gd->queue;
-
+#if KFIOC_REQUEST_QUEUE_HAS_REQUEST_FN
     if (q->request_fn)
     {
         kfio_disk_t *disk = q->queuedata;
@@ -1797,6 +1813,7 @@ void kfio_unmark_lock_pending(kfio_disk_t *fgd)
             kfio_restart_queue(q);
         }
     }
+#endif /* defined(KFIOC_REQUEST_QUEUE_HAS_REQUEST_FN) */
 #endif
 }
 
