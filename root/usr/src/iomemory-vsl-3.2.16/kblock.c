@@ -1028,13 +1028,15 @@ int kfio_get_gd_in_flight(kfio_disk_t *fgd, int rw)
     return atomic_read(&gd->part0.in_flight[dir]);
 #else
     return gd->part0.in_flight[dir];
-#endif
-#else
+#endif /* KFIOC_HAS_INFLIGHT_RW_ATOMIC */
+#elif KFIOC_PART0_HAS_IN_FLIGHT
     return gd->part0.in_flight;
-#endif
+#else
+    return part_in_flight(gd->queue, &gd->part0);
+#endif /* KFIOC_HAS_INFLIGHT_RW  */
 #else
     return gd->in_flight;
-#endif
+#endif /*KFIOC_PARTITION_STATS */
 }
 
 void kfio_set_gd_in_flight(kfio_disk_t *fgd, int rw, int in_flight)
@@ -1058,13 +1060,16 @@ void kfio_set_gd_in_flight(kfio_disk_t *fgd, int rw, int in_flight)
         atomic_set(&gd->part0.in_flight[dir], in_flight);
 #else
         gd->part0.in_flight[dir] = in_flight;
-#endif
-#else
+#endif /* KFIOC_HAS_INFLIGHT_RW_ATOMIC */
+#elif KFIOC_PART0_HAS_IN_FLIGHT
         gd->part0.in_flight = in_flight;
-#endif
+#else
+        unsigned int *x = &in_flight;
+        part_in_flight_rw(gd->queue, &gd->part0, x);
+#endif /* KFIOC_HAS_INFLIGHT_RW */
 #else
         gd->in_flight = in_flight;
-#endif
+#endif /* KFIOC_PARTITION_STATS */
     }
 }
 

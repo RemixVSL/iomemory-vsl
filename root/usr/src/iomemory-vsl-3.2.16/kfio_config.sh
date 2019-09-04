@@ -201,6 +201,7 @@ KFIOC_HAS_TIMER_SETUP
 KFIOC_HAS_DISK_STATS_NSECS
 KFIOC_HAS_COARSE_REAL_TS
 KFIOC_HAS_ELEVATOR_INIT
+KFIOC_PART0_HAS_IN_FLIGHT
 "
 
 
@@ -1105,26 +1106,6 @@ KFIOC_PARTITION_STATS()
     kfioc_test "$test_code" "$test_flag" 1
 }
 
-# flag:           KFIOC_PART_STAT_REQUIRES_CPU
-# values:
-#                 0     newer kernels don't need the cpu for stats
-#                 1     older kernels need the cpu for stats
-# git commit:
-# comments:       in newer
-KFIOC_PART_STAT_REQUIRES_CPU()
-{
-    local test_flag="$1"
-    local test_code='
-#include <linux/genhd.h>
-struct gendisk *gd;
-void kfioc_test_part_stat_requires_cpu(void) {
-  part_stat_inc(1, &d->part0, ios[0]);
-}
-'
-
-    kfioc_test "$test_code" "$test_flag" 1
-}
-
 # flag:           KFIOC_HAS_NEW_BLOCK_METHODS
 # values:
 #                 0     for old block open release ioctl methods
@@ -1781,6 +1762,46 @@ void kfioc_has_inflight_rw_atomic(void)
 '
 
     kfioc_test "$test_code" "$test_flag" 1 -Wframe-larger-than=2048
+}
+
+# flag:           KFIOC_PART_STAT_REQUIRES_CPU
+# values:
+#                 0     newer kernels don't need the cpu for stats
+#                 1     older kernels need the cpu for stats
+# git commit:
+# comments:       in newer
+KFIOC_PART_STAT_REQUIRES_CPU()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/genhd.h>
+struct gendisk *gd;
+void kfioc_test_part_stat_requires_cpu(void) {
+  part_stat_inc(1, &d->part0, ios[0]);
+}
+'
+
+    kfioc_test "$test_code" "$test_flag" 1
+}
+
+# flag:           KFIOC_PART0_HAS_IN_FLIGHT
+# values:
+#                 0     beyond 5 the struct has no in_flight
+#                 1     older kernels do have in_flight
+# git commit:
+# comments:       yada
+KFIOC_PART0_HAS_IN_FLIGHT()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/genhd.h>
+struct gendisk *gd;
+void kfioc_test_part0_has_in_flight(void) {
+  return gd->part0.in_flight;
+}
+'
+
+    kfioc_test "$test_code" "$test_flag" 1
 }
 
 # flag:           KFIOC_HAS_BLK_LIMITS_IO_MIN
