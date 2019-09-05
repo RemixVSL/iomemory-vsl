@@ -88,6 +88,7 @@ KFIOC_HAS_BLK_DELAY_QUEUE
 KFIOC_REQUEST_QUEUE_HAS_UNPLUG_FN
 KFIOC_REQUEST_QUEUE_UNPLUG_FN_HAS_EXTRA_BOOL_PARAM
 KFIOC_REQUEST_QUEUE_HAS_REQUEST_FN
+KFIOC_REQUEST_QUEUE_HAS_QUEUE_LOCK_POINTER
 KFIOC_BACKING_DEV_INFO_HAS_UNPLUG_IO_FN
 KFIOC_HAS_KMEM_CACHE
 KFIOC_HAS_MUTEX_SUBSYSTEM
@@ -923,6 +924,29 @@ KFIOC_REQUEST_QUEUE_HAS_REQUEST_FN()
 void kfioc_test_request_queue_request_fn(void) {
     struct request_queue q = { .request_fn = NULL };
     (void)q;
+}
+'
+
+    kfioc_test "$test_code" "$test_flag" 1
+}
+
+
+# flag:           KFIOC_REQUEST_QUEUE_HAS_QUEUE_LOCK_POINTER
+# values:
+#                 0     starting 5.0 the request_queue has a spinlock_t for queue_lock
+#                 1     pre 5.0 kernels have a spinlock_t *queue_lock in request_queue.
+# git commit:     NA
+# comments:
+KFIOC_REQUEST_QUEUE_HAS_QUEUE_LOCK_POINTER()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/blkdev.h>
+
+void kfioc_test_request_queue_has_queue_lock_pointer(void) {
+    spinlock_t *l;
+    struct request_queue *q;
+    q->queue_lock = l;
 }
 '
 

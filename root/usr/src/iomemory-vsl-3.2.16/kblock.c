@@ -66,6 +66,8 @@
 #include <fio/port/common-linux/kblock.h>
 #include <fio/port/atomic_list.h>
 
+#include <linux/genhd.h>
+#include <linux/bio.h>
 #include <linux/blk-mq.h>
 #include <linux/version.h>
 #include <linux/fs.h>
@@ -1707,7 +1709,11 @@ static struct request_queue *kfio_alloc_queue(struct kfio_disk *dp,
     {
         rq->queuedata = dp;
         blk_queue_make_request(rq, kfio_make_request);
+#if KFIOC_REQUEST_QUEUE_HAS_QUEUE_LOCK_POINTER
         rq->queue_lock = (spinlock_t *)dp->queue_lock;
+#else
+        memcpy(&dp->queue_lock, &rq->queue_lock, sizeof(dp->queue_lock));
+#endif
 #if KFIOC_REQUEST_QUEUE_HAS_UNPLUG_FN
         rq->unplug_fn = kfio_unplug;
 #endif
