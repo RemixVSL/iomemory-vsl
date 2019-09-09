@@ -933,7 +933,7 @@ void kfio_disk_stat_write_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t 
         part_stat_add(&gd->part0, sectors[1], totalsize >> 9);
 #  endif
 # if KFIOC_HAS_DISK_STATS_NSECS
-        part_stat_add(GD_PART, nsecs[1],   duration * 1000);
+        part_stat_add(&gd->part0, nsecs[1],   duration * 1000);
 # else
 #  if KFIOC_PART_STAT_REQUIRES_CPU
         part_stat_add(cpu, &gd->part0, ticks[1],   kfio_div64_64(duration * HZ, 1000000));
@@ -990,7 +990,7 @@ void kfio_disk_stat_read_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t d
         part_stat_add(&gd->part0, sectors[0], totalsize >> 9);
 #  endif
 # if KFIOC_HAS_DISK_STATS_NSECS
-        part_stat_add(GD_PART, nsecs[0],   duration * 1000);
+        part_stat_add(&gd->part0, nsecs[0],   duration * 1000);
 # else
 #  if KFIOC_PART_STAT_REQUIRES_CPU
         part_stat_add(cpu, &gd->part0, ticks[0],   kfio_div64_64(duration * HZ, 1000000));
