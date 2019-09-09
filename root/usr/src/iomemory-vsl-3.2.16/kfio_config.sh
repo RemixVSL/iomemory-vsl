@@ -181,6 +181,7 @@ KFIOC_HAS_CPUMASK_WEIGHT
 KFIOC_BIO_HAS_USCORE_BI_CNT
 KFIOC_BIO_ENDIO_REMOVED_ERROR
 KFIOC_BIO_ERROR_CHANGED_TO_STATUS
+KFIOC_BIO_HAS_BI_PHYS_SEGMENTS
 KFIOC_MAKE_REQUEST_FN_UINT
 KFIOC_GET_USER_PAGES_REQUIRES_TASK
 KFIOC_BARRIER_USES_QUEUE_FLAGS
@@ -2708,6 +2709,23 @@ KFIOC_BIO_HAS_SPECIAL()
 void kfioc_test_bio_remaining(void) {
 	struct bio bio;
 	void *test = &(bio.bi_special);
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1 -Werror-implicit-function-declaration
+}
+
+# flag:           KFIOC_BIO_HAS_BI_PHYS_SEGMENTS
+# usage:          0     if bio has no bi_phys_segments
+#                 1     if bio has bi_phys_segments
+KFIOC_BIO_HAS_BI_PHYS_SEGMENTS()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/bio.h>
+
+void kfioc_test_bio_has_bi_phys_segments(void) {
+	struct bio bio;
+	void *test = &(bio.bi_phys_segments);
 }
 '
     kfioc_test "$test_code" "$test_flag" 1 -Werror-implicit-function-declaration
