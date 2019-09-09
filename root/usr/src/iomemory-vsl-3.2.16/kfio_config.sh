@@ -85,6 +85,7 @@ KFIOC_INVALIDATE_BDEV_REMOVED_DESTROY_DIRTY_BUFFERS
 KFIOC_NEEDS_VIRT_TO_PHYS
 KFIOC_HAS_BLK_UNPLUG
 KFIOC_HAS_BLK_DELAY_QUEUE
+KFIOC_SPINLOCK_TYPE_CHECK
 KFIOC_REQUEST_QUEUE_HAS_UNPLUG_FN
 KFIOC_REQUEST_QUEUE_UNPLUG_FN_HAS_EXTRA_BOOL_PARAM
 KFIOC_REQUEST_QUEUE_HAS_REQUEST_FN
@@ -973,6 +974,27 @@ void kfioc_test_request_queue_unplug_param(blk_plug_cb_fn cb) {
     kfioc_test "$test_code" "$test_flag" 1
 }
 
+# flag:           KFIOC_QUEUE_LOCK_TYPE_CHECK
+# values:
+#                 0     pre 5.0 has expect a pointer
+#                 1     5.0 and above doesn't
+# git commit:     NA
+# comments:
+KFIOC_SPINLOCK_TYPE_CHECK()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/blkdev.h>
+#include <linux/spinlock.h>
+
+void kfioc_spinlock_type_check(void) {
+    struct request_queue *q;
+    spin_lock_irq(q->queue_lock);
+}
+'
+
+    kfioc_test "$test_code" "$test_flag" 1
+}
 
 # flag:           KFIOC_BACKING_DEV_INFO_HAS_UNPLUG_IO_FN
 # values:
@@ -1801,7 +1823,7 @@ KFIOC_PART_STAT_REQUIRES_CPU()
 #include <linux/genhd.h>
 struct gendisk *gd;
 void kfioc_test_part_stat_requires_cpu(void) {
-  part_stat_inc(1, &d->part0, ios[0]);
+  part_stat_inc(1, &gd->part0, ios[0]);
 }
 '
 

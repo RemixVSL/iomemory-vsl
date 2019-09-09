@@ -451,14 +451,19 @@ kfio_bio_t *kfio_fetch_next_bio(struct kfio_disk *disk)
 
         // This is odd, 5.0.y complains it's not a pointer...
         // perhaps move to irqsave/irqrestore
-        spin_lock_irq(&q->queue_lock);
+#if KFIOC_SPINLOCK_TYPE_CHECK
+#define Q_LOCK q->queue_lock
+#else
+#define Q_LOCK &q->queue_lock
+#endif
+        spin_lock_irq(Q_LOCK);
         if ((bio = disk->bio_head) != NULL)
         {
             disk->bio_head = bio->bi_next;
             if (disk->bio_head == NULL)
                 disk->bio_tail = NULL;
         }
-        spin_unlock_irq(&q->queue_lock);
+        spin_unlock_irq(Q_LOCK);
 
         if (bio != NULL)
         {
@@ -912,12 +917,8 @@ void kfio_disk_stat_write_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t 
         struct gendisk *gd = fgd->gd;
 #endif
 # if KFIOC_PARTITION_STATS
-# if KFIOC_PART_STAT_REQUIRES_CPU
-#define GD_PART cpu, &gd->part0
-# else /* #if KFIOC_PART_STAT_REQUIRES_CPU */
-#define GD_PART &gd->part0
-# endif /* #if KFIOC_PART_STAT_REQUIRES_CPU */
 # if !KFIOC_CONFIG_PREEMPT_RT && !KFIOC_CONFIG_TREE_PREEMPT_RCU
+#  if KFIOC_PART_STAT_REQUIRES_CPU
         int cpu;
 
        /*
@@ -925,12 +926,20 @@ void kfio_disk_stat_write_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t 
         * rcu_read_update which is GPL in the RT patch set.
         */
         cpu = part_stat_lock();
-        part_stat_inc(GD_PART, ios[1]);
-        part_stat_add(GD_PART, sectors[1], totalsize >> 9);
+        part_stat_inc(cpu, &gd->part0, ios[1]);
+        part_stat_add(cpu, &gd->part0, sectors[1], totalsize >> 9);
+#  else
+        part_stat_inc(&gd->part0, ios[1]);
+        part_stat_add(&gd->part0, sectors[1], totalsize >> 9);
+#  endif
 # if KFIOC_HAS_DISK_STATS_NSECS
         part_stat_add(GD_PART, nsecs[1],   duration * 1000);
 # else
-        part_stat_add(GD_PART, ticks[1],   kfio_div64_64(duration * HZ, 1000000));
+#  if KFIOC_PART_STAT_REQUIRES_CPU
+        part_stat_add(cpu, &gd->part0, ticks[1],   kfio_div64_64(duration * HZ, 1000000));
+#  else
+        part_stat_add(&gd->part0, ticks[1],   kfio_div64_64(duration * HZ, 1000000));
+#  endif
 # endif
         part_stat_unlock();
 # endif /* defined(KFIOC_CONFIG_PREEMPT_RT) */
@@ -967,23 +976,27 @@ void kfio_disk_stat_read_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t d
         struct gendisk *gd = fgd->gd;
 #endif
 # if KFIOC_PARTITION_STATS
-# if KFIOC_PART_STAT_REQUIRES_CPU
-#define GD_PART cpu, &gd->part0
-# else /* #if KFIOC_PART_STAT_REQUIRES_CPU */
-#define GD_PART &gd->part0
-# endif
 # if !KFIOC_CONFIG_PREEMPT_RT && !KFIOC_CONFIG_TREE_PREEMPT_RCU
+#  if KFIOC_PART_STAT_REQUIRES_CPU
         int cpu;
 
     /* part_stat_lock() with CONFIG_PREEMPT_RT can't be used!
        It ends up calling rcu_read_update which is GPL in the RT patch set */
         cpu = part_stat_lock();
-        part_stat_inc(GD_PART, ios[0]);
-        part_stat_add(GD_PART, sectors[0], totalsize >> 9);
+        part_stat_inc(cpu, &gd->part0, ios[0]);
+        part_stat_add(cpu, &gd->part0, sectors[0], totalsize >> 9);
+#  else
+        part_stat_inc(&gd->part0, ios[0]);
+        part_stat_add(&gd->part0, sectors[0], totalsize >> 9);
+#  endif
 # if KFIOC_HAS_DISK_STATS_NSECS
         part_stat_add(GD_PART, nsecs[0],   duration * 1000);
 # else
-        part_stat_add(GD_PART, ticks[0],   kfio_div64_64(duration * HZ, 1000000));
+#  if KFIOC_PART_STAT_REQUIRES_CPU
+        part_stat_add(cpu, &gd->part0, ticks[0],   kfio_div64_64(duration * HZ, 1000000));
+#  else
+        part_stat_add(&gd->part0, ticks[0],   kfio_div64_64(duration * HZ, 1000000));
+#  endif
 # endif
         part_stat_unlock();
 # endif /* KFIO_CONFIG_PREEMPT_RT */
