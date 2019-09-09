@@ -1047,7 +1047,7 @@ int kfio_get_gd_in_flight(kfio_disk_t *fgd, int rw)
 #elif KFIOC_PART0_HAS_IN_FLIGHT
     return gd->part0.in_flight;
 #else
-    return part_in_flight(gd->queue, &gd->part0);
+    return part_stat_read(&gd->part0, ios[STAT_WRITE]);
 #endif /* KFIOC_HAS_INFLIGHT_RW  */
 #else
     return gd->in_flight;
@@ -1079,8 +1079,7 @@ void kfio_set_gd_in_flight(kfio_disk_t *fgd, int rw, int in_flight)
 #elif KFIOC_PART0_HAS_IN_FLIGHT
         gd->part0.in_flight = in_flight;
 #else
-        unsigned int *x = &in_flight;
-        part_in_flight_rw(gd->queue, &gd->part0, x);
+        part_stat_set_all(&gd->part0, in_flight);
 #endif /* KFIOC_HAS_INFLIGHT_RW */
 #else
         gd->in_flight = in_flight;
