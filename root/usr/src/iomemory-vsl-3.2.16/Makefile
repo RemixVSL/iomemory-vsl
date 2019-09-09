@@ -76,7 +76,7 @@ clean modules_clean:
 		FIO_DRIVER_NAME=$(FIO_DRIVER_NAME) \
 		FIO_SCSI_DEVICE=$(FIO_SCSI_DEVICE) \
 		FUSION_DRIVER_DIR=$(shell pwd) \
-		SUBDIRS=$(shell pwd) \
+		KBUILD_EXTMOD=$(shell pwd) \
 		EXTRA_CFLAGS+="$(CFLAGS)" \
 		KFIO_LIB=$(KFIO_LIB) \
 		clean
@@ -104,7 +104,7 @@ modules modules_install: check_n_fix_kfio_ccver check_target_kernel include/fio/
 	FIO_DRIVER_NAME=$(FIO_DRIVER_NAME) \
 	FIO_SCSI_DEVICE=$(FIO_SCSI_DEVICE) \
 	FUSION_DRIVER_DIR=$(shell pwd) \
-	SUBDIRS=$(shell pwd) \
+	KBUILD_EXTMOD=$(shell pwd) \
 	EXTRA_CFLAGS+="$(CFLAGS)" \
 	INSTALL_MOD_DIR=$(FIO_DRIVER_SUBDIR) \
 	INSTALL_MOD_PATH=$(INSTALL_ROOT) \
