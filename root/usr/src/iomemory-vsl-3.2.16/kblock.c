@@ -823,6 +823,7 @@ void kfio_destroy_disk(kfio_disk_t *disk, destroy_type_t dt)
         }
 
         set_capacity(disk->gd, 0);
+
         if (disk->queue_lock != NULL) {
             fusion_spin_lock_irqsave(disk->queue_lock);
         }
@@ -865,6 +866,7 @@ void kfio_destroy_disk(kfio_disk_t *disk, destroy_type_t dt)
         if (disk->queue_lock != NULL) {
             fusion_spin_unlock_irqrestore(disk->queue_lock);
         }
+
         del_gendisk(disk->gd);
 
         put_disk(disk->gd);
