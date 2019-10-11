@@ -827,6 +827,7 @@ void kfio_destroy_disk(kfio_disk_t *disk, destroy_type_t dt)
         if (disk->queue_lock != NULL) {
             fusion_spin_lock_irqsave(disk->queue_lock);
         }
+
         /* Stop delivery of new io from user. */
         set_bit(QUEUE_FLAG_DEAD, &disk->rq->queue_flags);
 
