@@ -824,7 +824,9 @@ void kfio_destroy_disk(kfio_disk_t *disk, destroy_type_t dt)
 
         set_capacity(disk->gd, 0);
 
-        fusion_spin_lock_irqsave(disk->queue_lock);
+        if (disk->queue_lock != NULL) {
+            fusion_spin_lock_irqsave(disk->queue_lock);
+        }
 
         /* Stop delivery of new io from user. */
         set_bit(QUEUE_FLAG_DEAD, &disk->rq->queue_flags);
@@ -862,8 +864,9 @@ void kfio_destroy_disk(kfio_disk_t *disk, destroy_type_t dt)
         }
 #endif
 
-
-        fusion_spin_unlock_irqrestore(disk->queue_lock);
+        if (disk->queue_lock != NULL) {
+            fusion_spin_unlock_irqrestore(disk->queue_lock);
+        }
 
         del_gendisk(disk->gd);
 
