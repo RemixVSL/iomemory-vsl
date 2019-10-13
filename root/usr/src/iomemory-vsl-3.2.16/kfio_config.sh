@@ -2744,7 +2744,7 @@ KFIOC_BIO_HAS_BIO_SEGMENTS()
 #include <linux/bio.h>
 
 void kfioc_test_bio_has_bio_segments(void) {
-    struct bio bio;
+    struct bio *bio = NULL;
     unsigned segs;
     segs = bio_segments(bio);
 }

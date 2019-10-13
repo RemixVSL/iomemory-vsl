@@ -1134,9 +1134,13 @@ static void kfio_dump_bio(const char *msg, const struct bio * const bio)
     infprint("%s: sector: %llx: flags: %lx : rw: %lx : vcnt: %x", msg,
              sector, (unsigned long)bio->bi_flags, bio->bi_rw, bio->bi_vcnt);
 #endif
+#if KFIOC_BIO_HAS_BIO_SEGMENTS
+    infprint("%s : idx: %x : phys_segments: %x : size: %x",
+             msg, BI_IDX(bio), bio_segments(bio), BI_SIZE(bio));
+#else
     infprint("%s : idx: %x : phys_segments: %x : size: %x",
              msg, BI_IDX(bio), bio->bi_phys_segments, BI_SIZE(bio));
-
+#endif
 #if KFIOC_BIO_HAS_HW_SEGMENTS
     infprint("%s: hw_segments: %x : hw_front_size: %x : hw_back_size %x", msg,
              bio->bi_hw_segments, bio->bi_hw_front_size, bio->bi_hw_back_size);
