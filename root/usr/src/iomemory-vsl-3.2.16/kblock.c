@@ -1750,6 +1750,7 @@ void kfio_set_write_holdoff(struct kfio_disk *disk)
 
 void kfio_clear_write_holdoff(struct kfio_disk *disk)
 {
+    /* TODO: Double Check. q->mq_ops */
     struct request_queue *q = disk->gd->queue;
 
     fusion_cv_lock_irq(&disk->state_lk);
@@ -1806,6 +1807,7 @@ void kfio_clear_write_holdoff(struct kfio_disk *disk)
 void kfio_mark_lock_pending(kfio_disk_t *fgd)
 {
 #if !defined(__VMKLNX__)
+    /* TODO: Double Check. these could move down, to surpress the warning */
     struct gendisk *gd = fgd->gd;
     struct request_queue *q = gd->queue;
 
@@ -1830,6 +1832,7 @@ void kfio_mark_lock_pending(kfio_disk_t *fgd)
 void kfio_unmark_lock_pending(kfio_disk_t *fgd)
 {
 #if !defined(__VMKLNX__)
+    /* TODO: Double Check. these could move down, to surpress the warning */
     struct gendisk *gd = fgd->gd;
     struct request_queue *q = gd->queue;
 #if KFIOC_REQUEST_QUEUE_HAS_REQUEST_FN
