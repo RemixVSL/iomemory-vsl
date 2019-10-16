@@ -823,9 +823,9 @@ void kfio_destroy_disk(kfio_disk_t *disk, destroy_type_t dt)
         }
 
         set_capacity(disk->gd, 0);
-
-        fusion_spin_lock_irqsave(disk->queue_lock);
-
+        if (disk->queue_lock != NULL) {
+            fusion_spin_lock_irqsave(disk->queue_lock);
+        }
         /* Stop delivery of new io from user. */
         set_bit(QUEUE_FLAG_DEAD, &disk->rq->queue_flags);
 
@@ -862,9 +862,9 @@ void kfio_destroy_disk(kfio_disk_t *disk, destroy_type_t dt)
         }
 #endif
 
-
-        fusion_spin_unlock_irqrestore(disk->queue_lock);
-
+        if (disk->queue_lock != NULL) {
+            fusion_spin_unlock_irqrestore(disk->queue_lock);
+        }
         del_gendisk(disk->gd);
 
         put_disk(disk->gd);
@@ -2017,7 +2017,9 @@ static int kfio_make_request(struct request_queue *queue, struct bio *bio)
     // Split the incomming bio if it has more segments than we have scatter-gather DMA vectors,
     //   and re-submit the remainder to the request queue. blk_queue_split() does all that for us.
     // It appears the kernel quit honoring the blk_queue_max_segments() in about 4.13.
-# if KFIOC_BIO_HAS_BI_PHYS_SEGMENTS
+# if KFIOC_BIO_HAS_BIO_SEGMENTS
+    if (bio_segments(bio) > queue_max_segments(queue))
+# elif KFIOC_BIO_HAS_BI_PHYS_SEGMENTS
     if (bio->bi_phys_segments > queue_max_segments(queue))
 # else
     if (bio_phys_segments(queue, bio) > queue_max_segments(queue))

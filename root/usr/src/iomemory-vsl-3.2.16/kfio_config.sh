@@ -143,6 +143,7 @@ KFIOC_QUEUE_HAS_NONROT_FLAG
 KFIOC_QUEUE_HAS_RANDOM_FLAG
 KFIOC_KBLOCKD_SCHEDULE_HAS_QUEUE_ARG
 KFIOC_TASK_HAS_NR_CPUS_ALLOWED
+KFIOC_TASK_HAS_CPUS_ALLOWED
 KFIOC_TASK_HAS_BOUND_FLAG
 KFIOC_NUMA_MAPS
 KFIOC_PCI_HAS_NUMA_INFO
@@ -181,6 +182,7 @@ KFIOC_HAS_CPUMASK_WEIGHT
 KFIOC_BIO_HAS_USCORE_BI_CNT
 KFIOC_BIO_ENDIO_REMOVED_ERROR
 KFIOC_BIO_ERROR_CHANGED_TO_STATUS
+KFIOC_BIO_HAS_BIO_SEGMENTS
 KFIOC_BIO_HAS_BI_PHYS_SEGMENTS
 KFIOC_MAKE_REQUEST_FN_UINT
 KFIOC_GET_USER_PAGES_REQUIRES_TASK
@@ -2169,6 +2171,24 @@ void kfioc_check_task_has_nr_cpus_allowed(void)
     kfioc_test "$test_code" "$test_flag" 1 -Werror
 }
 
+# flag:          KFIOC_TASK_HAS_CPUS_ALLOWED
+# usage:         1   Task struct has CPUs allowed as mask
+#                0   It does not
+KFIOC_TASK_HAS_CPUS_ALLOWED()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/sched.h>
+void kfioc_check_task_has_cpus_allowed(void)
+{
+    cpumask_t *cpu_mask = NULL;
+    struct task_struct *tsk = NULL;
+    tsk->cpus_allowed = *cpu_mask;
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1 -Werror
+}
+
 # flag:          KFIOC_TASK_HAS_BOUND_FLAG
 # usage:         1   Task struct PF_THREAD_BOUND flag for affinity
 #                0   It does not
@@ -2709,6 +2729,24 @@ KFIOC_BIO_HAS_SPECIAL()
 void kfioc_test_bio_remaining(void) {
 	struct bio bio;
 	void *test = &(bio.bi_special);
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1 -Werror-implicit-function-declaration
+}
+
+# flag:           KFIOC_BIO_HAS_BIO_SEGMENTS
+# usage:          0     if kernel has no bio_segments
+#                 1     if kernel has bio_segments
+KFIOC_BIO_HAS_BIO_SEGMENTS()
+{
+    local test_flag="$1"
+    local test_code=' 
+#include <linux/bio.h>
+
+void kfioc_test_bio_has_bio_segments(void) {
+    struct bio bio;
+    unsigned segs;
+    segs = bio_segments(bio);
 }
 '
     kfioc_test "$test_code" "$test_flag" 1 -Werror-implicit-function-declaration
