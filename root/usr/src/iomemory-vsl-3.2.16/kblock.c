@@ -920,8 +920,8 @@ void kfio_disk_stat_write_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t 
         struct gendisk *gd = fgd->gd;
 #endif
 # if KFIOC_PARTITION_STATS
-# if !KFIOC_CONFIG_PREEMPT_RT && !KFIOC_CONFIG_TREE_PREEMPT_RCU
-#  if KFIOC_PART_STAT_REQUIRES_CPU
+#  if !KFIOC_CONFIG_PREEMPT_RT && !KFIOC_CONFIG_TREE_PREEMPT_RCU
+#   if KFIOC_PART_STAT_REQUIRES_CPU
         int cpu;
 
        /*
@@ -931,19 +931,21 @@ void kfio_disk_stat_write_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t 
         cpu = part_stat_lock();
         part_stat_inc(cpu, &gd->part0, ios[1]);
         part_stat_add(cpu, &gd->part0, sectors[1], totalsize >> 9);
-#  else
+#   else
         part_stat_inc(&gd->part0, ios[1]);
         part_stat_add(&gd->part0, sectors[1], totalsize >> 9);
-#  endif
-# if KFIOC_HAS_DISK_STATS_NSECS
-        part_stat_add(&gd->part0, nsecs[1],   duration * 1000);
-# else
-#  if KFIOC_PART_STAT_REQUIRES_CPU
+#   endif
+#   if KFIOC_HAS_DISK_STATS_NSECS && KFIOC_PART_STAT_REQUIRES_CPU
+        part_stat_add(cpu, &gd->part0, nsecs[1],   duration * 1000);
+#   elif KFIOC_HAS_DISK_STATS_NSECS && ! KFIOC_PART_STAT_REQUIRES_CPU
+	part_stat_add(&gd->part0, nsecs[1],   duration * 1000);
+#   else
+#     if KFIOC_PART_STAT_REQUIRES_CPU
         part_stat_add(cpu, &gd->part0, ticks[1],   kfio_div64_64(duration * HZ, 1000000));
-#  else
+#     else
         part_stat_add(&gd->part0, ticks[1],   kfio_div64_64(duration * HZ, 1000000));
-#  endif
-# endif
+#     endif
+#   endif
         part_stat_unlock();
 # endif /* defined(KFIOC_CONFIG_PREEMPT_RT) */
 # else /* KFIOC_PARTITION_STATS */
@@ -979,8 +981,8 @@ void kfio_disk_stat_read_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t d
         struct gendisk *gd = fgd->gd;
 #endif
 # if KFIOC_PARTITION_STATS
-# if !KFIOC_CONFIG_PREEMPT_RT && !KFIOC_CONFIG_TREE_PREEMPT_RCU
-#  if KFIOC_PART_STAT_REQUIRES_CPU
+#  if !KFIOC_CONFIG_PREEMPT_RT && !KFIOC_CONFIG_TREE_PREEMPT_RCU
+#   if KFIOC_PART_STAT_REQUIRES_CPU
         int cpu;
 
     /* part_stat_lock() with CONFIG_PREEMPT_RT can't be used!
@@ -988,19 +990,21 @@ void kfio_disk_stat_read_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t d
         cpu = part_stat_lock();
         part_stat_inc(cpu, &gd->part0, ios[0]);
         part_stat_add(cpu, &gd->part0, sectors[0], totalsize >> 9);
-#  else
+#   else
         part_stat_inc(&gd->part0, ios[0]);
         part_stat_add(&gd->part0, sectors[0], totalsize >> 9);
-#  endif
-# if KFIOC_HAS_DISK_STATS_NSECS
+#   endif
+#   if KFIOC_HAS_DISK_STATS_NSECS && KFIOC_PART_STAT_REQUIRES_CPU
+	part_stat_add(cpu, &gd->part0, nsecs[0],   duration * 1000);
+#   elif KFIOC_HAS_DISK_STATS_NSECS
         part_stat_add(&gd->part0, nsecs[0],   duration * 1000);
-# else
-#  if KFIOC_PART_STAT_REQUIRES_CPU
+#   else
+#     if KFIOC_PART_STAT_REQUIRES_CPU
         part_stat_add(cpu, &gd->part0, ticks[0],   kfio_div64_64(duration * HZ, 1000000));
-#  else
+#     else
         part_stat_add(&gd->part0, ticks[0],   kfio_div64_64(duration * HZ, 1000000));
-#  endif
-# endif
+#     endif
+#   endif
         part_stat_unlock();
 # endif /* KFIO_CONFIG_PREEMPT_RT */
 # else /* KFIO_PARTITION_STATS */
