@@ -120,7 +120,7 @@ clean:
 	# Add here commands to clean up after the build process.
 	#$(MAKE) clean
 	-rm -rf \
-		"$(CURDIR)driver_source" \
+		"$(CURDIR)/driver_source" \
 		"$(CURDIR)/debian/fio" \
 		$(CURDIR)/debian/$(fio_driver_name)-$(deb_kernel_version) \
 		$(CURDIR)/debian/$(fio_driver_name)-config-$(deb_kernel_version) \

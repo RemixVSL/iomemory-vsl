@@ -823,9 +823,11 @@ void kfio_destroy_disk(kfio_disk_t *disk, destroy_type_t dt)
         }
 
         set_capacity(disk->gd, 0);
+
         if (disk->queue_lock != NULL) {
             fusion_spin_lock_irqsave(disk->queue_lock);
         }
+
         /* Stop delivery of new io from user. */
         set_bit(QUEUE_FLAG_DEAD, &disk->rq->queue_flags);
 
@@ -865,6 +867,7 @@ void kfio_destroy_disk(kfio_disk_t *disk, destroy_type_t dt)
         if (disk->queue_lock != NULL) {
             fusion_spin_unlock_irqrestore(disk->queue_lock);
         }
+
         del_gendisk(disk->gd);
 
         put_disk(disk->gd);
@@ -917,8 +920,8 @@ void kfio_disk_stat_write_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t 
         struct gendisk *gd = fgd->gd;
 #endif
 # if KFIOC_PARTITION_STATS
-# if !KFIOC_CONFIG_PREEMPT_RT && !KFIOC_CONFIG_TREE_PREEMPT_RCU
-#  if KFIOC_PART_STAT_REQUIRES_CPU
+#  if !KFIOC_CONFIG_PREEMPT_RT && !KFIOC_CONFIG_TREE_PREEMPT_RCU
+#   if KFIOC_PART_STAT_REQUIRES_CPU
         int cpu;
 
        /*
@@ -928,19 +931,21 @@ void kfio_disk_stat_write_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t 
         cpu = part_stat_lock();
         part_stat_inc(cpu, &gd->part0, ios[1]);
         part_stat_add(cpu, &gd->part0, sectors[1], totalsize >> 9);
-#  else
+#   else
         part_stat_inc(&gd->part0, ios[1]);
         part_stat_add(&gd->part0, sectors[1], totalsize >> 9);
-#  endif
-# if KFIOC_HAS_DISK_STATS_NSECS
-        part_stat_add(&gd->part0, nsecs[1],   duration * 1000);
-# else
-#  if KFIOC_PART_STAT_REQUIRES_CPU
+#   endif
+#   if KFIOC_HAS_DISK_STATS_NSECS && KFIOC_PART_STAT_REQUIRES_CPU
+        part_stat_add(cpu, &gd->part0, nsecs[1],   duration * 1000);
+#   elif KFIOC_HAS_DISK_STATS_NSECS && ! KFIOC_PART_STAT_REQUIRES_CPU
+	part_stat_add(&gd->part0, nsecs[1],   duration * 1000);
+#   else
+#     if KFIOC_PART_STAT_REQUIRES_CPU
         part_stat_add(cpu, &gd->part0, ticks[1],   kfio_div64_64(duration * HZ, 1000000));
-#  else
+#     else
         part_stat_add(&gd->part0, ticks[1],   kfio_div64_64(duration * HZ, 1000000));
-#  endif
-# endif
+#     endif
+#   endif
         part_stat_unlock();
 # endif /* defined(KFIOC_CONFIG_PREEMPT_RT) */
 # else /* KFIOC_PARTITION_STATS */
@@ -976,8 +981,8 @@ void kfio_disk_stat_read_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t d
         struct gendisk *gd = fgd->gd;
 #endif
 # if KFIOC_PARTITION_STATS
-# if !KFIOC_CONFIG_PREEMPT_RT && !KFIOC_CONFIG_TREE_PREEMPT_RCU
-#  if KFIOC_PART_STAT_REQUIRES_CPU
+#  if !KFIOC_CONFIG_PREEMPT_RT && !KFIOC_CONFIG_TREE_PREEMPT_RCU
+#   if KFIOC_PART_STAT_REQUIRES_CPU
         int cpu;
 
     /* part_stat_lock() with CONFIG_PREEMPT_RT can't be used!
@@ -985,19 +990,21 @@ void kfio_disk_stat_read_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t d
         cpu = part_stat_lock();
         part_stat_inc(cpu, &gd->part0, ios[0]);
         part_stat_add(cpu, &gd->part0, sectors[0], totalsize >> 9);
-#  else
+#   else
         part_stat_inc(&gd->part0, ios[0]);
         part_stat_add(&gd->part0, sectors[0], totalsize >> 9);
-#  endif
-# if KFIOC_HAS_DISK_STATS_NSECS
+#   endif
+#   if KFIOC_HAS_DISK_STATS_NSECS && KFIOC_PART_STAT_REQUIRES_CPU
+	part_stat_add(cpu, &gd->part0, nsecs[0],   duration * 1000);
+#   elif KFIOC_HAS_DISK_STATS_NSECS
         part_stat_add(&gd->part0, nsecs[0],   duration * 1000);
-# else
-#  if KFIOC_PART_STAT_REQUIRES_CPU
+#   else
+#     if KFIOC_PART_STAT_REQUIRES_CPU
         part_stat_add(cpu, &gd->part0, ticks[0],   kfio_div64_64(duration * HZ, 1000000));
-#  else
+#     else
         part_stat_add(&gd->part0, ticks[0],   kfio_div64_64(duration * HZ, 1000000));
-#  endif
-# endif
+#     endif
+#   endif
         part_stat_unlock();
 # endif /* KFIO_CONFIG_PREEMPT_RT */
 # else /* KFIO_PARTITION_STATS */
@@ -1750,6 +1757,7 @@ void kfio_set_write_holdoff(struct kfio_disk *disk)
 
 void kfio_clear_write_holdoff(struct kfio_disk *disk)
 {
+    /* TODO: Double Check. q->mq_ops */
     struct request_queue *q = disk->gd->queue;
 
     fusion_cv_lock_irq(&disk->state_lk);
@@ -1806,6 +1814,7 @@ void kfio_clear_write_holdoff(struct kfio_disk *disk)
 void kfio_mark_lock_pending(kfio_disk_t *fgd)
 {
 #if !defined(__VMKLNX__)
+    /* TODO: Double Check. these could move down, to surpress the warning */
     struct gendisk *gd = fgd->gd;
     struct request_queue *q = gd->queue;
 
@@ -1830,6 +1839,7 @@ void kfio_mark_lock_pending(kfio_disk_t *fgd)
 void kfio_unmark_lock_pending(kfio_disk_t *fgd)
 {
 #if !defined(__VMKLNX__)
+    /* TODO: Double Check. these could move down, to surpress the warning */
     struct gendisk *gd = fgd->gd;
     struct request_queue *q = gd->queue;
 #if KFIOC_REQUEST_QUEUE_HAS_REQUEST_FN
