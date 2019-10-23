@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Create a report to help us improve
+about: Please provide the following information, it helps a lot
 title: ''
 labels: ''
 assignees: ''
@@ -22,13 +22,13 @@ make
 -->
 
 ### Posible solution
-<!-- is a solution know? -->
+<!-- is a solution know, or any plausible suggestions -->
 
 ### Environment information
  <!-- Information about the system the module is used on
-1. Linux kernel compiled against
-2. The C compiler version used
-3. distribution, and version
+1. Linux kernel compiled against (uname -a)
+2. The C compiler version used (gcc --version)
+3. distribution, and version 
 4. Branch of iomemory-vsl that is being compiled
 5. FIO device used, if applicable
    * fio-status
