@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Please provide the following information, it helps a lot
+about: Something broke
 title: ''
 labels: ''
 assignees: ''
