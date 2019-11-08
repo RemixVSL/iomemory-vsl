@@ -43,8 +43,7 @@ Installation can be done according to the original README.
 A dkms.conf file is supplied, so it should be plug and play:
 ```
 sudo cp -r iomemory-vsl/root/usr/src/iomemory-vsl-3.2.15 /usr/src/
-sudo mkdir -p /var/lib/dkms/iomemory-vsl/3.2.15/build
-sudo ln -s /usr/src/iomemory-vsl-3.2.15 /var/lib/dkms/iomemory-vsl/3.2.15/source
+sudo dkms add -m iomemory-vsl -v 3.2.15
 sudo dkms build -m iomemory-vsl -v 3.2.15
 sudo dkms install -m iomemory-vsl -v 3.2.15
 sudo modprobe iomemory-vsl
