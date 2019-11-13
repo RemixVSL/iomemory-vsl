@@ -921,7 +921,6 @@ void kfio_disk_stat_write_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t 
 #endif
 # if KFIOC_PARTITION_STATS
 #  if !KFIOC_CONFIG_PREEMPT_RT && !KFIOC_CONFIG_TREE_PREEMPT_RCU
-#   if KFIOC_PART_STAT_REQUIRES_CPU
         int cpu;
 
        /*
@@ -929,6 +928,7 @@ void kfio_disk_stat_write_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t 
         * rcu_read_update which is GPL in the RT patch set.
         */
         cpu = part_stat_lock();
+#   if KFIOC_PART_STAT_REQUIRES_CPU
         part_stat_inc(cpu, &gd->part0, ios[1]);
         part_stat_add(cpu, &gd->part0, sectors[1], totalsize >> 9);
 #   else
