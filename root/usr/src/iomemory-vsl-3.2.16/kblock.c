@@ -1126,7 +1126,7 @@ static int kfio_bio_is_discard(struct bio *bio)
 /// @brief   Dump an OS bio to the log
 /// @param   msg   prefix for message
 /// @param   bio   the bio to drop
-static void kfio_dump_bio(const char *msg, const struct bio * const bio)
+static void kfio_dump_bio(const char *msg, struct bio * bio)
 {
     uint64_t sector;
 
