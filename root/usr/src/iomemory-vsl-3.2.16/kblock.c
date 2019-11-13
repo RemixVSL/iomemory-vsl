@@ -2032,11 +2032,11 @@ static int kfio_make_request(struct request_queue *queue, struct bio *bio)
     //   and re-submit the remainder to the request queue. blk_queue_split() does all that for us.
     // It appears the kernel quit honoring the blk_queue_max_segments() in about 4.13.
 # if KFIOC_BIO_HAS_BIO_SEGMENTS
-    if (bio_segments(bio) > queue_max_segments(queue))
+    if (bio_segments(bio) >= queue_max_segments(queue))
 # elif KFIOC_BIO_HAS_BI_PHYS_SEGMENTS
-    if (bio->bi_phys_segments > queue_max_segments(queue))
+    if (bio->bi_phys_segments >= queue_max_segments(queue))
 # else
-    if (bio_phys_segments(queue, bio) > queue_max_segments(queue))
+    if (bio_phys_segments(queue, bio) >= queue_max_segments(queue))
 # endif
     {
         blk_queue_split(queue, &bio);
