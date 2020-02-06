@@ -53,9 +53,11 @@ LAST_KFIO_LIB := $(shell ls -1 kfio | sort | tail -1)
 
 NCPUS:=$(shell grep -c ^processor /proc/cpuinfo)
 
-all: modules
+all: modules patch_module
 
-gpl: fake_license modules
+gpl: fake_license modules patch_module
+
+.PHONY: pre_commit
 
 .PHONY: fake_license
 fake_license:
@@ -97,6 +99,15 @@ check_target_kernel:
 		$(MAKE) clean ; \
 	fi
 
+.PHONY: patch_module_version
+patch_module_version:
+	@ret="$$("$(shell pwd)"/patch_module_version.sh "$(FIO_DRIVER_NAME)".ko)" ; \
+	if [ -n "$$ret" ] ; then \
+		echo "" ; \
+		echo ""$$ret"" ; \
+		echo "" ; \
+	fi
+
 modules modules_install: check_n_fix_kfio_ccver check_target_kernel include/fio/port/linux/kfio_config.h
 	$(MAKE) \
     -j$(NCPUS) \
@@ -110,5 +121,7 @@ modules modules_install: check_n_fix_kfio_ccver check_target_kernel include/fio/
 	INSTALL_MOD_PATH=$(INSTALL_ROOT) \
 	KFIO_LIB=$(KFIO_LIB) \
 	$@
+
+patch_module: patch_module_version
 
 endif

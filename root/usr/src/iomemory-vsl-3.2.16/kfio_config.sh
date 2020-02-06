@@ -428,7 +428,7 @@ start_tests()
         KFIOC_COUNT=$( pgrep -fc "kfio_config.sh -a" )
         while [ $KFIOC_COUNT -gt $TEST_RATE ]
         do
-            sleep .2
+            sleep .1
             KFIOC_COUNT=$( pgrep -fc "kfio_config.sh -a" )
         done
     done
@@ -540,7 +540,7 @@ $1
     local test_dir="${CONFIGDIR}/${kfioc_flag}"
     local result=0
     local license="
-MODULE_LICENSE(\"Proprietary\");
+MODULE_LICENSE(\"GPL\");
 "
 
     mkdir -p "$test_dir"
