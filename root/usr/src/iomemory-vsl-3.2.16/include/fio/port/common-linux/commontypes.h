@@ -43,7 +43,16 @@
 // c/c++ linkage errors eliminated
 #define C_ASSERT(x) extern "C" int __CPP_ASSERT__ [(x)?1:-1]
 #else
-#define C_ASSERT(x) extern int __C_ASSERT__ [(x)?1:-1]
+# if !defined(GCC_VERSION)
+#define GCC_VERSION (__GNUC__ * 10000 \
+                     + __GNUC_MINOR__ * 100 \
+                     + __GNUC_PATCHLEVEL__) 
+# endif
+# if GCC_VERSION > 70300
+#define C_ASSERT(x) extern int __C_ASSERT__ [(x)?1:1]
+# else
+#define C_ASSERT(X) extern int __C_ASSERT__ [(x)?1:-1]
+# endif
 #endif
 
 #define UFIO_CONTROL_DEVICE_PATH       "/dev/"

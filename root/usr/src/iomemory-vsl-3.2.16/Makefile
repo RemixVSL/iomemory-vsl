@@ -45,6 +45,7 @@ CCMAJOR ?= $(shell echo __GNUC__ | $(FIOCC) -E -xc - | tail -n 1)
 CCMINOR ?= $(shell echo __GNUC_MINOR__ | $(FIOCC) -E -xc - | tail -n 1)
 CCVER=$(CCMAJOR)$(CCMINOR)
 LAST_CCVER := $(shell ls -1 kfio | sed -n 's/.*_cc\([0-9][0-9]*\)_.*/\1/p' | tail -1)
+MODULE_VERSION ?= $(shell git rev-parse --short HEAD)
 
 TARGET ?= $(FIOARCH)_cc$(CCMAJOR)$(CCMINOR)
 
@@ -53,9 +54,9 @@ LAST_KFIO_LIB := $(shell ls -1 kfio | sort | tail -1)
 
 NCPUS:=$(shell grep -c ^processor /proc/cpuinfo)
 
-all: modules
+all: modules patch_module_version
 
-gpl: fake_license modules
+gpl: fake_license modules patch_module_version
 
 .PHONY: fake_license
 fake_license:
@@ -76,7 +77,7 @@ clean modules_clean:
 		FIO_DRIVER_NAME=$(FIO_DRIVER_NAME) \
 		FIO_SCSI_DEVICE=$(FIO_SCSI_DEVICE) \
 		FUSION_DRIVER_DIR=$(shell pwd) \
-		SUBDIRS=$(shell pwd) \
+		KBUILD_EXTMOD=$(shell pwd) \
 		EXTRA_CFLAGS+="$(CFLAGS)" \
 		KFIO_LIB=$(KFIO_LIB) \
 		clean
@@ -97,14 +98,23 @@ check_target_kernel:
 		$(MAKE) clean ; \
 	fi
 
-modules modules_install: check_n_fix_kfio_ccver check_target_kernel include/fio/port/linux/kfio_config.h
+.PHONY: add_module_version patch_module_version 
+add_module_version patch_module_version:
+	@ret="$$("$(shell pwd)"/patch_module_version.sh "$(FIO_DRIVER_NAME)".ko "$(MODULE_VERSION)")" ; \
+	if [ -n "$$ret" ] ; then \
+		echo "" ; \
+		echo ""$$ret"" ; \
+		echo "" ; \
+	fi
+
+modules modules_install: check_n_fix_kfio_ccver check_target_kernel include/fio/port/linux/kfio_config.h add_module_version
 	$(MAKE) \
     -j$(NCPUS) \
 	-C $(KERNEL_SRC) \
 	FIO_DRIVER_NAME=$(FIO_DRIVER_NAME) \
 	FIO_SCSI_DEVICE=$(FIO_SCSI_DEVICE) \
 	FUSION_DRIVER_DIR=$(shell pwd) \
-	SUBDIRS=$(shell pwd) \
+	KBUILD_EXTMOD=$(shell pwd) \
 	EXTRA_CFLAGS+="$(CFLAGS)" \
 	INSTALL_MOD_DIR=$(FIO_DRIVER_SUBDIR) \
 	INSTALL_MOD_PATH=$(INSTALL_ROOT) \
