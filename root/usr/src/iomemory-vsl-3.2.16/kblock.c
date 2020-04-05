@@ -1758,7 +1758,9 @@ void kfio_set_write_holdoff(struct kfio_disk *disk)
 void kfio_clear_write_holdoff(struct kfio_disk *disk)
 {
     /* TODO: Double Check. q->mq_ops */
+#if KFIOC_X_REQUEST_QUEUE_HAS_REQUEST_FN
     struct request_queue *q = disk->gd->queue;
+#endif
 
     fusion_cv_lock_irq(&disk->state_lk);
     fio_clear_bit(KFIO_DISK_HOLDOFF_BIT, &disk->disk_state);
@@ -1815,10 +1817,9 @@ void kfio_mark_lock_pending(kfio_disk_t *fgd)
 {
 #if !defined(__VMKLNX__)
     /* TODO: Double Check. these could move down, to surpress the warning */
+#if KFIOC_X_REQUEST_QUEUE_HAS_REQUEST_FN
     struct gendisk *gd = fgd->gd;
     struct request_queue *q = gd->queue;
-
-#if KFIOC_X_REQUEST_QUEUE_HAS_REQUEST_FN
     /*
      * Only the request_fn driven model issues requests in a non-blocking
      * manner. The direct queued model does not need this.
@@ -1840,9 +1841,9 @@ void kfio_unmark_lock_pending(kfio_disk_t *fgd)
 {
 #if !defined(__VMKLNX__)
     /* TODO: Double Check. these could move down, to surpress the warning */
+#if KFIOC_X_REQUEST_QUEUE_HAS_REQUEST_FN
     struct gendisk *gd = fgd->gd;
     struct request_queue *q = gd->queue;
-#if KFIOC_X_REQUEST_QUEUE_HAS_REQUEST_FN
     if (q->request_fn)
     {
         kfio_disk_t *disk = q->queuedata;
