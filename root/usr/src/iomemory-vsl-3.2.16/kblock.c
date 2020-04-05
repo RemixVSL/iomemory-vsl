@@ -937,7 +937,7 @@ void kfio_disk_stat_write_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t 
 #   endif
 #   if KFIOC_X_HAS_DISK_STATS_NSECS && KFIOC_X_PART_STAT_REQUIRES_CPU
         part_stat_add(cpu, &gd->part0, nsecs[1],   duration * 1000);
-#   elif KFIOC_X_HAS_DISK_STATS_NSECS && ! KFIOC_XPART_STAT_REQUIRES_CPU
+#   elif KFIOC_X_HAS_DISK_STATS_NSECS && ! KFIOC_X_PART_STAT_REQUIRES_CPU
 	      part_stat_add(&gd->part0, nsecs[1],   duration * 1000);
 #   else
 #     if KFIOC_X_PART_STAT_REQUIRES_CPU
