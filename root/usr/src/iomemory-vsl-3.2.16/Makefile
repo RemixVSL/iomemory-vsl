@@ -98,7 +98,7 @@ check_target_kernel:
 		$(MAKE) clean ; \
 	fi
 
-.PHONY: add_module_version patch_module_version 
+.PHONY: add_module_version patch_module_version
 add_module_version patch_module_version:
 	@ret="$$("$(shell pwd)"/patch_module_version.sh "$(FIO_DRIVER_NAME)".ko "$(MODULE_VERSION)")" ; \
 	if [ -n "$$ret" ] ; then \

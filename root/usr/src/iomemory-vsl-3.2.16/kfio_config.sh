@@ -88,8 +88,6 @@ KFIOC_HAS_BLK_DELAY_QUEUE
 KFIOC_SPINLOCK_TYPE_CHECK
 KFIOC_REQUEST_QUEUE_HAS_UNPLUG_FN
 KFIOC_REQUEST_QUEUE_UNPLUG_FN_HAS_EXTRA_BOOL_PARAM
-KFIOC_REQUEST_QUEUE_HAS_REQUEST_FN
-KFIOC_REQUEST_QUEUE_HAS_QUEUE_LOCK_POINTER
 KFIOC_BACKING_DEV_INFO_HAS_UNPLUG_IO_FN
 KFIOC_HAS_KMEM_CACHE
 KFIOC_HAS_MUTEX_SUBSYSTEM
@@ -97,7 +95,6 @@ KFIOC_STRUCT_FILE_HAS_PATH
 KFIOC_HAS_PATH_LOOKUP
 KFIOC_UNREGISTER_BLKDEV_RETURNS_VOID
 KFIOC_PARTITION_STATS
-KFIOC_PART_STAT_REQUIRES_CPU
 KFIOC_HAS_NEW_BLOCK_METHODS
 KFIOC_BLOCK_DEVICE_RELEASE_RETURNS_INT
 KFIOC_HAS_NEW_BLKDEV_METHODS
@@ -143,7 +140,6 @@ KFIOC_QUEUE_HAS_NONROT_FLAG
 KFIOC_QUEUE_HAS_RANDOM_FLAG
 KFIOC_KBLOCKD_SCHEDULE_HAS_QUEUE_ARG
 KFIOC_TASK_HAS_NR_CPUS_ALLOWED
-KFIOC_TASK_HAS_CPUS_ALLOWED
 KFIOC_TASK_HAS_BOUND_FLAG
 KFIOC_NUMA_MAPS
 KFIOC_PCI_HAS_NUMA_INFO
@@ -182,8 +178,6 @@ KFIOC_HAS_CPUMASK_WEIGHT
 KFIOC_BIO_HAS_USCORE_BI_CNT
 KFIOC_BIO_ENDIO_REMOVED_ERROR
 KFIOC_BIO_ERROR_CHANGED_TO_STATUS
-KFIOC_BIO_HAS_BIO_SEGMENTS
-KFIOC_BIO_HAS_BI_PHYS_SEGMENTS
 KFIOC_MAKE_REQUEST_FN_UINT
 KFIOC_GET_USER_PAGES_REQUIRES_TASK
 KFIOC_BARRIER_USES_QUEUE_FLAGS
@@ -197,16 +191,6 @@ KFIOC_ELEVATOR_EXIT_HAS_REQQ_PARAM
 KFIOC_HAS_BLK_RQ_IS_PASSTHROUGH
 KFIOC_HAS_BLK_QUEUE_BOUNCE
 KFIOC_HAS_BLK_QUEUE_SPLIT2
-KFIOC_HAS_BLK_QUEUE_FLAG_OPS
-KFIOC_BIO_HAS_ERROR
-KFIOC_REQ_HAS_ERRORS
-KFIOC_REQ_HAS_ERROR_COUNT
-KFIOC_BOUNCE_H
-KFIOC_HAS_TIMER_SETUP
-KFIOC_HAS_DISK_STATS_NSECS
-KFIOC_HAS_COARSE_REAL_TS
-KFIOC_HAS_ELEVATOR_INIT
-KFIOC_PART0_HAS_IN_FLIGHT
 "
 
 
@@ -907,50 +891,6 @@ KFIOC_REQUEST_QUEUE_HAS_UNPLUG_FN()
 void kfioc_test_request_queue_unplug(void) {
     struct request_queue q = { .unplug_fn = NULL };
     (void)q;
-}
-'
-
-    kfioc_test "$test_code" "$test_flag" 1
-}
-
-# flag:           KFIOC_REQUEST_QUEUE_HAS_REQUEST_FN
-# values:
-#                 0     for newer kernels that don't have request_fn member in struct request_queue.
-#                 1     for older kernels that have request_fn member in struct request_queue.
-# git commit:     NA
-# comments:
-KFIOC_REQUEST_QUEUE_HAS_REQUEST_FN()
-{
-    local test_flag="$1"
-    local test_code='
-#include <linux/blkdev.h>
-
-void kfioc_test_request_queue_request_fn(void) {
-    struct request_queue q = { .request_fn = NULL };
-    (void)q;
-}
-'
-
-    kfioc_test "$test_code" "$test_flag" 1
-}
-
-
-# flag:           KFIOC_REQUEST_QUEUE_HAS_QUEUE_LOCK_POINTER
-# values:
-#                 0     starting 5.0 the request_queue has a spinlock_t for queue_lock
-#                 1     pre 5.0 kernels have a spinlock_t *queue_lock in request_queue.
-# git commit:     NA
-# comments:
-KFIOC_REQUEST_QUEUE_HAS_QUEUE_LOCK_POINTER()
-{
-    local test_flag="$1"
-    local test_code='
-#include <linux/blkdev.h>
-
-void kfioc_test_request_queue_has_queue_lock_pointer(void) {
-    spinlock_t *l;
-    struct request_queue *q;
-    q->queue_lock = l;
 }
 '
 
@@ -1813,46 +1753,6 @@ void kfioc_has_inflight_rw_atomic(void)
     kfioc_test "$test_code" "$test_flag" 1 -Wframe-larger-than=2048
 }
 
-# flag:           KFIOC_PART_STAT_REQUIRES_CPU
-# values:
-#                 0     newer kernels don't need the cpu for stats
-#                 1     older kernels need the cpu for stats
-# git commit:
-# comments:       in newer
-KFIOC_PART_STAT_REQUIRES_CPU()
-{
-    local test_flag="$1"
-    local test_code='
-#include <linux/genhd.h>
-struct gendisk *gd;
-void kfioc_test_part_stat_requires_cpu(void) {
-  part_stat_inc(1, &gd->part0, ios[0]);
-}
-'
-
-    kfioc_test "$test_code" "$test_flag" 1
-}
-
-# flag:           KFIOC_PART0_HAS_IN_FLIGHT
-# values:
-#                 0     beyond 5 the struct has no in_flight
-#                 1     older kernels do have in_flight
-# git commit:
-# comments:       yada
-KFIOC_PART0_HAS_IN_FLIGHT()
-{
-    local test_flag="$1"
-    local test_code='
-#include <linux/genhd.h>
-struct gendisk *gd;
-void kfioc_test_part0_has_in_flight(void) {
-  return gd->part0.in_flight;
-}
-'
-
-    kfioc_test "$test_code" "$test_flag" 1
-}
-
 # flag:           KFIOC_HAS_BLK_LIMITS_IO_MIN
 #                 1     if the kernel defines blk_limits_io_min
 #                 0     if the kernel does not
@@ -2171,24 +2071,6 @@ void kfioc_check_task_has_nr_cpus_allowed(void)
     kfioc_test "$test_code" "$test_flag" 1 -Werror
 }
 
-# flag:          KFIOC_TASK_HAS_CPUS_ALLOWED
-# usage:         1   Task struct has CPUs allowed as mask
-#                0   It does not
-KFIOC_TASK_HAS_CPUS_ALLOWED()
-{
-    local test_flag="$1"
-    local test_code='
-#include <linux/sched.h>
-void kfioc_check_task_has_cpus_allowed(void)
-{
-    cpumask_t *cpu_mask = NULL;
-    struct task_struct *tsk = NULL;
-    tsk->cpus_allowed = *cpu_mask;
-}
-'
-    kfioc_test "$test_code" "$test_flag" 1 -Werror
-}
-
 # flag:          KFIOC_TASK_HAS_BOUND_FLAG
 # usage:         1   Task struct PF_THREAD_BOUND flag for affinity
 #                0   It does not
@@ -2307,23 +2189,6 @@ void has_queue_flag_clear_unlocked(void)
 }
 '
     kfioc_test "$test_code" KFIOC_HAS_QUEUE_FLAG_CLEAR_UNLOCKED 1 -Werror
-}
-
-# flag:          KFIOC_HAS_BLK_QUEUE_FLAG_OPS
-# usage:         1   request queue limits structure has 'queue_flag_clear_unlocked' function.
-#                0   It does not
-KFIOC_HAS_BLK_QUEUE_FLAG_OPS()
-{
-    local test_flag="$1"
-    local test_code='
-#include <linux/blkdev.h>
-void has_queue_blk_queue_flag_ops(void)
-{
-     struct request_queue q;
-     blk_queue_flag_clear(0, &q);
-}
-'
-    kfioc_test "$test_code" KFIOC_HAS_BLK_QUEUE_FLAG_OPS 1 "-Werror -Werror=frame-larger-than=4096"
 }
 
 # flag:          KFIOC_HAS_BIO_COMP_CPU
@@ -2734,41 +2599,6 @@ void kfioc_test_bio_remaining(void) {
     kfioc_test "$test_code" "$test_flag" 1 -Werror-implicit-function-declaration
 }
 
-# flag:           KFIOC_BIO_HAS_BIO_SEGMENTS
-# usage:          0     if kernel has no bio_segments
-#                 1     if kernel has bio_segments
-KFIOC_BIO_HAS_BIO_SEGMENTS()
-{
-    local test_flag="$1"
-    local test_code=' 
-#include <linux/bio.h>
-
-void kfioc_test_bio_has_bio_segments(void) {
-    struct bio *bio = NULL;
-    unsigned segs;
-    segs = bio_segments(bio);
-}
-'
-    kfioc_test "$test_code" "$test_flag" 1 -Werror-implicit-function-declaration
-}
-
-# flag:           KFIOC_BIO_HAS_BI_PHYS_SEGMENTS
-# usage:          0     if bio has no bi_phys_segments
-#                 1     if bio has bi_phys_segments
-KFIOC_BIO_HAS_BI_PHYS_SEGMENTS()
-{
-    local test_flag="$1"
-    local test_code='
-#include <linux/bio.h>
-
-void kfioc_test_bio_has_bi_phys_segments(void) {
-	struct bio bio;
-	void *test = &(bio.bi_phys_segments);
-}
-'
-    kfioc_test "$test_code" "$test_flag" 1 -Werror-implicit-function-declaration
-}
-
 # flag:           KFIOC_HAS_FILE_INODE_HELPER
 # usage:          undef for automatic selection by kernel version
 #                 0     if the kernel does not have file_inode() helper
@@ -2857,80 +2687,6 @@ KFIOC_BIO_ERROR_CHANGED_TO_STATUS()
 void kfioc_bio_error_changed_to_status(struct bio* bi)
 {
     bi->bi_status = BLK_STS_OK;
-}
-'
-    kfioc_test "$test_code" "$test_flag" 1
-}
-
-
-# flag:           KFIOC_BIO_HAS_ERROR
-# usage:          1 if bio.bi_error does not exist, 0 if instead
-# git commit:
-# kernel version: v4.14-rc4
-KFIOC_BIO_HAS_ERROR()
-{
-    local test_flag="$1"
-    local test_code='
-#include <linux/bio.h>
-
-void kfioc_bio_has_error(void) {
-    struct bio test_bio;
-    (void) test_bio.error;
-}
-'
-    kfioc_test "$test_code" "$test_flag" 1
-}
-
-# flag:           KFIOC_REQ_HAS_ERRORS
-# usage:          1 if req.errors does not exist, 0 if instead
-# git commit:
-# kernel version: v4.10
-KFIOC_REQ_HAS_ERRORS()
-{
-    local test_flag="$1"
-    local test_code='
-#include <linux/blkdev.h>
-
-void kfioc_req_has_errors(void) {
-    struct request *req;
-    req->errors = 1;
-}
-'
-    kfioc_test "$test_code" "$test_flag" 1
-}
-
-# flag:           KFIOC_REQ_HAS_ERROR_COUNT
-# usage:          1 if req.error_count does not exist, 0 if instead
-# git commit:
-# kernel version: v4.14-rc4
-KFIOC_REQ_HAS_ERROR_COUNT()
-{
-    local test_flag="$1"
-    local test_code='
-#include <linux/blkdev.h>
-
-void kfioc_req_has_error_count(void) {
-    struct request *req;
-    req->error_count = 1;
-}
-'
-    kfioc_test "$test_code" "$test_flag" 1
-}
-
-# flag:           KFIOC_BOUNCE_H
-# usage:          1 if no bounce.h, 0 has bounce.h
-#                 bounce was seperated out from highmem
-# git commit:
-# kernel version: v4.14-rc4
-KFIOC_BOUNCE_H()
-{
-    local test_flag="$1"
-    local test_code='
-#include <linux/bounce.h>
-
-void kfioc_bio_has_error(void) {
-    struct bio test_bio;
-    (void) test_bio.error;
 }
 '
     kfioc_test "$test_code" "$test_flag" 1
@@ -3093,29 +2849,6 @@ KFIOC_HAS_HOTPLUG_STATES_REMOVAL_BUG()
 }
 
 
-# flag:           KFIOC_HAS_TIMER_SETUP
-# usage:          1   linux/time.h has `timer_setup((struct timer_list *)  timer, fusion_timer_callback, 0)
-#                 0   not timer_setup, use function and data of timer instead
-# git commit:
-# kernel version: v4.15
-KFIOC_HAS_TIMER_SETUP() {
-    local test_flag="$1"
-    local test_code='
-#include <linux/time.h>
-
-static void timer_callback(struct timer_list *t) {
-}
-
-void kfioc_has_timer_setup(void) {
-    struct timer_list *timer;
-    timer_setup((struct timer_list *)  timer, timer_callback, 0);
-}
-'
-    kfioc_test "$test_code" "$test_flag" 1
-
-}
-
-
 # flag:            KFIOC_HAS_PCI_ENABLE_MSIX_EXACT
 # usage:           1 pci_enable_msix_exact() function exists
 #                  0 Use the older pci_enable_msix() function.
@@ -3217,67 +2950,6 @@ void test_has_blk_queue_split2(struct request_queue *rq, struct bio **bio)
 '
     kfioc_test "$test_code" "$test_flag" 1 -Werror
 }
-
-# flag:            KFIOC_HAS_DISK_STATS_NSECS
-# usage:           1 struct disk_stats has nsecs member
-#                  0 struct is still uses ticks member
-# kernel version:  Added in 4.19 to log disk stats with nanoseconds
-#                  commit "block: use nanosecond resolution for iostat"
-KFIOC_HAS_DISK_STATS_NSECS()
-{
-    local test_flag="$1"
-    local test_code='
-#include <linux/genhd.h>
-
-void test_has_disk_stats_nsecs(void)
-{
-    struct disk_stats stat = { .nsecs = 0 };
-    (void)stat;
-}
-'
-    kfioc_test "$test_code" "$test_flag" 1
-}
-
-# flag:            KFIOC_HAS_COARSE_REAL_TS
-# usage:           1 kernel exports ktime_get_coarse_real_ts64()
-#                  0 old kernel with current_kernel_time()
-# kernel version:  Added in 4.18 to provide a 64 bit time interface
-#                  commit: "timekeeping: Standardize on ktime_get_*() naming"
-KFIOC_HAS_COARSE_REAL_TS()
-{
-    local test_flag="$1"
-    local test_code='
-#include <linux/timekeeping.h>
-
-void test_has_coarse_real_ts(void)
-{
-    struct timespec64 ts;
-    ktime_get_coarse_real_ts64(&ts);
-}
-'
-    kfioc_test "$test_code" "$test_flag" 1
-}
-
-# flag:            KFIOC_HAS_ELEVATOR_INIT
-# usage:           1 kernel has 2 parameter elevator_init()
-#                  0 newer kernel without that function
-# kernel version:  Symbol export removed in 4.18. Since then only internal
-#                  commit: "block: unexport elevator_init/exit"
-KFIOC_HAS_ELEVATOR_INIT()
-{
-    local test_flag="$1"
-    local test_code='
-#include <linux/elevator.h>
-
-test_has_elevator_init(void)
-{
-    struct request_queue *q;
-    elevator_init(q, "noop");
-}
-'
-    kfioc_test "$test_code" "$test_flag" 1
-}
-
 
 
 ###############################################################################
@@ -3384,6 +3056,8 @@ EOF
         echo "Please make sure your kernel development package is installed."
         exit $EX_OSFILE;
     fi
+
+    . ./kfio_config_add.sh
 
     start_tests
 

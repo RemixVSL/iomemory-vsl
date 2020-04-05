@@ -612,7 +612,7 @@ int kfio_create_disk(struct fio_device *dev, kfio_pci_dev_t *pdev, uint32_t sect
 #endif
 
 #if KFIOC_HAS_QUEUE_FLAG_CLUSTER
-# if KFIOC_HAS_BLK_QUEUE_FLAG_OPS
+# if KFIOC_X_HAS_BLK_QUEUE_FLAG_OPS
     blk_queue_flag_clear(QUEUE_FLAG_CLUSTER, rq);
 # else
 #  if KFIOC_HAS_QUEUE_FLAG_CLEAR_UNLOCKED
@@ -649,7 +649,7 @@ int kfio_create_disk(struct fio_device *dev, kfio_pci_dev_t *pdev, uint32_t sect
         }
 #endif  /* KFIOC_DISCARD_ZEROES_IN_LIMITS */
 
-#if KFIOC_HAS_BLK_QUEUE_FLAG_OPS
+#if KFIOC_X_HAS_BLK_QUEUE_FLAG_OPS
         blk_queue_flag_set(QUEUE_FLAG_DISCARD, rq);
 #else
         queue_flag_set_unlocked(QUEUE_FLAG_DISCARD, rq);
@@ -677,7 +677,7 @@ int kfio_create_disk(struct fio_device *dev, kfio_pci_dev_t *pdev, uint32_t sect
      */
     rq->flush_flags = REQ_FUA | REQ_FLUSH;
 #elif KFIOC_BARRIER_USES_QUEUE_FLAGS
-# if KFIOC_HAS_BLK_QUEUE_FLAG_OPS
+# if KFIOC_X_HAS_BLK_QUEUE_FLAG_OPS
     blk_queue_flag_set(QUEUE_FLAG_WC, rq);
 # else
     queue_flag_set(QUEUE_FLAG_WC, rq);
@@ -691,7 +691,7 @@ int kfio_create_disk(struct fio_device *dev, kfio_pci_dev_t *pdev, uint32_t sect
 
 #if KFIOC_QUEUE_HAS_NONROT_FLAG
     /* Tell the kernel we are a non-rotational storage device */
-# if KFIOC_HAS_BLK_QUEUE_FLAG_OPS
+# if KFIOC_X_HAS_BLK_QUEUE_FLAG_OPS
     blk_queue_flag_set(QUEUE_FLAG_NONROT, rq);
 # else
     queue_flag_set_unlocked(QUEUE_FLAG_NONROT, rq);
@@ -699,7 +699,7 @@ int kfio_create_disk(struct fio_device *dev, kfio_pci_dev_t *pdev, uint32_t sect
 #endif
 #if KFIOC_QUEUE_HAS_RANDOM_FLAG
     /* Disable device global entropy contribution */
-# if KFIOC_HAS_BLK_QUEUE_FLAG_OPS
+# if KFIOC_X_HAS_BLK_QUEUE_FLAG_OPS
     blk_queue_flag_clear(QUEUE_FLAG_ADD_RANDOM, rq);
 # else
     queue_flag_clear_unlocked(QUEUE_FLAG_ADD_RANDOM, rq);
@@ -928,19 +928,19 @@ void kfio_disk_stat_write_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t 
         * rcu_read_update which is GPL in the RT patch set.
         */
         cpu = part_stat_lock();
-#   if KFIOC_PART_STAT_REQUIRES_CPU
+#   if KFIOC_X_PART_STAT_REQUIRES_CPU
         part_stat_inc(cpu, &gd->part0, ios[1]);
         part_stat_add(cpu, &gd->part0, sectors[1], totalsize >> 9);
 #   else
         part_stat_inc(&gd->part0, ios[1]);
         part_stat_add(&gd->part0, sectors[1], totalsize >> 9);
 #   endif
-#   if KFIOC_HAS_DISK_STATS_NSECS && KFIOC_PART_STAT_REQUIRES_CPU
+#   if KFIOC_X_HAS_DISK_STATS_NSECS && KFIOC_X_PART_STAT_REQUIRES_CPU
         part_stat_add(cpu, &gd->part0, nsecs[1],   duration * 1000);
-#   elif KFIOC_HAS_DISK_STATS_NSECS && ! KFIOC_PART_STAT_REQUIRES_CPU
-	part_stat_add(&gd->part0, nsecs[1],   duration * 1000);
+#   elif KFIOC_X_HAS_DISK_STATS_NSECS && ! KFIOC_XPART_STAT_REQUIRES_CPU
+	      part_stat_add(&gd->part0, nsecs[1],   duration * 1000);
 #   else
-#     if KFIOC_PART_STAT_REQUIRES_CPU
+#     if KFIOC_X_PART_STAT_REQUIRES_CPU
         part_stat_add(cpu, &gd->part0, ticks[1],   kfio_div64_64(duration * HZ, 1000000));
 #     else
         part_stat_add(&gd->part0, ticks[1],   kfio_div64_64(duration * HZ, 1000000));
@@ -953,7 +953,7 @@ void kfio_disk_stat_write_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t 
 #  if KFIOC_HAS_DISK_STATS_READ_WRITE_ARRAYS
         disk_stat_inc(gd, ios[1]);
         disk_stat_add(gd, sectors[1], totalsize >> 9);
-# if KFIOC_HAS_DISK_STATS_NSECS
+# if KFIOC_X_HAS_DISK_STATS_NSECS
         disk_stat_add(gd, nsecs[1], jiffies_to_nsecs(fusion_usectohz(duration)));
 # else
         disk_stat_add(gd, ticks[1], fusion_usectohz(duration));
@@ -987,19 +987,19 @@ void kfio_disk_stat_read_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t d
     /* part_stat_lock() with CONFIG_PREEMPT_RT can't be used!
        It ends up calling rcu_read_update which is GPL in the RT patch set */
         cpu = part_stat_lock();
-#   if KFIOC_PART_STAT_REQUIRES_CPU
+#   if KFIOC_X_PART_STAT_REQUIRES_CPU
         part_stat_inc(cpu, &gd->part0, ios[0]);
         part_stat_add(cpu, &gd->part0, sectors[0], totalsize >> 9);
 #   else
         part_stat_inc(&gd->part0, ios[0]);
         part_stat_add(&gd->part0, sectors[0], totalsize >> 9);
 #   endif
-#   if KFIOC_HAS_DISK_STATS_NSECS && KFIOC_PART_STAT_REQUIRES_CPU
+#   if KFIOC_X_HAS_DISK_STATS_NSECS && KFIOC_X_PART_STAT_REQUIRES_CPU
 	part_stat_add(cpu, &gd->part0, nsecs[0],   duration * 1000);
-#   elif KFIOC_HAS_DISK_STATS_NSECS
+#   elif KFIOC_X_HAS_DISK_STATS_NSECS
         part_stat_add(&gd->part0, nsecs[0],   duration * 1000);
 #   else
-#     if KFIOC_PART_STAT_REQUIRES_CPU
+#     if KFIOC_X_PART_STAT_REQUIRES_CPU
         part_stat_add(cpu, &gd->part0, ticks[0],   kfio_div64_64(duration * HZ, 1000000));
 #     else
         part_stat_add(&gd->part0, ticks[0],   kfio_div64_64(duration * HZ, 1000000));
@@ -1011,7 +1011,7 @@ void kfio_disk_stat_read_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t d
 #  if KFIOC_HAS_DISK_STATS_READ_WRITE_ARRAYS
         disk_stat_inc(gd, ios[0]);
         disk_stat_add(gd, sectors[0], totalsize >> 9);
-# if KFIOC_HAS_DISK_STATS_NSECS
+# if KFIOC_X_HAS_DISK_STATS_NSECS
         disk_stat_add(gd, nsecs[0], jiffies_to_nsecs(fusion_usectohz(duration)));
 # else
         disk_stat_add(gd, ticks[0], fusion_usectohz(duration));
@@ -1051,7 +1051,7 @@ int kfio_get_gd_in_flight(kfio_disk_t *fgd, int rw)
 #else
     return gd->part0.in_flight[dir];
 #endif /* KFIOC_HAS_INFLIGHT_RW_ATOMIC */
-#elif KFIOC_PART0_HAS_IN_FLIGHT
+#elif KFIOC_X_PART0_HAS_IN_FLIGHT
     return gd->part0.in_flight;
 #else
     return part_stat_read(&gd->part0, ios[STAT_WRITE]);
@@ -1083,7 +1083,7 @@ void kfio_set_gd_in_flight(kfio_disk_t *fgd, int rw, int in_flight)
 #else
         gd->part0.in_flight[dir] = in_flight;
 #endif /* KFIOC_HAS_INFLIGHT_RW_ATOMIC */
-#elif KFIOC_PART0_HAS_IN_FLIGHT
+#elif KFIOC_X_PART0_HAS_IN_FLIGHT
         gd->part0.in_flight = in_flight;
 #else
         part_stat_set_all(&gd->part0, in_flight);
@@ -1141,7 +1141,7 @@ static void kfio_dump_bio(const char *msg, struct bio * bio)
     infprint("%s: sector: %llx: flags: %lx : rw: %lx : vcnt: %x", msg,
              sector, (unsigned long)bio->bi_flags, bio->bi_rw, bio->bi_vcnt);
 #endif
-#if KFIOC_BIO_HAS_BIO_SEGMENTS
+#if KFIOC_X_BIO_HAS_BIO_SEGMENTS
     infprint("%s : idx: %x : phys_segments: %x : size: %x",
              msg, BI_IDX(bio), bio_segments(bio), BI_SIZE(bio));
 #else
@@ -1732,7 +1732,7 @@ static struct request_queue *kfio_alloc_queue(struct kfio_disk *dp,
     {
         rq->queuedata = dp;
         blk_queue_make_request(rq, kfio_make_request);
-#if KFIOC_REQUEST_QUEUE_HAS_QUEUE_LOCK_POINTER
+#if KFIOC_X_REQUEST_QUEUE_HAS_QUEUE_LOCK_POINTER
         rq->queue_lock = (spinlock_t *)dp->queue_lock;
 #else
         memcpy(&dp->queue_lock, &rq->queue_lock, sizeof(dp->queue_lock));
@@ -1774,7 +1774,7 @@ void kfio_clear_write_holdoff(struct kfio_disk *disk)
     // These all moved out of the kernel, think it has to do with DMA drain, as said in the removal of the cluster FLAG article
     // https://elixir.bootlin.com/linux/v5.0.21/source/include/linux/blkdev.h#L390
     // https://elixir.bootlin.com/linux/v4.20.17/source/include/linux/blkdev.h#L440
-#if KFIOC_REQUEST_QUEUE_HAS_REQUEST_FN
+#if KFIOC_X_REQUEST_QUEUE_HAS_REQUEST_FN
     if (q->request_fn)
     {
 
@@ -1818,7 +1818,7 @@ void kfio_mark_lock_pending(kfio_disk_t *fgd)
     struct gendisk *gd = fgd->gd;
     struct request_queue *q = gd->queue;
 
-#if KFIOC_REQUEST_QUEUE_HAS_REQUEST_FN
+#if KFIOC_X_REQUEST_QUEUE_HAS_REQUEST_FN
     /*
      * Only the request_fn driven model issues requests in a non-blocking
      * manner. The direct queued model does not need this.
@@ -1842,7 +1842,7 @@ void kfio_unmark_lock_pending(kfio_disk_t *fgd)
     /* TODO: Double Check. these could move down, to surpress the warning */
     struct gendisk *gd = fgd->gd;
     struct request_queue *q = gd->queue;
-#if KFIOC_REQUEST_QUEUE_HAS_REQUEST_FN
+#if KFIOC_X_REQUEST_QUEUE_HAS_REQUEST_FN
     if (q->request_fn)
     {
         kfio_disk_t *disk = q->queuedata;
@@ -2031,9 +2031,9 @@ static int kfio_make_request(struct request_queue *queue, struct bio *bio)
     // Split the incomming bio if it has more segments than we have scatter-gather DMA vectors,
     //   and re-submit the remainder to the request queue. blk_queue_split() does all that for us.
     // It appears the kernel quit honoring the blk_queue_max_segments() in about 4.13.
-# if KFIOC_BIO_HAS_BIO_SEGMENTS
+# if KFIOC_X_BIO_HAS_BIO_SEGMENTS
     if (bio_segments(bio) >= queue_max_segments(queue))
-# elif KFIOC_BIO_HAS_BI_PHYS_SEGMENTS
+# elif KFIOC_X_BIO_HAS_BI_PHYS_SEGMENTS
     if (bio->bi_phys_segments >= queue_max_segments(queue))
 # else
     if (bio_phys_segments(queue, bio) >= queue_max_segments(queue))
@@ -2588,6 +2588,7 @@ static kfio_bio_t *kfio_request_to_bio(kfio_disk_t *disk, struct request *req,
         return NULL;
     }
 
+    // TODO: look at iomemory-vsl4 for hints...
     fbio->fbio_offset = blk_rq_pos(req) << 9;
     fbio->fbio_size   = blk_rq_bytes(req);
 

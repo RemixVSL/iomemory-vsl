@@ -130,7 +130,7 @@ KFIO_EXPORT_SYMBOL(fusion_getmicrotime);
 /// @brief return current UTC wall clock time in seconds since the Unix epoch (Jan 1 1970).
 uint64_t noinline fusion_getwallclocktime(void)
 {
-#if KFIOC_HAS_COARSE_REAL_TS
+#if KFIOC_X_HAS_COARSE_REAL_TS
     struct timespec64 ts;
 
     ktime_get_coarse_real_ts64(&ts);
@@ -175,7 +175,7 @@ static void fusion_timer_callback(struct timer_list *t) {
  */
 void noinline fusion_init_timer(struct fusion_timer_list* timer)
 {
-#if KFIOC_HAS_TIMER_SETUP
+#if KFIOC_X_HAS_TIMER_SETUP
     timer_setup((struct timer_list *)  timer, fusion_timer_callback, 0);
     printk("fusion_init_timer");
 #else
@@ -190,7 +190,7 @@ KFIO_EXPORT_SYMBOL(fusion_init_timer);
 void noinline fusion_set_timer_function(struct fusion_timer_list* timer,
     void (*f) (fio_uintptr_t))
 {
-#if KFIOC_HAS_TIMER_SETUP
+#if KFIOC_X_HAS_TIMER_SETUP
     printk("fusion_set_timer_function");
 #else
     ((struct timer_list *) timer)->function = f;
@@ -203,7 +203,7 @@ KFIO_EXPORT_SYMBOL(fusion_set_timer_function);
  */
 void noinline fusion_set_timer_data(struct fusion_timer_list* timer, fio_uintptr_t d)
 {
-#if KFIOC_HAS_TIMER_SETUP
+#if KFIOC_X_HAS_TIMER_SETUP
     printk("fusion_set_timer_data");
 #else
     ((struct timer_list *) timer)->data = d;

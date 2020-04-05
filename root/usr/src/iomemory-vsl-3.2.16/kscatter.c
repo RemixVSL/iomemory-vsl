@@ -402,7 +402,7 @@ int kfio_sgl_map_bio(kfio_sg_list_t *sgl, struct bio *pbio)
 
     // Make sure combining this pbio into the current sgl won't result in too many sg vectors.
     // The bio_for_each_segment() loop below will catch this, but it seems more efficient to catch it here.
-#if KFIOC_BIO_HAS_BIO_SEGMENTS
+#if KFIOC_X_BIO_HAS_BIO_SEGMENTS
     if (lsg->num_entries + bio_segments(pbio) > lsg->max_entries)
 #else
     if (lsg->num_entries + pbio->bi_phys_segments > lsg->max_entries)
