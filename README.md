@@ -5,19 +5,17 @@ cards. It comes with no warranty, it may cause DATA LOSS or CORRUPTION.
 Therefore it is NOT meant for production use, just for testing purposes.
 
 ## Current version
-At the moment there is a lot of code redesign ongoing. You can find the
-bleeding edge development in the next_generation branch. Despite its name
-it is more mature than the master. Especially it fixes several known bugs:
+The current version is derived from iomemory-vsl-3.2.16. At the moment there is a lot of code redesign ongoing. You can find the bleeding edge development in the next_generation branch. Despite its name it is more mature than the master. Especially it fixes several known bugs:
 - silent IO drops
 - crashes during driver unload
 - SCSI queue settings
 - BIO status handling
 
 ## Important note!!!
-Only the version and next_generation branches are tested, nothing else. 
-The driver may in fact work with older or newer kernels. The next_generation 
-branch is currently running in a CEPH cluster with official LTS kernel 4.14 and 
-works quite well. Testing and running with the kernel module has been done on 
+Only the version and next_generation branches are tested, nothing else.
+The driver may in fact work with older or newer kernels. The next_generation
+branch is currently running in a CEPH cluster with official LTS kernel 4.14 and
+works quite well. Testing and running with the kernel module has been done on
 Ubuntu and Redhat.
 *** the untested branch has only been compiled and loaded not device tested ***
 
@@ -27,10 +25,22 @@ releases, effectively making the cards an expensive paperweight
 when running a distribution like Ubuntu which supplies newer kernels.
 Deemed a trivial task to update the drivers and actually make them work
 with said newer kernels, and putting the expensive paperweight to use again
-so I could access my data..., set forking and fixing the code in motion 
+so I could access my data..., set forking and fixing the code in motion
 quite a while ago.
 
 ## Building
+### Source
+```
+git clone https://github.com/snuf/iomemory-vsl
+cd iomemory-vsl4/
+git checkout backport-iomemory-vsl
+cd root/usr/src/iomemory-vsl4-3.2.16
+make gpl
+sudo insmod iomemory-vsl.ko
+```
+### Ubuntu / Debian
+
+### CentOS / RHEL
 If you are on CentOS or similiar distribution simply run
 ```
 git clone https://github.com/snuf/iomemory-vsl
@@ -46,17 +56,17 @@ Installation can be done according to the original README.
 ## DKMS
 A dkms.conf file is supplied, so it should be plug and play:
 ```
-sudo cp -r iomemory-vsl/root/usr/src/iomemory-vsl-3.2.15 /usr/src/
-sudo mkdir -p /var/lib/dkms/iomemory-vsl/3.2.15/build
-sudo ln -s /usr/src/iomemory-vsl-3.2.15 /var/lib/dkms/iomemory-vsl/3.2.15/source
-sudo dkms build -m iomemory-vsl -v 3.2.15
-sudo dkms install -m iomemory-vsl -v 3.2.15
+sudo cp -r iomemory-vsl/root/usr/src/iomemory-vsl-3.2.16 /usr/src/
+sudo mkdir -p /var/lib/dkms/iomemory-vsl/3.2.16/build
+sudo ln -s /usr/src/iomemory-vsl-3.2.16 /var/lib/dkms/iomemory-vsl/3.2.16/source
+sudo dkms build -m iomemory-vsl -v 3.2.16
+sudo dkms install -m iomemory-vsl -v 3.2.16
 sudo modprobe iomemory-vsl
 ```
 With fio-utils installed you should see the following kind of...:
 ```
-snuf@scipio:~/Downloads/ark/usr/bin$ sudo ./fio-status 
-[sudo] password for snuf: 
+snuf@scipio:~/Downloads/ark/usr/bin$ sudo ./fio-status
+[sudo] password for snuf:
 
 Found 2 ioMemory devices in this system with 1 ioDrive Duo
 Driver version: 3.2.15 build 1700
@@ -106,6 +116,4 @@ fiob    State: Online, Type: block device
 Installing the fio-util, fio-common, fio-preinstall and fio-sysvinit are
 recommended.
 When moving from source 2.3.11 to source 3.2.10 the firmware HAS TO BE UPDATED
-to 3.2.10.20150212. For the move to 3.2.15 from 3.2.10 I've not seen any issues
-with my card.
-
+to 3.2.10.20150212. For the move to 3.2.15, and 3.2.16 from 3.2.10 I've not seen any issues with my card.
