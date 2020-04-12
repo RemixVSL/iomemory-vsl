@@ -238,6 +238,7 @@ Source to build driver for SanDisk Fusion ioMemory devices
 /usr/src/iomemory-vsl-3.2.16/kfio.c
 /usr/src/iomemory-vsl-3.2.16/kfio_common.c
 /usr/src/iomemory-vsl-3.2.16/kfio_config.sh
+/usr/src/iomemory-vsl-3.2.16/kfio_config_add.sh
 /usr/src/iomemory-vsl-3.2.16/khotplug.c
 /usr/src/iomemory-vsl-3.2.16/kinfo.c
 /usr/src/iomemory-vsl-3.2.16/kmem.c
