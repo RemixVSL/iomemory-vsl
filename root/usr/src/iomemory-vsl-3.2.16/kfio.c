@@ -76,7 +76,7 @@ typedef struct FUSION_STRUCT_ALIGN(8) _linux_spinlock
 
 void *kfio_ioremap_nocache (unsigned long offset, unsigned long size)
 {
-    return ioremap_nocache(offset, size);
+    return ioremap(offset, size);
 }
 
 void  kfio_iounmap(void *addr)

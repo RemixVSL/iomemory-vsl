@@ -26,6 +26,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //-----------------------------------------------------------------------------
 
+#include "port-internal.h"
 #include <linux/module.h>
 
 #include <fio/port/fio-port.h>
@@ -397,18 +398,21 @@ static int kfio_info_seqf_open(fusion_inode *inode, fusion_file *file)
  */
 static void kfio_info_os_init(void)
 {
-    /* Initialize file ops used to handle fixed types. */
+#if ! KFIOC_X_PROC_CREATE_DATA_WANTS_PROC_OPS
     kfio_set_file_ops_owner(&kfio_info_type_fops, THIS_MODULE);
+    kfio_set_file_ops_owner(&kfio_info_seqf_fops, THIS_MODULE);
+    kfio_set_file_ops_owner(&kfio_info_text_fops, THIS_MODULE);
+#endif /* ! KFIOC_X_PROC_CREATE_DATA_WANTS_PROC_OPS */
+
+    /* Initialize file ops used to handle fixed types. */
     kfio_set_file_ops_write_handler(&kfio_info_type_fops, kfio_info_os_type_write);
     kfio_set_file_ops_read_handler (&kfio_info_type_fops, kfio_info_os_type_read);
 
-    kfio_set_file_ops_owner(&kfio_info_seqf_fops, THIS_MODULE);
     kfio_set_file_ops_open_handler   (&kfio_info_seqf_fops, kfio_info_seqf_open);
     kfio_set_file_ops_read_handler   (&kfio_info_seqf_fops, kfio_seq_read);
     kfio_set_file_ops_llseek_handler (&kfio_info_seqf_fops, kfio_seq_lseek);
     kfio_set_file_ops_release_handler(&kfio_info_seqf_fops, kfio_seq_release);
 
-    kfio_set_file_ops_owner(&kfio_info_text_fops, THIS_MODULE);
     kfio_set_file_ops_open_handler   (&kfio_info_text_fops, kfio_info_text_open);
     kfio_set_file_ops_read_handler   (&kfio_info_text_fops, kfio_seq_read);
     kfio_set_file_ops_llseek_handler (&kfio_info_text_fops, kfio_seq_lseek);

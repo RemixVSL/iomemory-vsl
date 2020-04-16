@@ -23,6 +23,7 @@ KFIOC_X_HAS_DISK_STATS_NSECS
 KFIOC_X_HAS_COARSE_REAL_TS
 KFIOC_X_HAS_ELEVATOR_INIT
 KFIOC_X_PART0_HAS_IN_FLIGHT
+KFIOC_X_PROC_CREATE_DATA_WANTS_PROC_OPS
 "
 
 ##
@@ -82,6 +83,30 @@ void kfioc_test_request_queue_has_queue_lock_pointer(void) {
 '
 
     kfioc_test "$test_code" "$test_flag" 1
+}
+
+# flag:           KFIOC_X_PROC_CREATE_DATA_WANTS_PROC_OPS
+# usage:          undef for automatic selection by kernel version
+#                 0     if the kernel does not have the proc_create_data function
+#                 1     if the kernel has the function
+# description:    Between 5.3 and 5.6 the 4th option for proc_create_data changes.
+#                 It went from a "const struct file_operations *" to a
+#                 const struct proc_ops *.
+#                 https://elixir.bootlin.com/linux/v5.3/source/include/linux/proc_fs.h#L44
+#                 https://elixir.bootlin.com/linux/v5.6.3/source/include/linux/proc_fs.h#L59
+KFIOC_X_PROC_CREATE_DATA_WANTS_PROC_OPS()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/proc_fs.h>
+
+void *kfioc_has_proc_create_data(struct inode *inode)
+{
+    const struct proc_ops *pops;
+    return proc_create_data(NULL, 0, NULL, pops, NULL);
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1 -Werror-implicit-function-declaration
 }
 
 # flag:           KFIOC_X_PART_STAT_REQUIRES_CPU
