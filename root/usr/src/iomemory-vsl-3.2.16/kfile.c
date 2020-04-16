@@ -318,6 +318,9 @@ void kfio_set_file_ops_release_handler(fusion_file_operations_t *fops, void *rel
    our way through it by just pretending we're dumb deaf and blind, and reuse
    the botched allocated memory that was there before
 */
+void kfio_set_file_ops_owner(fusion_file_operations_t *fops, void *owner)
+{
+}
 
 void kfio_set_file_ops_llseek_handler(fusion_file_operations_t *pops, void *llseek)
 {

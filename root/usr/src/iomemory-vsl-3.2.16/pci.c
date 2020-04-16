@@ -425,7 +425,7 @@ static uint8_t find_slot_number_bios(const struct pci_dev *dev)
     const uint8_t *stop_addr;
     void *bios_addr;
 
-    bios_addr = ioremap_nocache(BIOS_MEMORY_ADDRESS, BIOS_MEMORY_LEN);
+    bios_addr = ioremap(BIOS_MEMORY_ADDRESS, BIOS_MEMORY_LEN);
     if (bios_addr == NULL)
     {
         errprint("%s: could not map bios\n", pci_name((struct pci_dev*)dev));
