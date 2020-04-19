@@ -2,7 +2,7 @@
 name: Bug report
 about: Something broke
 title: ''
-labels: ''
+labels: bug
 assignees: ''
 
 ---
@@ -15,7 +15,7 @@ assignees: ''
 ```
 git clone https://github.com/snuf/iomemory-vsl.git
 cd iomemory-vsl
-git checkout some-branch
+git checkout <tag or branch>
 cd root/usr/src/iomemory-vsl-3.2.16
 make
 ** poof, broken token **
@@ -29,7 +29,7 @@ make
 1. Linux kernel compiled against (uname -a)
 2. The C compiler version used (gcc --version)
 3. distribution, and version 
-4. Branch of iomemory-vsl that is being compiled
+4. Tag or Branch of iomemory-vsl that is being compiled
 5. FIO device used, if applicable
    * fio-status
    * lspci -b -nn
