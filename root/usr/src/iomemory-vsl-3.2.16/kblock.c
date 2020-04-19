@@ -350,115 +350,23 @@ int kfio_create_disk(struct fio_device *dev, kfio_pci_dev_t *pdev, uint32_t sect
 
     rq = dp->rq;
 
-#if KFIOC_HAS_BLK_LIMITS_IO_MIN
     blk_limits_io_min(&rq->limits, sector_size);
-#endif
-#if KFIOC_HAS_BLK_LIMITS_IO_OPT
     blk_limits_io_opt(&rq->limits, fio_dev_optimal_blk_size);
-#endif
-
-#if KFIOC_HAS_BLK_QUEUE_MAX_SEGMENTS
-
     blk_queue_max_hw_sectors(rq, max_sectors_per_request);
     blk_queue_max_segments(rq, max_sg_elements_per_request);
-#else
-    blk_queue_max_sectors(rq, max_sectors_per_request);
-    blk_queue_max_phys_segments(rq, max_sg_elements_per_request);
-    blk_queue_max_hw_segments  (rq, max_sg_elements_per_request);
-#endif
-
-#if KFIOC_HAS_QUEUE_FLAG_CLUSTER
-# if KFIOC_X_HAS_BLK_QUEUE_FLAG_OPS
-    blk_queue_flag_clear(QUEUE_FLAG_CLUSTER, rq);
-# else
-#  if KFIOC_HAS_QUEUE_FLAG_CLEAR_UNLOCKED
-     queue_flag_clear_unlocked(QUEUE_FLAG_CLUSTER, rq);
-#  else
-     rq->queue_flags &= ~(1 << QUEUE_FLAG_CLUSTER);
-#  endif
-# endif
-#elif KFIOC_HAS_QUEUE_LIMITS_CLUSTER
-    rq->limits.cluster = 0;
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
-// Linux from 5.0 > removed the limits.cluster: https://patchwork.kernel.org/patch/10716231/
-#else
-#  error "Do not know how to disable request queue clustering for this kernel."
-#endif
-
     blk_queue_max_segment_size(rq, PAGE_SIZE);
-
-#if KFIOC_HAS_BLK_QUEUE_HARDSECT_SIZE
-    blk_queue_hardsect_size(rq, sector_size);
-#else
     blk_queue_logical_block_size(rq, sector_size);
-#endif
-#if KFIOC_DISCARD == 1
+
     if (enable_discard)
     {
-
-#if KFIOC_DISCARD_ZEROES_IN_LIMITS == 1
-        if (fio_device_ptrim_available(dev))
-        {
-            rq->limits.discard_zeroes_data = 1;
-        }
-#endif  /* KFIOC_DISCARD_ZEROES_IN_LIMITS */
-
-#if KFIOC_X_HAS_BLK_QUEUE_FLAG_OPS
         blk_queue_flag_set(QUEUE_FLAG_DISCARD, rq);
-#else
-        queue_flag_set_unlocked(QUEUE_FLAG_DISCARD, rq);
-#endif
         // XXXXXXX !!! WARNING - power of two sector sizes only !!! (always true in standard linux)
         blk_queue_max_discard_sectors(rq, (UINT_MAX & ~((unsigned int) sector_size - 1)) >> 9);
-#if KFIOC_DISCARD_GRANULARITY_IN_LIMITS
-        rq->limits.discard_granularity = sector_size;
-#endif
     }
-#else
-    if (enable_discard)
-    {
-        infprint("enable_discard set but discard not supported on this linux version\n");
-        enable_discard = 0;         // Seems like a good idea to also disable our discard code.
-    }
-#endif
 
-#if KFIOC_NEW_BARRIER_SCHEME == 1
-    /*
-     * Do this manually, as blk_queue_flush() is a GPL only export.
-     *
-     * We set REQ_FUA and REQ_FLUSH to ensure ordering (barriers) and to flush (on non-powercut cards).
-     * Note on REQ_FUA: "strict_sync=1" needs to be set or this is ignored on cards w/o powercut support.
-     */
-    rq->flush_flags = REQ_FUA | REQ_FLUSH;
-#elif KFIOC_BARRIER_USES_QUEUE_FLAGS
-# if KFIOC_X_HAS_BLK_QUEUE_FLAG_OPS
     blk_queue_flag_set(QUEUE_FLAG_WC, rq);
-# else
-    queue_flag_set(QUEUE_FLAG_WC, rq);
-# endif
-#elif KFIOC_BARRIER == 1
-    // Ignore if ordered mode is wrong - linux will complain
-    blk_queue_ordered(rq, iodrive_barrier_type, kfio_prepare_flush);
-#else
-#error No barrier scheme supported
-#endif
-
-#if KFIOC_QUEUE_HAS_NONROT_FLAG
-    /* Tell the kernel we are a non-rotational storage device */
-# if KFIOC_X_HAS_BLK_QUEUE_FLAG_OPS
     blk_queue_flag_set(QUEUE_FLAG_NONROT, rq);
-# else
-    queue_flag_set_unlocked(QUEUE_FLAG_NONROT, rq);
-# endif
-#endif
-#if KFIOC_QUEUE_HAS_RANDOM_FLAG
-    /* Disable device global entropy contribution */
-# if KFIOC_X_HAS_BLK_QUEUE_FLAG_OPS
     blk_queue_flag_clear(QUEUE_FLAG_ADD_RANDOM, rq);
-# else
-    queue_flag_clear_unlocked(QUEUE_FLAG_ADD_RANDOM, rq);
-# endif
-#endif
 
     *diskp = dp;
     return 0;
@@ -1701,12 +1609,6 @@ static unsigned int kfio_make_request(struct request_queue *queue, struct bio *b
 
     return FIO_MFN_RET;
 }
-
-#if KFIOC_BARRIER == 1
-static void kfio_prepare_flush(struct request_queue *q, struct request *req)
-{
-}
-#endif
 
 /******************************************************************************
  *   Kernel Atomic Write API
