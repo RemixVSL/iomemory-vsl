@@ -46,13 +46,7 @@
 #include <linux/pci.h>
 #include <linux/blkdev.h>   // for BLK_EH_NOT_HANDLED
 
-// See CRT-23. ESX asserts on DID_BAD_TARGET; it expects DID_NO_CONNECT.
-#if defined(__VMKLNX__)
-#undef DID_BAD_TARGET
-#define DID_BAD_TARGET DID_NO_CONNECT
-#endif
-
-#if (KFIOC_HAS_SCSI_LUNID_UINT == 1) || defined(__VMKLNX__)
+#if (KFIOC_HAS_SCSI_LUNID_UINT == 1)
 #define PRILunId   "u"
 #else
 #define PRILunId   "llu"
@@ -841,4 +835,3 @@ void kfio_port_scsi_cmd_completor(void *port_cmd,
 /**
  * @}
  */
-

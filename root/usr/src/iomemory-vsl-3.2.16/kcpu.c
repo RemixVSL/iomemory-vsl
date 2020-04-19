@@ -41,9 +41,7 @@
 #include <linux/kthread.h>
 
 #include <fio/port/kfio_config.h>
-#if !defined(__VMKLNX__)
 #include <linux/kallsyms.h>
-#endif
 
 /**
  * @ingroup PORT_COMMON_LINUX
@@ -78,11 +76,7 @@ void kfio_put_cpu(kfio_get_cpu_t *flags)
  */
 unsigned int kfio_max_cpus(void)
 {
-  #if !defined(__VMKLNX__)
     return num_possible_cpus();
-  #else
-    return 1;
-  #endif
 }
 
 /**
@@ -90,11 +84,7 @@ unsigned int kfio_max_cpus(void)
  */
 int kfio_cpu_online(kfio_cpu_t cpu)
 {
-  #if !defined(__VMKLNX__)
     return cpu_online(cpu);
-  #else
-    return 1;
-  #endif
 }
 
 #if PORT_SUPPORTS_PER_CPU
@@ -126,28 +116,14 @@ void kfio_create_kthread_on_cpu(fusion_kthread_func_t func, void *data,
 }
 #endif
 
-#if PORT_SUPPORTS_PCI_NUMA_INFO
+// #if PORT_SUPPORTS_PCI_NUMA_INFO
 #if KFIOC_NUMA_MAPS
 static void __kfio_bind_task_to_cpumask(struct task_struct *tsk, cpumask_t *mask)
 {
-#if KFIOC_X_TASK_HAS_CPUS_ALLOWED
-    tsk->cpus_allowed = *mask;
-#else
     tsk->cpus_mask = *mask;
-#endif
-#if KFIOC_TASK_HAS_NR_CPUS_ALLOWED
-#if KFIOC_HAS_CPUMASK_WEIGHT
-    tsk->rt.nr_cpus_allowed = cpumask_weight(mask);
-#else
-    tsk->rt.nr_cpus_allowed = cpus_weight(*mask);
-#endif
-#endif
-#if KFIOC_TASK_HAS_BOUND_FLAG
-    tsk->flags |= PF_THREAD_BOUND;
-#endif
+    tsk->nr_cpus_allowed = cpumask_weight(mask);
 }
 #endif
-
 /*
  * Will take effect on next schedule event
  */
@@ -159,17 +135,12 @@ void kfio_bind_kthread_to_node(kfio_numa_node_t node)
         cpumask_t *cpumask = (cpumask_t *) cpumask_of_node(node);
 
         if (cpumask &&
-#if KFIOC_HAS_CPUMASK_WEIGHT
             cpumask_weight(cpumask)
-#else
-            cpus_weight(*cpumask)
-#endif
             )
             __kfio_bind_task_to_cpumask(current, cpumask);
     }
 #endif
 }
-#endif
 
 /**
  * @}

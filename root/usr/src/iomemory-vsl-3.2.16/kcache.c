@@ -50,9 +50,6 @@
  */
 int noinline __kfio_create_cache(fusion_mem_cache_t *pcache, char *name, uint32_t size, uint32_t align)
 {
-#if defined(__VMKLNX__)
-    align = 0;
-#endif
     dbgprint(DBGS_GENERAL, "Creating cache %s size: %d  align: %d\n", name, size, align);
 
 //    kassert(pcache->name);

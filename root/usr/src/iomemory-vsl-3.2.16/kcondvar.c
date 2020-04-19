@@ -34,7 +34,8 @@
 #include <fio/port/dbgset.h>
 #include <fio/port/kcondvar.h>
 #include <fio/port/ktime.h>
-#if !defined(__VMKLNX__) && FUSION_DEBUG
+// TODO: gwhat?
+#if FUSION_DEBUG
 #include <linux/sched.h>    // for struct task_struct used in kassert
 #endif
 
@@ -227,9 +228,7 @@ int noinline fusion_condvar_timedwait_noload(fusion_condvar_t *cv,
                                              int64_t timeout_us)
 {
     /* Only safe from kernel threads! */
-#if !defined(__VMKLNX__)
     kassert(!current->mm);
-#endif
     return __fusion_condvar_timedwait(cv, lock, timeout_us, 1);
 }
 KFIO_EXPORT_SYMBOL(fusion_condvar_timedwait_noload);

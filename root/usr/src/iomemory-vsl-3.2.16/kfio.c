@@ -33,18 +33,14 @@
 #include <linux/types.h>
 #include <linux/module.h>
 #include <linux/slab.h>
-#if !defined(__VMKLNX__)
 #include <linux/buffer_head.h>
-#endif
 #include <linux/interrupt.h>
 #include <linux/pci.h>
 #include <linux/kthread.h>
 #include <linux/stddef.h>
-#if !defined(__VMKLNX__)
 #include <linux/delay.h>
 #include <linux/namei.h>
 #include <linux/sysrq.h>
-#endif
 #include <linux/blkdev.h>
 #include <linux/miscdevice.h>
 #include <linux/fs.h>
@@ -141,7 +137,7 @@ KFIO_EXPORT_SYMBOL(fusion_init_spin);
 void noinline fusion_spin_lock(fusion_spinlock_t *s)
 {
     linux_spinlock_t *ps = (linux_spinlock_t *) s;
-#if FUSION_DEBUG && !defined(CONFIG_PREEMPT_RT) && !defined(__VMKLNX__)
+#if FUSION_DEBUG && !defined(CONFIG_PREEMPT_RT)
     kassert(!irqs_disabled());
 #endif
     spin_lock(&ps->lock);
@@ -231,17 +227,7 @@ int noinline fusion_spin_trylock_irqsave(fusion_spinlock_t *s)
 void noinline fusion_spin_unlock_irqrestore(fusion_spinlock_t *s)
 {
     linux_spinlock_t *ps = (linux_spinlock_t *) s;
-
-#if defined(__VMKLINUX__)
-    /* VMware defines their irqrestore implementation as a macro; acting on the
-     * actual flags in the lock, rather than a copy (or one passed-by-value).
-     * Here, we correct this manually. VMware fixed this for ESXi 5.0 only.
-     */
-    unsigned long flags = ps->flags;
-    spin_unlock_irqrestore(&ps->lock, flags);
-#else
     spin_unlock_irqrestore(&ps->lock, ps->flags);
-#endif
 }
 KFIO_EXPORT_SYMBOL(fusion_spin_unlock_irqrestore);
 
@@ -334,8 +320,6 @@ KFIO_EXPORT_SYMBOL(fusion_mutex_unlock);
 /*
  * Sempahore wrappers
  */
-
-#if !defined(__VMKLNX__)
 void fusion_rwsem_init(fusion_rwsem_t *x, const char *name)
 {
     init_rwsem((struct rw_semaphore *)x);
@@ -370,66 +354,6 @@ void fusion_rwsem_up_write(fusion_rwsem_t *x)
 {
     up_write((struct rw_semaphore *)x);
 }
-#else  // rw semaphore routines for VMKLNX
-void fusion_rwsem_init(fusion_rwsem_t *x, const char *name)
-{
-    sema_init((struct semaphore *)x, 1);
-}
-void fusion_rwsem_delete(fusion_rwsem_t *x)
-{
-    (void) x;
-}
-void fusion_rwsem_down_read(fusion_rwsem_t *x)
-{
-    down((struct semaphore *)x);
-}
-void fusion_rwsem_up_read(fusion_rwsem_t *x)
-{
-    up((struct semaphore *)x);
-}
-void fusion_rwsem_down_write(fusion_rwsem_t *x)
-{
-    down((struct semaphore *)x);
-}
-void fusion_rwsem_up_write(fusion_rwsem_t *x)
-{
-    up((struct semaphore *)x);
-}
-/* Returns 1 if we got the lock */
-int fusion_rwsem_down_write_trylock(fusion_rwsem_t *x)
-{
-    return !down_trylock((struct semaphore *)x);
-}
-/* Returns 1 if we got the lock */
-int fusion_rwsem_down_read_trylock(fusion_rwsem_t *x)
-{
-    return !down_trylock((struct semaphore *)x);
-}
-#endif
-
-#if defined(__VMKLNX__)
-// Version of fusion_create_kthread() that returns the thread task_struct pointer
-struct task_struct *fusion_esx_create_kthread(fusion_kthread_func_t func, void *data,
-                                              void *fusion_nand_device, const char *fmt, ...)
-{
-    va_list ap;
-    char buffer[MAX_KTHREAD_NAME_LENGTH];
-    struct task_struct *ts;
-
-    va_start(ap, fmt);
-    vsnprintf(buffer, sizeof(buffer), fmt, ap);
-    va_end(ap);
-
-    ts = kthread_run(func, data, "%s", buffer);
-
-    return IS_ERR(ts)? NULL : ts;
-}
-
-void fusion_esx_wakeup_thread(struct task_struct *ts)
-{
-    wake_up_process(ts);
-}
-#endif
 
 #if PORT_SUPPORTS_PER_CPU
 kfio_cpu_t kfio_next_cpu_in_node(kfio_cpu_t last_cpu, kfio_numa_node_t node)
@@ -487,7 +411,6 @@ int kfio_put_user_64(int x, uint64_t *arg)
  */
 int fio_wait_for_dev(const char *devname)
 {
-#if !defined(__VMKLNX__)
     char abs_filename[UFIO_DEVICE_FILE_MAX_LEN];
 #if KFIOC_HAS_PATH_LOOKUP
     struct nameidata nd;
@@ -518,8 +441,6 @@ int fio_wait_for_dev(const char *devname)
     {
         infprint("warning: timeout on device %s creation\n", devname);
     }
-#endif
-
     return 0;
 }
 KFIO_EXPORT_SYMBOL(fio_wait_for_dev);

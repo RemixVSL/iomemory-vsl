@@ -28,7 +28,7 @@
 #if defined (__linux__)
 #include <fio/port/compiler.h>
 #include "port-internal.h"
-#if KFIOC_USE_LINUX_UACCESS_H && !defined(__VMKLNX__)
+#if KFIOC_USE_LINUX_UACCESS_H
 # include <linux/uaccess.h>
 #else
 # include <asm/uaccess.h>
@@ -49,12 +49,10 @@
 #endif
 #include <fio/port/dbgset.h>
 #include <fio/port/ifio.h>
-#if defined(__linux__) || defined(__VMKLNX__)
-# if (KFIO_SCSI_DEVICE==1)
+#if (KFIO_SCSI_DEVICE==1)
 #   include <fio/port/kscsi.h>
-# else
+#else
 #   include <fio/port/common-linux/kblock.h>
-# endif
 #endif
 #include <fio/port/port_config_vars_externs.h>
 #if (FUSION_INTERNAL==1)
@@ -144,10 +142,6 @@ extern void fio_auto_attach_wait(void);
 
 extern void kfio_iodrive_sysrq_keys(void);
 extern void kfio_iodrive_unreg_sysrq_keys(void);
-#if defined (__VMKLNX__)
-extern int  ifio_init_memory();
-extern void ifio_cleanup_memory();
-#endif
 
 /// @brief Driver initialization for parts that do not require cleanup if initialization fails.
 /// @note  The companion fio_do_exit() function may be called at any time, regardless of the
@@ -203,14 +197,6 @@ static int __init init_fio_driver(void)
         auto_attach = 0;
     }
 
-#if defined(__VMKLNX__)
-    rc = ifio_init_memory();
-    if (rc)
-    {
-        return rc;
-    }
-#endif
-
     if ((rc = kfio_checkstructs()) ||
         (rc = init_fio_dev()))
     {
@@ -219,25 +205,8 @@ static int __init init_fio_driver(void)
 
     /* Call swiss knife of all init functions. */
     rc = fio_do_init();
-
-#if !defined(__VMKLNX__)
     fio_auto_attach_wait();
     kfio_iodrive_sysrq_keys();
-#else
-    // ESX[i] holds up the entire boot process while the driver is being loaded,
-    // which is unacceptable if a long metadata scan is needed.
-    // Don't wait; let the attach thread run in the background.
-    // fio-status will report the status as "Attaching" until it is done.
-    //
-    // Unfortunately, it appears that dev node exposure can race with the
-    // vmkernel's datastore scan.  This is rare, however, and has only been
-    // observed once. Hence, we provide an option to re-enable the attach wait.
-    if (!background_attach)
-    {
-        infprint("Background-attach disabled; waiting for all devices...\n");
-        fio_auto_attach_wait();
-    }
-#endif
 
     if ((rc = dbgs_create_flags_dir(&_dbgset)))
     {
@@ -251,10 +220,7 @@ static int __init init_fio_driver(void)
 void __exit exit_fio_driver(void)
 {
     dbgs_delete_flags_dir(&_dbgset);
-
-#if !defined(__VMKLNX__)
     kfio_iodrive_unreg_sysrq_keys();
-#endif
 
     cleanup_fio_blk();
     cleanup_fio_obj();
@@ -266,9 +232,6 @@ void __exit exit_fio_driver(void)
 #endif
     cleanup_fio_iodrive();
     cleanup_fio_dev();
-#if defined(__VMKLNX__)
-    ifio_cleanup_memory();
-#endif
 }
 
 /**

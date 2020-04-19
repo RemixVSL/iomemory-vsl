@@ -47,21 +47,15 @@ KFIO_MODULE_PARAM(numa_node_forced_local, int, S_IRUGO | S_IWUSR);
 KFIO_MODULE_PARAM_DESC(numa_node_forced_local, "Only schedule fio-wq completion threads for use on NUMA node local to fct-worker");
 
 #if PORT_SUPPORTS_NUMA_NODE_OVERRIDE
-# if !defined(__VMKLNX__)
 KFIO_MODULE_PARAM_DESC(numa_node_override, "Override device to NUMA node binding");
 #  if KFIOC_MODULE_PARAM_ARRAY_NUMP
 KFIO_MODULE_PARAM_ARRAY(numa_node_override, charp, &num_numa_node_override, S_IRUGO | S_IWUSR);
 #  else
 KFIO_MODULE_PARAM_ARRAY(numa_node_override, charp, num_numa_node_override, S_IRUGO | S_IWUSR);
 #  endif
-# endif
 #endif
 
-#if defined(__VMKLNX__)
-int use_workqueue = USE_QUEUE_RQ;
-#else
 int use_workqueue = USE_QUEUE_NONE;
-#endif
 
 KFIO_MODULE_PARAM(use_workqueue, int, S_IRUGO | S_IWUSR);
 

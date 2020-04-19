@@ -126,11 +126,6 @@ extern int fio_wait_for_dev(const char *devname);
             (n) = kfio_div64_64((uint64_t)(n), __base);       \
         } while (0)
 
-// ESX-specific block-mode limit; capped at 2TB
-# if defined(__VMKLNX__) && (KFIO_SCSI_DEVICE==0)
-#  define PORT_FORMATTED_CAPACITY_BYTES_MAX (1ULL<<41)
-# endif
-
 #endif
 
 #endif /* __FIO_PORT_LINUX_KFIO_H__ */
@@ -152,4 +147,3 @@ extern int fio_wait_for_dev(const char *devname);
 #else
 #define KFIO_EXPORT_SYMBOL(sym)
 #endif
-

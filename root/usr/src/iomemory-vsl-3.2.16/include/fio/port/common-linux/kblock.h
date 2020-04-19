@@ -42,10 +42,6 @@ typedef enum
 
 extern int  kfio_init_storage_interface(void);
 extern int  kfio_teardown_storage_interface(void);
-#ifdef __VMKLNX__
-extern int kfio_register_esx_blkdev(kfio_pci_dev_t *pdev);
-extern int kfio_unregister_esx_blkdev(unsigned int major, const char *name);
-#endif
 
 extern int  kfio_create_disk(struct fio_device *dev, kfio_pci_dev_t *pci_dev,
                              uint32_t sector_size,

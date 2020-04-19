@@ -32,9 +32,7 @@
 #include <linux/version.h>
 #include <linux/module.h>
 #include <linux/reboot.h>
-#if defined(__x86_64__) && !defined(__VMKLNX__)
 #include <linux/acpi.h>
-#endif
 #include <fio/port/fio-port.h>
 #include <fio/port/pci.h>
 #include <fio/port/kfio_config.h>
@@ -475,7 +473,6 @@ static uint8_t find_slot_number_bios(const struct pci_dev *dev)
     return 0;
 }
 
-#if defined(__x86_64__) && !defined(__VMKLNX__)
 static uint8_t find_slot_number_acpi(const struct pci_dev *pcidev)
 {
 #if KFIOC_ACPI_EVAL_INT_TAKES_UNSIGNED_LONG_LONG
@@ -502,13 +499,9 @@ static uint8_t find_slot_number_acpi(const struct pci_dev *pcidev)
 
     return (uint8_t)sun;
 }
-#endif
 
 uint8_t kfio_pci_get_slot(kfio_pci_dev_t *pdev)
 {
-#if !defined (__x86_64__) && !defined(__i386__)
-    return 0;
-#else
     uint32_t slot_number = 0;
     struct pci_dev *dev = (struct pci_dev *)pdev;
 
@@ -523,15 +516,12 @@ uint8_t kfio_pci_get_slot(kfio_pci_dev_t *pdev)
             slot_number = find_slot_number_bios(dev->bus->parent->self);
         }
     }
-#if defined(__x86_64__) && !defined(__VMKLNX__)
     if (!slot_number)
     {
         slot_number = find_slot_number_acpi(dev);
     }
-#endif
 
     return slot_number;
-#endif
 }
 
 /*************************************************************************************/

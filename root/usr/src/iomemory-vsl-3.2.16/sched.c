@@ -38,7 +38,7 @@
  * the func member of work_struct is   void (*func)(void *)
  */
 
-#if KFIOC_MISSING_WORK_FUNC_T && !defined(__VMKLNX__)
+#if KFIOC_MISSING_WORK_FUNC_T
 typedef void (*work_func_t)(void *);
 #endif
 #include <linux/workqueue.h>
@@ -47,8 +47,6 @@ void noinline fusion_setup_dpc(fusion_dpc_t *wq, fusion_work_func_t func)
 {
 #if KFIOC_WORKDATA_PASSED_IN_WORKSTRUCT
     INIT_WORK((struct work_struct *) wq, (work_func_t) func);
-#elif defined(__VMKLNX__)
-    INIT_WORK((struct work_struct *) wq, (void (*)(void *)) func, wq);
 #else
     INIT_WORK((struct work_struct *) wq, (work_func_t) func, wq);
 #endif
@@ -58,8 +56,6 @@ void noinline fusion_setup_delayed_dpc(fusion_delayed_dpc_t *wq, fusion_work_fun
 {
 #if KFIOC_WORKDATA_PASSED_IN_WORKSTRUCT
     INIT_DELAYED_WORK((struct delayed_work *) wq, (work_func_t) func);
-#elif defined(__VMKLNX__)
-    INIT_WORK((struct work_struct *) wq, (void (*)(void *)) func, wq);
 #else
     INIT_WORK((struct work_struct *) wq, (work_func_t) func, wq);
 #endif
@@ -79,8 +75,6 @@ void noinline fusion_init_work(fusion_work_struct_t *wq, fusion_work_func_t func
 {
 #if KFIOC_WORKDATA_PASSED_IN_WORKSTRUCT
     INIT_WORK((struct work_struct *) wq, (work_func_t) func);
-#elif defined(__VMKLNX__)
-    INIT_WORK((struct work_struct *) wq, (void (*)(void *)) func, wq);
 #else
     INIT_WORK((struct work_struct *) wq, (work_func_t) func, wq);
 #endif
@@ -112,8 +106,6 @@ void noinline fusion_init_delayed_work(fusion_work_struct_t *wq, fusion_work_fun
 {
 #if KFIOC_WORKDATA_PASSED_IN_WORKSTRUCT
     INIT_DELAYED_WORK((struct delayed_work *) wq, (work_func_t) func);
-#elif defined(__VMKLNX__)
-    INIT_WORK((struct work_struct *) wq, (void (*)(void *)) func, wq);
 #else
     INIT_WORK((struct work_struct *) wq, (work_func_t) func, wq);
 #endif

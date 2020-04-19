@@ -33,11 +33,7 @@
 
 #include <linux/kernel.h>
 #include <linux/kthread.h>
-#if defined(__VMKLNX__) // Apparently ESXux doesn't have copy_to/from_user in the same place.
-#include <asm/uaccess.h>
-#else   // Everyone else
 #include <linux/uaccess.h>
-#endif
 #include <fio/port/dbgset.h>
 #include <fio/port/kfio_config.h>
 
@@ -81,22 +77,7 @@ KFIO_EXPORT_SYMBOL(kfio_print);
 
 int kfio_vprint(const char *format, va_list ap)
 {
-#if !defined(__VMKLNX__)
     return vprintk(format, ap);
-#else
-    va_list argsCopy;
-    int printedLen;
-
-    va_copy(argsCopy, ap);
-
-    vmk_vLogNoLevel(VMK_LOG_URGENCY_NORMAL, format, ap);
-    printedLen = vmk_Vsnprintf(NULL, 0, format, argsCopy);
-
-    va_end(argsCopy);
-    va_end(ap);
-
-    return printedLen;
-#endif
 }
 
 int kfio_snprintf(char *buffer, fio_size_t n, const char *format, ...)
@@ -171,31 +152,7 @@ KFIO_EXPORT_SYMBOL(kfio_memcpy);
 
 void *kfio_memmove(void *dst, const void *src, fio_size_t n)
 {
-#if !defined(__VMKLNX__)
     return memmove(dst, src, n);
-#else
-    // memmove is available in ESX but is not available for use by drivers.
-    // This code was yanked from the DDK.
-    char *tmp;
-    const char *s;
-    char *dest = dst;
-    size_t count = n;
-
-    if (dest <= (char *)src) {
-        tmp = dest;
-        s = src;
-        while (count--)
-            *tmp++ = *s++;
-    } else {
-        tmp = dest;
-        tmp += count;
-        s = src;
-        s += count;
-        while (count--)
-            *--tmp = *--s;
-    }
-    return dest;
-#endif
 }
 
 unsigned long long kfio_strtoull(const char *nptr, char **endptr, int base)
@@ -232,14 +189,14 @@ void fusion_destroy_rw_spin(fusion_rw_spinlock_t *s)
 
 void fusion_spin_read_lock(fusion_rw_spinlock_t *s)
 {
-#if FUSION_DEBUG && !KFIOC_CONFIG_PREEMPT_RT && !defined(__VMKLNX__)
+#if FUSION_DEBUG && !KFIOC_CONFIG_PREEMPT_RT
     kassert(!irqs_disabled());
 #endif
     read_lock((rwlock_t *)s);
 }
 void fusion_spin_write_lock(fusion_rw_spinlock_t *s)
 {
-#if FUSION_DEBUG && !KFIOC_CONFIG_PREEMPT_RT && !defined(__VMKLNX__)
+#if FUSION_DEBUG && !KFIOC_CONFIG_PREEMPT_RT
     kassert(!irqs_disabled());
 #endif
     write_lock((rwlock_t *)s);

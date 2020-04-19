@@ -26,10 +26,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //-----------------------------------------------------------------------------
 
-#if defined (__linux__) && !defined(__VMKAPI__) && !defined(__ESXI6__)
 #include <linux/types.h>
-#endif
-
 #include <fio/port/state.h>
 #include <fio/port/dbgset.h>
 

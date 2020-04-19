@@ -91,10 +91,8 @@ static int fusion_control_open(struct inode *inode, struct file *file)
 
     if (major != MISC_MAJOR)
     {
-#if !defined(__VMKLNX__)
         errprint("inode has major %d and is not a MISC_MAJOR device\n", major);
         goto end;
-#endif
     }
 
     /* This must map an 'inode->i_cdev' to a 'void *fusion_nand_device' */
@@ -204,39 +202,12 @@ int fusion_create_control_device(struct fusion_nand_device *nand_dev)
 {
     struct miscdevice *misc;
     int result;
-#if defined(__VMKLNX__)
-    int minor=254;
-#endif
 
     misc = (struct miscdevice *)fusion_nand_get_miscdev(nand_dev);
 
     misc_dev_init(misc, fusion_nand_get_dev_name(nand_dev));
 
-#if defined(__VMKLNX__)
-    do
-    {
-        misc->minor = minor--;
-#endif
-        result = misc_register(misc);
-#if defined(__VMKLNX__)
-        /*
-         * Yet another ugly hack for ESX: misc_register does not return 0 on success.
-         * From the comments in misc_register() in the ESX 4.0 DDK:
-         *  ESX Deviation Notes:
-         *  On ESX, misc_register returns the assigned character-device major
-         *  associated with the device (which is always MISC_MAJOR) upon a
-         *  successful registration. For failure, a negative error code is
-         *  returned.
-         *  ....
-         *  This is a deviation from Linux - should return 0 for success
-         */
-        if (result > 0)
-        {
-            result = 0;
-        }
-    }
-    while (result < 0 && minor > 0);
-#endif
+    result = misc_register(misc);
     if(result < 0)
     {
         errprint("%s Unable to initialize misc device '%s'\n",
@@ -244,7 +215,8 @@ int fusion_create_control_device(struct fusion_nand_device *nand_dev)
                 fusion_nand_get_dev_name(nand_dev));
     }
 
-#if !defined(__VMKLNX__) && !defined(__TENCENT_KERNEL__)
+// TODO: TENCENT_KERNEL heh
+#if !defined(__TENCENT_KERNEL__)
     fio_wait_for_dev(fusion_nand_get_dev_name(nand_dev));
 #endif
 
