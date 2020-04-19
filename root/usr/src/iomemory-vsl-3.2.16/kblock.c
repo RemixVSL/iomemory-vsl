@@ -469,11 +469,7 @@ void kfio_destroy_disk(kfio_disk_t *disk, destroy_type_t dt)
          * Prevent request_fn callback from interfering with
          * the queue shutdown.
          */
-#if KFIOC_HAS_BLK_STOP_QUEUE
-        blk_stop_queue(disk->rq);
-#else
         blk_mq_stop_hw_queues(disk->rq);
-#endif
         /*
          * The queue is stopped and dead and no new user requests will be
          * coming to it anymore. Fetch remaining already queued requests
@@ -543,58 +539,12 @@ void kfio_disk_stat_write_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t 
 {
     if (use_workqueue != USE_QUEUE_RQ)
     {
-#if !(KFIOC_PARTITION_STATS && (KFIOC_CONFIG_PREEMPT_RT || KFIOC_CONFIG_TREE_PREEMPT_RCU))
         struct gendisk *gd = fgd->gd;
-#endif
-# if KFIOC_PARTITION_STATS
-#  if !KFIOC_CONFIG_PREEMPT_RT && !KFIOC_CONFIG_TREE_PREEMPT_RCU
-        int cpu;
-
-       /*
-        * part_stat_lock() with CONFIG_PREEMPT_RT can't be used! It ends up calling
-        * rcu_read_update which is GPL in the RT patch set.
-        */
-        cpu = part_stat_lock();
-#   if KFIOC_X_PART_STAT_REQUIRES_CPU
-        part_stat_inc(cpu, &gd->part0, ios[1]);
-        part_stat_add(cpu, &gd->part0, sectors[1], totalsize >> 9);
-#   else
+        part_stat_lock();
         part_stat_inc(&gd->part0, ios[1]);
         part_stat_add(&gd->part0, sectors[1], totalsize >> 9);
-#   endif
-#   if KFIOC_X_HAS_DISK_STATS_NSECS && KFIOC_X_PART_STAT_REQUIRES_CPU
-        part_stat_add(cpu, &gd->part0, nsecs[1],   duration * 1000);
-#   elif KFIOC_X_HAS_DISK_STATS_NSECS && ! KFIOC_X_PART_STAT_REQUIRES_CPU
 	      part_stat_add(&gd->part0, nsecs[1],   duration * 1000);
-#   else
-#     if KFIOC_X_PART_STAT_REQUIRES_CPU
-        part_stat_add(cpu, &gd->part0, ticks[1],   kfio_div64_64(duration * HZ, 1000000));
-#     else
-        part_stat_add(&gd->part0, ticks[1],   kfio_div64_64(duration * HZ, 1000000));
-#     endif
-#   endif
         part_stat_unlock();
-# endif /* defined(KFIOC_CONFIG_PREEMPT_RT) */
-# else /* KFIOC_PARTITION_STATS */
-
-#  if KFIOC_HAS_DISK_STATS_READ_WRITE_ARRAYS
-        disk_stat_inc(gd, ios[1]);
-        disk_stat_add(gd, sectors[1], totalsize >> 9);
-# if KFIOC_X_HAS_DISK_STATS_NSECS
-        disk_stat_add(gd, nsecs[1], jiffies_to_nsecs(fusion_usectohz(duration)));
-# else
-        disk_stat_add(gd, ticks[1], fusion_usectohz(duration));
-# endif
-#  else /* KFIOC_HAS_DISK_STATS_READ_WRITE_ARRAYS */
-        disk_stat_inc(gd, writes);
-        disk_stat_add(gd, write_sectors, totalsize >> 9);
-        disk_stat_add(gd, write_ticks, fusion_usectohz(duration));
-#  endif /* else ! KFIOC_HAS_DISK_STATS_READ_WRITE_ARRAYS */
-        // TODO: #warning Need disk_round_stats() implementation to replace GPL version.
-        // disk_round_stats(gd);
-        disk_stat_add(gd, time_in_queue,
-            kfio_get_gd_in_flight(fgd, BIO_DIR_WRITE));
-# endif /* else ! KFIOC_PARTITION_STATS */
     }
 }
 
@@ -602,56 +552,12 @@ void kfio_disk_stat_read_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t d
 {
     if (use_workqueue != USE_QUEUE_RQ)
     {
-#if !(KFIOC_PARTITION_STATS && (KFIOC_CONFIG_PREEMPT_RT || KFIOC_CONFIG_TREE_PREEMPT_RCU))
         struct gendisk *gd = fgd->gd;
-#endif
-# if KFIOC_PARTITION_STATS
-#  if !KFIOC_CONFIG_PREEMPT_RT && !KFIOC_CONFIG_TREE_PREEMPT_RCU
-        int cpu;
-
-    /* part_stat_lock() with CONFIG_PREEMPT_RT can't be used!
-       It ends up calling rcu_read_update which is GPL in the RT patch set */
-        cpu = part_stat_lock();
-#   if KFIOC_X_PART_STAT_REQUIRES_CPU
-        part_stat_inc(cpu, &gd->part0, ios[0]);
-        part_stat_add(cpu, &gd->part0, sectors[0], totalsize >> 9);
-#   else
+        part_stat_lock();
         part_stat_inc(&gd->part0, ios[0]);
         part_stat_add(&gd->part0, sectors[0], totalsize >> 9);
-#   endif
-#   if KFIOC_X_HAS_DISK_STATS_NSECS && KFIOC_X_PART_STAT_REQUIRES_CPU
-	part_stat_add(cpu, &gd->part0, nsecs[0],   duration * 1000);
-#   elif KFIOC_X_HAS_DISK_STATS_NSECS
         part_stat_add(&gd->part0, nsecs[0],   duration * 1000);
-#   else
-#     if KFIOC_X_PART_STAT_REQUIRES_CPU
-        part_stat_add(cpu, &gd->part0, ticks[0],   kfio_div64_64(duration * HZ, 1000000));
-#     else
-        part_stat_add(&gd->part0, ticks[0],   kfio_div64_64(duration * HZ, 1000000));
-#     endif
-#   endif
         part_stat_unlock();
-# endif /* KFIO_CONFIG_PREEMPT_RT */
-# else /* KFIO_PARTITION_STATS */
-#  if KFIOC_HAS_DISK_STATS_READ_WRITE_ARRAYS
-        disk_stat_inc(gd, ios[0]);
-        disk_stat_add(gd, sectors[0], totalsize >> 9);
-# if KFIOC_X_HAS_DISK_STATS_NSECS
-        disk_stat_add(gd, nsecs[0], jiffies_to_nsecs(fusion_usectohz(duration)));
-# else
-        disk_stat_add(gd, ticks[0], fusion_usectohz(duration));
-# endif
-#  else /* KFIO_C_HAS_DISK_STATS_READ_WRITE_ARRAYS */
-        disk_stat_inc(gd, reads);
-        disk_stat_add(gd, read_sectors, totalsize >> 9);
-        disk_stat_add(gd, read_ticks, fusion_usectohz(duration));
-#  endif /* else ! KFIO_C_HAS_DISK_STATS_READ_WRITE_ARRAYS */
-
-        // TODO: #warning Need disk_round_stats() implimentation to replace GPL version.
-        // disk_round_stats(gd);
-        disk_stat_add(gd, time_in_queue,
-            kfio_get_gd_in_flight(fgd, BIO_DIR_READ));
-# endif /* else ! KFIO_PARTITION_STATS */
     }
 }
 
@@ -659,30 +565,7 @@ void kfio_disk_stat_read_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t d
 int kfio_get_gd_in_flight(kfio_disk_t *fgd, int rw)
 {
     struct gendisk *gd = fgd->gd;
-#if KFIOC_PARTITION_STATS
-#if KFIOC_HAS_INFLIGHT_RW || KFIOC_HAS_INFLIGHT_RW_ATOMIC
-    int dir = 0;
-
-    // In the Linux kernel the direction isn't explicitly defined, however
-    // in linux/bio.h, you'll notice that its referenced as 1 for write and 0
-    // for read.
-
-    if (rw == BIO_DIR_WRITE)
-        dir = 1;
-
-#if KFIOC_HAS_INFLIGHT_RW_ATOMIC
-    return atomic_read(&gd->part0.in_flight[dir]);
-#else
-    return gd->part0.in_flight[dir];
-#endif /* KFIOC_HAS_INFLIGHT_RW_ATOMIC */
-#elif KFIOC_X_PART0_HAS_IN_FLIGHT
-    return gd->part0.in_flight;
-#else
     return part_stat_read(&gd->part0, ios[STAT_WRITE]);
-#endif /* KFIOC_HAS_INFLIGHT_RW  */
-#else
-    return gd->in_flight;
-#endif /*KFIOC_PARTITION_STATS */
 }
 
 void kfio_set_gd_in_flight(kfio_disk_t *fgd, int rw, int in_flight)
@@ -692,29 +575,7 @@ void kfio_set_gd_in_flight(kfio_disk_t *fgd, int rw, int in_flight)
 
     if (use_workqueue != USE_QUEUE_RQ)
     {
-#if KFIOC_PARTITION_STATS
-#if KFIOC_HAS_INFLIGHT_RW || KFIOC_HAS_INFLIGHT_RW_ATOMIC
-        // In the Linux kernel the direction isn't explicitly defined, however
-        // in linux/bio.h, you'll notice that its referenced as 1 for write and 0
-        // for read.
-        int dir = 0;
-
-        if (rw == BIO_DIR_WRITE)
-            dir = 1;
-
-#if KFIOC_HAS_INFLIGHT_RW_ATOMIC
-        atomic_set(&gd->part0.in_flight[dir], in_flight);
-#else
-        gd->part0.in_flight[dir] = in_flight;
-#endif /* KFIOC_HAS_INFLIGHT_RW_ATOMIC */
-#elif KFIOC_X_PART0_HAS_IN_FLIGHT
-        gd->part0.in_flight = in_flight;
-#else
         part_stat_set_all(&gd->part0, in_flight);
-#endif /* KFIOC_HAS_INFLIGHT_RW */
-#else
-        gd->in_flight = in_flight;
-#endif /* KFIOC_PARTITION_STATS */
     }
 }
 
@@ -761,17 +622,7 @@ static inline void kfio_set_comp_cpu(kfio_bio_t *fbio, struct bio *bio)
 
 static unsigned long __kfio_bio_sync(struct bio *bio)
 {
-#if KFIOC_HAS_SEPARATE_OP_FLAGS
     return bio_flags(bio) == REQ_SYNC;
-#else
-#if KFIOC_HAS_UNIFIED_BLKTYPES
-    return bio->bi_rw & REQ_SYNC;
-#elif KFIOC_HAS_BIO_RW_FLAGGED
-    return bio_rw_flagged(bio, BIO_RW_SYNCIO);
-#else
-    return bio_sync(bio);
-#endif
-#endif
 }
 
 #if KFIOC_BIO_ERROR_CHANGED_TO_STATUS
@@ -943,13 +794,8 @@ static kfio_bio_t *kfio_map_to_fbio(struct request_queue *queue, struct bio *bio
     if ((((BI_SECTOR(bio) * KERNEL_SECTOR_SIZE) & disk->sector_mask) != 0) ||
         ((BI_SIZE(bio) & disk->sector_mask) != 0))
     {
-#if KFIOC_HAS_SEPARATE_OP_FLAGS
         engprint("Rejecting malformed bio %p sector %lu size 0x%08x flags 0x%08lx op 0x%08x op_flags 0x%04x\n", bio,
                  (unsigned long)BI_SECTOR(bio), BI_SIZE(bio), (unsigned long)bio->bi_flags, bio_op(bio), bio_flags(bio));
-#else
-        engprint("Rejecting malformed bio %p sector %lu size 0x%08x flags 0x%08lx rw 0x%08lx\n", bio,
-                 (unsigned long)BI_SECTOR(bio), BI_SIZE(bio), (unsigned long)bio->bi_flags, bio->bi_rw);
-#endif
         return NULL;
     }
 
@@ -973,13 +819,11 @@ static kfio_bio_t *kfio_map_to_fbio(struct request_queue *queue, struct bio *bio
 
     kfio_set_comp_cpu(fbio, bio);
 
-#if KFIOC_DISCARD == 1
     if (kfio_bio_is_discard(bio))
     {
         fbio->fbio_cmd = KBIO_CMD_DISCARD;
     }
     else
-#endif
     {
         if (bio_data_dir(bio) == WRITE)
         {
