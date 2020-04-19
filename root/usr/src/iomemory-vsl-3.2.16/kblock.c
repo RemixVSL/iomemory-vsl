@@ -749,12 +749,10 @@ static int kfio_kbio_add_bio(kfio_bio_t *fbio, struct bio *bio, uint32_t maxiosi
 {
     int error;
 
-#if KFIOC_DISCARD == 1
     if (kfio_bio_is_discard(bio))
     {
         return 1;
     }
-#endif
 
     /*
      * Need matching direction, and sequential offset
@@ -959,60 +957,8 @@ static int kfio_bio_should_submit_now(struct bio *bio)
     {
         return 1;
     }
-#if KFIOC_HAS_BIO_RW_SYNC == 1
-    if (bio->bi_rw & (1 << BIO_RW_SYNC))
-    {
-        return 1;
-    }
-#endif
-
-#if KFIOC_HAS_BIO_RW_UNPLUG == 1
-    if (bio->bi_rw & (1 << BIO_RW_UNPLUG))
-    {
-        return 1;
-    }
-#endif
-
-#if KFIOC_HAS_REQ_UNPLUG == 1
-    if (bio->bi_rw & REQ_UNPLUG)
-    {
-        return 1;
-    }
-#endif
-#if KFIOC_DISCARD == 1
     return kfio_bio_is_discard(bio);
-#else
-    return 0;
-#endif
 }
-
-#if KFIOC_REQUEST_QUEUE_HAS_UNPLUG_FN
-static void kfio_unplug(struct request_queue *q)
-{
-    struct kfio_disk *disk = q->queuedata;
-    struct bio *bio = NULL;
-
-    spin_lock_irq(q->queue_lock);
-    if (blk_remove_plug(q))
-    {
-        bio = disk->bio_head;
-        disk->bio_head = NULL;
-        disk->bio_tail = NULL;
-    }
-    spin_unlock_irq(q->queue_lock);
-
-    if (bio)
-    {
-        kfio_kickoff_plugged_io(q, bio, disk->maxiosize);
-    }
-}
-
-static void test_safe_plugging(void)
-{
-    /* empty */
-}
-
-#else
 
 /* some 3.0 kernels call our unplug callback with
  * irqs off.  We use this variable to track it and
@@ -1116,7 +1062,6 @@ static void test_safe_plugging(void)
         dangerous_plugging_callback = 0;
     }
 }
-#endif
 
 static struct request_queue *kfio_alloc_queue(struct kfio_disk *dp,
                                               kfio_numa_node_t node)
@@ -1138,9 +1083,6 @@ static struct request_queue *kfio_alloc_queue(struct kfio_disk *dp,
         rq->queue_lock = (spinlock_t *)dp->queue_lock;
 #else
         memcpy(&dp->queue_lock, &rq->queue_lock, sizeof(dp->queue_lock));
-#endif
-#if KFIOC_REQUEST_QUEUE_HAS_UNPLUG_FN
-        rq->unplug_fn = kfio_unplug;
 #endif
     }
     return rq;
@@ -1274,43 +1216,6 @@ static int holdoff_writes_under_pressure(struct kfio_disk *disk)
     return 1;
 }
 
-#if KFIOC_REQUEST_QUEUE_HAS_UNPLUG_FN
-static inline void *kfio_should_plug(struct request_queue *q)
-{
-    if (use_workqueue == USE_QUEUE_NONE)
-    {
-        return q;
-    }
-
-    return NULL;
-}
-static struct bio *kfio_add_bio_to_plugged_list(void *data, struct bio *bio)
-{
-    struct request_queue *q = data;
-    struct kfio_disk *disk = q->queuedata;
-    struct bio *ret = NULL;
-
-    spin_lock_irq(q->queue_lock);
-    if (disk->bio_tail)
-    {
-        disk->bio_tail->bi_next = bio;
-    }
-    else
-    {
-        disk->bio_head = bio;
-    }
-    disk->bio_tail = bio;
-    if (kfio_bio_should_submit_now(bio) && use_workqueue == USE_QUEUE_NONE)
-    {
-        ret = disk->bio_head;
-        disk->bio_head = disk->bio_tail = NULL;
-    }
-    blk_plug_device(q);
-    spin_unlock_irq(q->queue_lock);
-
-    return ret;
-}
-#else
 static void *kfio_should_plug(struct request_queue *q)
 {
     struct kfio_disk *disk = q->queuedata;
@@ -1375,7 +1280,6 @@ static struct bio *kfio_add_bio_to_plugged_list(void *data, struct bio *bio)
 
     return ret;
 }
-#endif
 
 static unsigned int kfio_make_request(struct request_queue *queue, struct bio *bio)
 #define FIO_MFN_RET 0
