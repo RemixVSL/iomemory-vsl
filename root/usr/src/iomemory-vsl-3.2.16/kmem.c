@@ -141,9 +141,7 @@ void noinline kfio_free_page(fusion_page_t pg)
  */
 fusion_page_t noinline kfio_page_from_virt(void *vaddr)
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,25)
     kassert(!is_vmalloc_addr(vaddr));
-#endif
     return (fusion_page_t)virt_to_page(vaddr);
 }
 
@@ -186,19 +184,7 @@ fusion_page_t noinline kfio_alloc_0_page(kfio_maa_t flags)
     return page;
 }
 
-// Newer kernels eliminate the task parameters from calls to get_user_pages()
-#if KFIOC_GET_USER_PAGES_REQUIRES_TASK
-    #define GET_USER_PAGES_TASK current, current->mm,
-#else
-    #define GET_USER_PAGES_TASK
-#endif
-
-/* Newer kernels combine the write and force flags into a single parameter */
-#if KFIOC_GET_USER_PAGES_HAS_GUP_FLAGS
-    #define GET_USER_PAGES_FLAGS(write, force) (write? FOLL_WRITE : 0 | force? FOLL_FORCE : 0)
-#else
-    #define GET_USER_PAGES_FLAGS(write, force) write, force
-#endif
+#define GET_USER_PAGES_FLAGS(write, force) (write? FOLL_WRITE : 0 | force? FOLL_FORCE : 0)
 
 #if PORT_SUPPORTS_USER_PAGES
 /// @brief Pin the user pages in memory.
@@ -215,7 +201,7 @@ int kfio_get_user_pages(fusion_user_page_t *pages, int nr_pages, fio_uintptr_t s
     int retval;
 
     down_read(&current->mm->mmap_sem);
-    retval =  get_user_pages(GET_USER_PAGES_TASK start, nr_pages, GET_USER_PAGES_FLAGS(write, 0), (struct page **) pages, NULL);
+    retval =  get_user_pages(start, nr_pages, GET_USER_PAGES_FLAGS(write, 0), (struct page **) pages, NULL);
     up_read(&current->mm->mmap_sem);
     return retval;
 }
