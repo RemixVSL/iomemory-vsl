@@ -39,7 +39,7 @@
 #include <fio/port/bitops.h>
 #include <fio/port/common-linux/kblock.h>
 #include <fio/port/atomic_list.h>
-
+#include <linux/blk_types.h>
 #include <linux/genhd.h>
 #include <linux/bio.h>
 #include <linux/blk-mq.h>
@@ -111,12 +111,7 @@ static kfio_bio_t *kfio_request_to_bio(kfio_disk_t *disk, struct request *req,
 
 static int kfio_bio_cnt(const struct bio * const bio)
 {
-    return
-#if KFIOC_BIO_HAS_USCORE_BI_CNT
-    atomic_read(&bio->__bi_cnt);
-#else
-    atomic_read(&bio->bi_cnt);
-#endif
+    return atomic_read(&bio->__bi_cnt);
 }
 
 /******************************************************************************
@@ -143,14 +138,8 @@ int kfio_init_storage_interface(void)
 
 int kfio_teardown_storage_interface(void)
 {
-    int rc = 0;
-
-#if KFIOC_UNREGISTER_BLKDEV_RETURNS_VOID
     unregister_blkdev(fio_major, "fio");
-#else
-    rc = unregister_blkdev(fio_major, "fio");
-#endif
-    return rc;
+    return 0;
 }
 
 /******************************************************************************
@@ -240,14 +229,7 @@ kfio_bio_t *kfio_fetch_next_bio(struct kfio_disk *disk)
     if (use_workqueue != USE_QUEUE_RQ)
     {
         struct bio *bio;
-
-        // This is odd, 5.0.y complains it's not a pointer...
-        // perhaps move to irqsave/irqrestore
-#if KFIOC_SPINLOCK_TYPE_CHECK
-#define Q_LOCK q->queue_lock
-#else
 #define Q_LOCK &q->queue_lock
-#endif
         spin_lock_irq(Q_LOCK);
         if ((bio = disk->bio_head) != NULL)
         {
@@ -393,9 +375,7 @@ int kfio_expose_disk(kfio_disk_t *dp, char *name, int major, int disk_index,
     gd->fops = &fio_bdev_ops;
     gd->queue = dp->rq;
     gd->private_data = dp->dev;
-#if defined GENHD_FL_EXT_DEVT
     gd->flags = GENHD_FL_EXT_DEVT;
-#endif
 
     fio_bdev_ops.owner = THIS_MODULE;
 
@@ -520,11 +500,7 @@ void kfio_destroy_disk(kfio_disk_t *disk, destroy_type_t dt)
 
 static void kfio_invalidate_bdev(struct block_device *bdev)
 {
-#if ! KFIOC_INVALIDATE_BDEV_REMOVED_DESTROY_DIRTY_BUFFERS
-    invalidate_bdev(bdev, 0);
-#else
     invalidate_bdev(bdev);
-#endif /* KFIOC_INVALIDATE_BDEV_REMOVED_DESTROY_DIRTY_BUFFERS */
 }
 
 static void kfio_bdput(struct block_device *bdev)
@@ -625,84 +601,13 @@ static unsigned long __kfio_bio_sync(struct bio *bio)
     return bio_flags(bio) == REQ_SYNC;
 }
 
-#if KFIOC_BIO_ERROR_CHANGED_TO_STATUS
-static blk_status_t kfio_errno_to_blk_status(int error)
-{
-    // We would use the kernel function of the same name, but they decided to impede us by making it GPL.
-
-    // Translate the possible errno values to blk_status_t values.
-    // This is the reverse of the kernel blk_status_to_errno() function.
-    blk_status_t blk_status;
-
-    switch (error)
-    {
-        case 0:
-            blk_status = BLK_STS_OK;
-            break;
-        case -EOPNOTSUPP:
-            blk_status = BLK_STS_NOTSUPP;
-            break;
-        case -ETIMEDOUT:
-            blk_status = BLK_STS_TIMEOUT;
-            break;
-        case -ENOSPC:
-            blk_status = BLK_STS_NOSPC;
-            break;
-        case -ENOLINK:
-            blk_status = BLK_STS_TRANSPORT;
-            break;
-        case -EREMOTEIO:
-            blk_status = BLK_STS_TARGET;
-            break;
-        case -EBADE:
-            blk_status = BLK_STS_NEXUS;
-            break;
-        case -ENODATA:
-            blk_status = BLK_STS_MEDIUM;
-            break;
-        case -EILSEQ:
-            blk_status = BLK_STS_PROTECTION;
-            break;
-        case -ENOMEM:
-            blk_status = BLK_STS_RESOURCE;
-            break;
-        case -EAGAIN:
-            blk_status = BLK_STS_AGAIN;
-            break;
-        default:
-            blk_status = BLK_STS_IOERR;
-            break;
-    }
-
-    return blk_status;
-}
-#endif /* KFIOC_BIO_ERROR_CHANGED_TO_STATUS */
-
 static void __kfio_bio_complete(struct bio *bio, uint32_t bytes_complete, int error)
 {
-#if KFIOC_BIO_ENDIO_REMOVED_ERROR
-#if KFIOC_BIO_ERROR_CHANGED_TO_STATUS
-    // bi_status is type blk_status_t, not an int errno, so must translate as necessary.
-    blk_status_t bio_status = BLK_STS_OK;
-
     if (unlikely(error != 0))
     {
-        bio_status = kfio_errno_to_blk_status(error);
+          bio->bi_status = errno_to_blk_status(error);
     }
-    bio->bi_status = bio_status;            /* bi_error was changed to bi_status <sigh> */
-#else
-    bio->bi_error = error;                  /* now a member of the bio struct */
-#endif /* KFIOC_BIO_ERROR_CHANGED_TO_STATUS */
-#endif /* !KFIOC_BIO_ENDIO_HAS_ERROR */
-
-    bio_endio(bio
-#if KFIOC_BIO_ENDIO_HAS_BYTES_DONE
-              , bytes_complete
-#endif /* KFIOC_BIO_ENDIO_HAS_BYTES_DONE */
-#if !KFIOC_BIO_ENDIO_REMOVED_ERROR
-              , error
-#endif /* KFIOC_BIO_ENDIO_HAS_ERROR */
-              );
+    bio_endio(bio);
 }
 
 static void kfio_bio_completor(kfio_bio_t *fbio, uint64_t bytes_complete, int error)
@@ -973,11 +878,7 @@ struct kfio_plug {
     struct bio *bio_tail;
 };
 
-#if KFIOC_REQUEST_QUEUE_UNPLUG_FN_HAS_EXTRA_BOOL_PARAM
 static void kfio_unplug_cb(struct blk_plug_cb *cb, bool from_schedule)
-#else
-static void kfio_unplug_cb(struct blk_plug_cb *cb)
-#endif
 {
     struct kfio_plug *plug = container_of(cb, struct kfio_plug, cb);
     struct kfio_disk *disk = plug->disk;
@@ -1002,11 +903,7 @@ struct test_plug
     int safe;
 };
 
-#if KFIOC_REQUEST_QUEUE_UNPLUG_FN_HAS_EXTRA_BOOL_PARAM
 static void safe_unplug_cb(struct blk_plug_cb *cb, bool from_schedule)
-#else
-static void safe_unplug_cb(struct blk_plug_cb *cb)
-#endif
 {
     struct test_plug *test_plug = container_of(cb, struct test_plug, cb);
 
@@ -1070,20 +967,15 @@ static struct request_queue *kfio_alloc_queue(struct kfio_disk *dp,
 
     test_safe_plugging();
 
-#if KFIOC_HAS_BLK_ALLOC_QUEUE_NODE
     rq = blk_alloc_queue_node(GFP_NOIO, node);
-#else
-    rq = blk_alloc_queue(GFP_NOIO);
-#endif
     if (rq != NULL)
     {
         rq->queuedata = dp;
         blk_queue_make_request(rq, kfio_make_request);
-#if KFIOC_X_REQUEST_QUEUE_HAS_QUEUE_LOCK_POINTER
-        rq->queue_lock = (spinlock_t *)dp->queue_lock;
-#else
+
+        // TODO:
+        // rq->queue_lock = (spinlock_t *)dp->queue_lock;
         memcpy(&dp->queue_lock, &rq->queue_lock, sizeof(dp->queue_lock));
-#endif
     }
     return rq;
 }
@@ -1100,31 +992,10 @@ void kfio_set_write_holdoff(struct kfio_disk *disk)
 
 void kfio_clear_write_holdoff(struct kfio_disk *disk)
 {
-    /* TODO: Double Check. q->mq_ops */
-#if KFIOC_X_REQUEST_QUEUE_HAS_REQUEST_FN
-    struct request_queue *q = disk->gd->queue;
-#endif
-
     fusion_cv_lock_irq(&disk->state_lk);
     fio_clear_bit(KFIO_DISK_HOLDOFF_BIT, &disk->disk_state);
     fusion_condvar_broadcast(&disk->state_cv);
     fusion_cv_unlock_irq(&disk->state_lk);
-
-    /*
-     * Re-kick the queue, if we stopped handing out writes
-     * due to log pressure. Do this out-of-line, since we can
-     * be called here with internal locks held and with IRQs
-     * disabled.
-     */
-    // These all moved out of the kernel, think it has to do with DMA drain, as said in the removal of the cluster FLAG article
-    // https://elixir.bootlin.com/linux/v5.0.21/source/include/linux/blkdev.h#L390
-    // https://elixir.bootlin.com/linux/v4.20.17/source/include/linux/blkdev.h#L440
-#if KFIOC_X_REQUEST_QUEUE_HAS_REQUEST_FN
-    if (q->request_fn)
-    {
-        kfio_restart_queue(q);
-    }
-#endif /* defined(KFIOC_REQUEST_QUEUE_HAS_REQUEST_FN) */
 }
 
 /*
@@ -1132,21 +1003,6 @@ void kfio_clear_write_holdoff(struct kfio_disk *disk)
  */
 void kfio_mark_lock_pending(kfio_disk_t *fgd)
 {
-    /* TODO: Double Check. these could move down, to surpress the warning */
-#if KFIOC_X_REQUEST_QUEUE_HAS_REQUEST_FN
-    struct gendisk *gd = fgd->gd;
-    struct request_queue *q = gd->queue;
-    /*
-     * Only the request_fn driven model issues requests in a non-blocking
-     * manner. The direct queued model does not need this.
-     */
-    if (q->request_fn)
-    {
-        kfio_disk_t *disk = q->queuedata;
-
-        atomic_inc(&disk->lock_pending);
-    }
-#endif /* defined(KFIOC_REQUEST_QUEUE_HAS_REQUEST_FN) */
 }
 
 /*
@@ -1154,27 +1010,6 @@ void kfio_mark_lock_pending(kfio_disk_t *fgd)
  */
 void kfio_unmark_lock_pending(kfio_disk_t *fgd)
 {
-    /* TODO: Double Check. these could move down, to surpress the warning */
-#if KFIOC_X_REQUEST_QUEUE_HAS_REQUEST_FN
-    struct gendisk *gd = fgd->gd;
-    struct request_queue *q = gd->queue;
-    if (q->request_fn)
-    {
-        kfio_disk_t *disk = q->queuedata;
-
-        /*
-         * Reset pending back to zero, since we now successfully dropped
-         * the lock. If the pending value was bigger than 1, then somebody
-         * else likely tried and failed to get the lock. In that case,
-         * kick off the queue.
-         */
-        if (atomic_dec_return(&disk->lock_pending) > 0)
-        {
-            atomic_set(&disk->lock_pending, 0);
-            kfio_restart_queue(q);
-        }
-    }
-#endif /* defined(KFIOC_REQUEST_QUEUE_HAS_REQUEST_FN) */
 }
 
 
@@ -1294,25 +1129,12 @@ static unsigned int kfio_make_request(struct request_queue *queue, struct bio *b
         return FIO_MFN_RET;
     }
 
-#if KFIOC_HAS_BLK_QUEUE_SPLIT2
-    // Split the incomming bio if it has more segments than we have scatter-gather DMA vectors,
-    //   and re-submit the remainder to the request queue. blk_queue_split() does all that for us.
-    // It appears the kernel quit honoring the blk_queue_max_segments() in about 4.13.
-# if KFIOC_X_BIO_HAS_BIO_SEGMENTS
-    if (bio_segments(bio) >= queue_max_segments(queue))
-# elif KFIOC_X_BIO_HAS_BI_PHYS_SEGMENTS
-    if (bio->bi_phys_segments >= queue_max_segments(queue))
-# else
-    if (bio_phys_segments(queue, bio) >= queue_max_segments(queue))
-# endif
-    {
-        blk_queue_split(queue, &bio);
-    }
-#endif
 
-#if KFIOC_HAS_BLK_QUEUE_BOUNCE
-    blk_queue_bounce(queue, &bio);
-#endif /* KFIOC_HAS_BLK_QUEUE_BOUNCE */
+    if (bio_segments(bio) >= queue_max_segments(queue))
+        blk_queue_split(queue, &bio);
+
+
+    // iomemory-vsl4 has atom bio here
 
     plug_data = kfio_should_plug(queue);
     if (!plug_data)

@@ -258,26 +258,16 @@ int kfio_sgl_map_bio(kfio_sg_list_t *sgl, struct bio *pbio)
     struct linux_sgl *lsg = sgl;
     struct scatterlist *sl, *old_sl;
 
-#if KFIOC_HAS_BIOVEC_ITERATORS
     struct bio_vec vec;
     struct bvec_iter bv_i;
 #define BIOV_MEMBER(vec, member) (vec.member)
-#else
-    struct bio_vec *vec;
-    int bv_i;
-#define BIOV_MEMBER(vec, member) (vec->member)
-#endif
 
     uint32_t old_len, old_sgl_size, old_sgl_len;
     int rval = 0;
 
     // Make sure combining this pbio into the current sgl won't result in too many sg vectors.
     // The bio_for_each_segment() loop below will catch this, but it seems more efficient to catch it here.
-#if KFIOC_X_BIO_HAS_BIO_SEGMENTS
     if (lsg->num_entries + bio_segments(pbio) > lsg->max_entries)
-#else
-    if (lsg->num_entries + pbio->bi_phys_segments > lsg->max_entries)
-#endif
     {
         return -EAGAIN;                 // Too many segments. Try the pbio again.
     }
@@ -784,24 +774,12 @@ int kfio_sgl_copy_data(kfio_sg_list_t *dst, kfio_sg_list_t *src, uint32_t length
 
         preempt_disable();
 
-#if KFIOC_KMAP_ATOMIC_NEEDS_TYPE
-        pdst = kmap_atomic(sg_page(ldst_sl), KM_USER0);
-        psrc = kmap_atomic(sg_page(lsrc_sl), KM_USER1);
-#else
         // newer linux kernels do not require kmem_type_t argument
         pdst = kmap_atomic(sg_page(ldst_sl));
         psrc = kmap_atomic(sg_page(lsrc_sl));
-#endif
-
         kfio_memcpy(pdst + ldst_sge_off, psrc + lsrc_sge_off, sub_length);
-
-#if KFIOC_KMAP_ATOMIC_NEEDS_TYPE
-        kunmap_atomic(psrc, KM_USER1);
-        kunmap_atomic(pdst, KM_USER0);
-#else
         kunmap_atomic(psrc);
         kunmap_atomic(pdst);
-#endif
 
         preempt_enable();
 
