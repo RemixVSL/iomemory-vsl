@@ -46,11 +46,7 @@
 #include <linux/pci.h>
 #include <linux/blkdev.h>   // for BLK_EH_NOT_HANDLED
 
-#if (KFIOC_HAS_SCSI_LUNID_UINT == 1)
-#define PRILunId   "u"
-#else
 #define PRILunId   "llu"
-#endif
 /**
  * @ingroup PORT_COMMON_LINUX
  * @{
@@ -129,11 +125,7 @@ int kfio_teardown_storage_interface(void)
 // ------------------------------------
 // Linux SCSI Mid Layer interfaces
 
-#if KFIOC_HAS_NEW_QUEUECOMMAND_SIGNATURE
 static int fio_shost_queuecommand(struct Scsi_Host *, struct scsi_cmnd *);
-#else
-static int fio_shost_queuecommand(struct scsi_cmnd *, void (*completor)(struct scsi_cmnd *));
-#endif
 static int fio_shost_abort(struct scsi_cmnd *);
 static int fio_shost_device_reset(struct scsi_cmnd *);
 static int fio_shost_bus_reset(struct scsi_cmnd *);
@@ -247,16 +239,10 @@ static void fio_scmd_immediate_error(struct scsi_cmnd *scmd, uint8_t host_byte, 
 
     scmd->result = 0;
     set_host_byte(scmd, host_byte);
-#if KFIOC_HAS_NEW_QUEUECOMMAND_SIGNATURE
     scmd->scsi_done(scmd);
-#endif
 }
 
-#if KFIOC_HAS_NEW_QUEUECOMMAND_SIGNATURE
 static int fio_shost_queuecommand(struct Scsi_Host *shost, struct scsi_cmnd *scmd)
-#else
-static int fio_shost_queuecommand(struct scsi_cmnd *scmd, void (*completor)(struct scsi_cmnd *))
-#endif
 {
     struct fio_scsi_lu *lu;
     struct fio_scsi_cmd *cmd;
@@ -280,18 +266,12 @@ static int fio_shost_queuecommand(struct scsi_cmnd *scmd, void (*completor)(stru
     if (port_host == NULL)
     {
         fio_scmd_immediate_error(scmd, DID_NO_CONNECT, "host is unregistered");
-#if KFIOC_HAS_NEW_QUEUECOMMAND_SIGNATURE==0
-        completor(scmd);
-#endif
         return 0;
     }
 
     if (sdev->id != port_host->target_id)
     {
         fio_scmd_immediate_error(scmd, DID_NO_CONNECT, "invalid target for host");
-#if KFIOC_HAS_NEW_QUEUECOMMAND_SIGNATURE==0
-        completor(scmd);
-#endif
         return 0;
     }
 
@@ -309,9 +289,6 @@ static int fio_shost_queuecommand(struct scsi_cmnd *scmd, void (*completor)(stru
         if (lu == NULL)
         {
             fio_scmd_immediate_error(scmd, DID_TIME_OUT, "LU is not attached");
-#if KFIOC_HAS_NEW_QUEUECOMMAND_SIGNATURE==0
-            completor(scmd);
-#endif
             return 0;
         }
 
@@ -343,9 +320,6 @@ static int fio_shost_queuecommand(struct scsi_cmnd *scmd, void (*completor)(stru
     if (ret == -ENOENT)
     {
         fio_scmd_immediate_error(scmd, DID_TIME_OUT, "LU just became detached");
-#if KFIOC_HAS_NEW_QUEUECOMMAND_SIGNATURE==0
-        completor(scmd);
-#endif
         return 0;
     }
 
@@ -354,10 +328,6 @@ static int fio_shost_queuecommand(struct scsi_cmnd *scmd, void (*completor)(stru
         kfio_scsi_cmd_get_bus_name(cmd), kfio_scsi_cmd_get_global_seq_num(cmd), sdev->id, sdev->lun, _cdb_str);
 
     scmd->host_scribble = (unsigned char *)cmd;
-
-#if KFIOC_HAS_NEW_QUEUECOMMAND_SIGNATURE==0
-    scmd->scsi_done = completor;
-#endif
 
     cmd_status = kfio_scsi_cmd_rcvd(cmd);
 
