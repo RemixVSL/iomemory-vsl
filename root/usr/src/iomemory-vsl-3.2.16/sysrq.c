@@ -50,9 +50,6 @@ void iodrive_handle_sysrq(int key
 #if ! KFIOC_HAS_GLOBAL_REGS_POINTER
                           ,struct pt_regs *pt_regs
 #endif
-#if KFIOC_SYSRQ_HANDLER_NEEDS_TTY_STRUCT
-                          ,struct tty_struct *tty
-#endif
                           )
 {
     switch (key)

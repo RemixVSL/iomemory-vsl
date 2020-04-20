@@ -54,9 +54,6 @@
 #include <fio/port/fio-port.h>
 #include <fio/port/sched.h>
 #include <fio/port/kfio_config.h>
-#if KFIOC_HAS_LINUX_SCATTERLIST_H
-#include <linux/scatterlist.h>
-#endif
 
 /**
  * @ingroup PORT_LINUX
@@ -264,56 +261,30 @@ void noinline fusion_spin_lock_irqsave_nested(fusion_spinlock_t *s, int subclass
  * Mutex wrappers
  */
 
-#if KFIOC_HAS_MUTEX_SUBSYSTEM
-#else
-#include <asm/semaphore.h>
-#endif
-
 void fusion_mutex_init(fusion_mutex_t *lock, const char *name)
 {
-#if KFIOC_HAS_MUTEX_SUBSYSTEM
     mutex_init((struct mutex *)lock);
-#else
-    init_MUTEX((struct semaphore *)lock);
-#endif
 }
 KFIO_EXPORT_SYMBOL(fusion_mutex_init);
 
 void fusion_mutex_destroy(fusion_mutex_t *lock)
 {
-#if KFIOC_HAS_MUTEX_SUBSYSTEM
-    //  mutex_destroy((struct mutex *)lock);
-#else
-    do { } while(0);
-#endif
 }
 KFIO_EXPORT_SYMBOL(fusion_mutex_destroy);
 
 int fusion_mutex_trylock(fusion_mutex_t *lock)
 {
-#if KFIOC_HAS_MUTEX_SUBSYSTEM
     return mutex_trylock((struct mutex *)lock) ? 1 : 0;
-#else
-    return !down_trylock((struct semaphore *)lock);
-#endif
 }
 void fusion_mutex_lock(fusion_mutex_t *lock)
 {
-#if KFIOC_HAS_MUTEX_SUBSYSTEM
     mutex_lock((struct mutex *)lock);
-#else
-    down((struct semaphore *)lock);
-#endif
 }
 KFIO_EXPORT_SYMBOL(fusion_mutex_lock);
 
 void fusion_mutex_unlock(fusion_mutex_t *lock)
 {
-#if KFIOC_HAS_MUTEX_SUBSYSTEM
     mutex_unlock((struct mutex *)lock);
-#else
-    up((struct semaphore *)lock);
-#endif
 }
 KFIO_EXPORT_SYMBOL(fusion_mutex_unlock);
 
@@ -412,21 +383,13 @@ int kfio_put_user_64(int x, uint64_t *arg)
 int fio_wait_for_dev(const char *devname)
 {
     char abs_filename[UFIO_DEVICE_FILE_MAX_LEN];
-#if KFIOC_HAS_PATH_LOOKUP
-    struct nameidata nd;
-#else
     struct path path;
-#endif
     int i = 0;
 
     snprintf(abs_filename, sizeof(abs_filename) - 1,
             "%s%s", UFIO_CONTROL_DEVICE_PATH, devname);
 
-#if KFIOC_HAS_PATH_LOOKUP
-    while ((path_lookup(abs_filename, 0, &nd) != 0) &&
-#else
     while ((kern_path(abs_filename, LOOKUP_PARENT, &path) != 0) &&
-#endif
           (i < fio_dev_wait_timeout_secs * 10))
     {
         if (i == 0)
@@ -490,14 +453,10 @@ int __init kfio_checkstructs(void)
 
     TEST_SIZE(errstr, struct fusion_timer_list, struct timer_list, 0);
 
-#if KFIOC_WORKDATA_PASSED_IN_WORKSTRUCT
     TEST_SIZE(errstr, struct fusion_work_struct, struct delayed_work, 0);
-#endif
     TEST_SIZE(errstr, struct fusion_work_struct, struct work_struct, 0);
 
-#if KFIOC_HAS_MUTEX_SUBSYSTEM
     TEST_SIZE(errstr, fusion_mutex_t, struct mutex, 0);
-#endif
 
     TEST_SIZE(errstr, kfio_poll_struct, wait_queue_head_t, 0);
     TEST_SIZE(errstr, fusion_condvar_t, wait_queue_head_t, 0);

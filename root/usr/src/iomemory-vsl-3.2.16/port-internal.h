@@ -64,14 +64,9 @@
 #include <linux/cdev.h>
 #include <linux/dma-mapping.h>
 #include <linux/module.h>
-#if !defined(__VMKLNX__)
-  #include <linux/file.h>
-#endif
+#include <linux/file.h>
 #include <linux/notifier.h>
 #include <linux/pci.h>
-#if KFIOC_HAS_LINUX_SCATTERLIST_H
-  #include <linux/scatterlist.h>
-#endif
 #include <linux/spinlock.h>
 #include <linux/timer.h>
 #include <linux/workqueue.h>
@@ -79,4 +74,3 @@
 
 #include <fio/port/ktypes.h>
 #include <fio/port/kfio.h>
-

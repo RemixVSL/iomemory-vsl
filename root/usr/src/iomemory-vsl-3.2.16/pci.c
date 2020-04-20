@@ -49,11 +49,7 @@
  * @{
  */
 
-irqreturn_t kfio_handle_irq_wrapper(int irq, void *dev_id
-#if !KFIOC_HAS_GLOBAL_REGS_POINTER
-                                    , struct pt_regs *regs
-#endif
-    )
+irqreturn_t kfio_handle_irq_wrapper(int irq, void *dev_id)
 {
     (void)iodrive_intr_fast(irq, dev_id);
 
@@ -74,12 +70,7 @@ int kfio_request_irq(kfio_pci_dev_t *pd, const char *devname, void *dev_id,
 {
     unsigned long interrupt_flags = 0;
     unsigned int irqn = ((struct pci_dev *)pd)->irq;
-
-#ifdef IRQF_SHARED
     interrupt_flags |= IRQF_SHARED;
-#else
-    interrupt_flags |= SA_SHIRQ;
-#endif
 
     return request_irq(irqn, kfio_handle_irq_wrapper, interrupt_flags, devname, dev_id);
 }
@@ -134,11 +125,7 @@ void kfio_free_msix(kfio_msix_t *msix, unsigned int vector, void *dev)
     free_irq(msi[vector].vector, dev);
 }
 
-irqreturn_t kfio_handle_irqx_wrapper(int irq, void *dev_id
-#if !KFIOC_HAS_GLOBAL_REGS_POINTER
-                        , struct pt_regs *regs
-#endif
-    )
+irqreturn_t kfio_handle_irqx_wrapper(int irq, void *dev_id)
 {
     return iodrive_intr_fast_pipeline(irq, dev_id);
 }
@@ -175,11 +162,7 @@ unsigned int kfio_pci_enable_msix(kfio_pci_dev_t *__pdev, kfio_msix_t *msix, uns
         msi[i].entry = i;
     }
 
-#if KFIOC_HAS_PCI_ENABLE_MSIX_EXACT
     err = pci_enable_msix_exact(pdev, msi, nr_vecs);
-#else
-    err = pci_enable_msix(pdev, msi, nr_vecs);
-#endif
     if (err)
     {
         return 0;
@@ -230,13 +213,8 @@ uint8_t kfio_pci_bus_number(kfio_pci_bus_t *bus)
 
 kfio_numa_node_t kfio_pci_get_node(kfio_pci_dev_t *pci_dev)
 {
-#if KFIOC_PCI_HAS_NUMA_INFO
     struct pci_dev *pdev = (struct pci_dev *) pci_dev;
-
     return dev_to_node(&pdev->dev);
-#else
-    return FIO_NUMA_NODE_NONE;
-#endif
 }
 
 #if PORT_SUPPORTS_NUMA_NODE_OVERRIDE
@@ -473,28 +451,7 @@ static uint8_t find_slot_number_bios(const struct pci_dev *dev)
 
 static uint8_t find_slot_number_acpi(const struct pci_dev *pcidev)
 {
-#if KFIOC_ACPI_EVAL_INT_TAKES_UNSIGNED_LONG_LONG
     unsigned long long sun = 0;
-#else
-    unsigned long sun = 0;
-#endif
-
-#ifdef DEVICE_ACPI_HANDLE
-    const struct device *dev = &pcidev->dev;
-
-    // Walk the tree to get a slot number, just in case we are behind a bridge. (ie ioDUO)
-    while (dev && !sun)
-    {
-        acpi_handle handle = DEVICE_ACPI_HANDLE(dev);
-        if (handle)
-        {
-            // Use the ACPI method _SUN to get the slot number. See ACPI spec.
-            acpi_evaluate_integer(handle, "_SUN", NULL, &sun);
-        }
-        dev = dev->parent;
-    }
-#endif
-
     return (uint8_t)sun;
 }
 
@@ -563,12 +520,7 @@ void kfio_pci_release_regions(kfio_pci_dev_t *pdev)
 
 int kfio_pci_request_regions(kfio_pci_dev_t *pdev, const char *res_name)
 {
-    return pci_request_regions((struct pci_dev *)pdev,
-#if KFIOC_PCI_REQUEST_REGIONS_CONST_CHAR
-        res_name);
-#else
-        (char *)res_name);
-#endif
+    return pci_request_regions((struct pci_dev *)pdev, res_name);
 }
 
 int kfio_pci_set_dma_mask(kfio_pci_dev_t *pdev, uint64_t mask)
@@ -659,7 +611,6 @@ struct pci_device_id iodrive_ids[] = {
     {0,}
 };
 
-#if KFIOC_HAS_PCI_ERROR_HANDLERS
 static pci_ers_result_t
 iodrive_pci_error_detected (struct pci_dev *dev, enum pci_channel_state error)
 {
@@ -686,9 +637,7 @@ static struct pci_driver iodrive_pci_driver = {
     .probe = iodrive_pci_probe,
     .remove = iodrive_pci_remove,
     .shutdown = iodrive_pci_on_shutdown,
-#if KFIOC_HAS_PCI_ERROR_HANDLERS
     .err_handler = &iodrive_pci_error_handlers,
-#endif
 };
 
 MODULE_DEVICE_TABLE (pci, iodrive_ids);
@@ -714,7 +663,6 @@ void kfio_pci_unregister_driver(void)
 {
     pci_unregister_driver(&iodrive_pci_driver);
 }
-#endif
 /**
  * @}
  */

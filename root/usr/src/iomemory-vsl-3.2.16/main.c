@@ -25,25 +25,15 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //-----------------------------------------------------------------------------
-#if defined (__linux__)
 #include <fio/port/compiler.h>
 #include "port-internal.h"
-#if KFIOC_USE_LINUX_UACCESS_H
-# include <linux/uaccess.h>
-#else
-# include <asm/uaccess.h>
-#endif
+#include <linux/uaccess.h>
 #include <linux/fs.h>
 #include <linux/err.h>
 #include <linux/sched.h>
-#endif
 #include <fio/port/fio-port.h>
-#if defined (__linux__)
 #include <linux/module.h>
-#endif
-/// @cond GENERATED_CODE
 #include <fio/port/port_config.h>
-/// @endcond
 #if (FUSION_INTERNAL==1)
 #include <fio/internal/config.h>
 #endif

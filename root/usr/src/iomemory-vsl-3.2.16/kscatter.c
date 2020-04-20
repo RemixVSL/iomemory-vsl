@@ -69,26 +69,6 @@ struct linux_sgl
 };
 #define sge_to_sl(lsg, sge) ((lsg)->sl + ((sge) - (lsg)->sge))
 
-#if KFIOC_SGLIST_NEW_API == 0
-static void sg_init_table(struct scatterlist *sgl, unsigned int nents)
-{
-    memset(sgl, 0, sizeof(*sgl) * nents);
-}
-
-static inline struct page *sg_page(struct scatterlist *sg)
-{
-    return sg->page;
-}
-
-static inline void sg_set_page(struct scatterlist *sg, struct page *page,
-                               unsigned int len, unsigned int offset)
-{
-    sg->page = page;
-    sg->offset = offset;
-    sg->length = len;
-}
-#endif
-
 int kfio_sgl_alloc_nvec(kfio_pci_dev_t *pcidev, kfio_numa_node_t node, kfio_sg_list_t **sgl, int nvecs)
 {
     struct linux_sgl *lsg;
