@@ -34,13 +34,6 @@
  * @{
  */
 
-/* XXX work_func_t undefined in early kernels:
- * the func member of work_struct is   void (*func)(void *)
- */
-
-#if KFIOC_MISSING_WORK_FUNC_T
-typedef void (*work_func_t)(void *);
-#endif
 #include <linux/workqueue.h>
 
 void noinline fusion_setup_dpc(fusion_dpc_t *wq, fusion_work_func_t func)
