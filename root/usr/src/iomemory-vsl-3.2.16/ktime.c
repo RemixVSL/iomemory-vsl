@@ -165,22 +165,16 @@ uint64_t noinline fusion_hztousec(uint64_t hertz)
 }
 KFIO_EXPORT_SYMBOL(fusion_usectohz);
 
-
+/* *****
+ * init_timer interface is old and deprecated
+ * *****/
 static void fusion_timer_callback(struct timer_list *t) {
-    /* what to do here? */
-    printk("fusion_timer_callback");
 }
 /**
  * support for delayed one shots
  */
 void noinline fusion_init_timer(struct fusion_timer_list* timer)
 {
-#if KFIOC_X_HAS_TIMER_SETUP
-    timer_setup((struct timer_list *)  timer, fusion_timer_callback, 0);
-    printk("fusion_init_timer");
-#else
-    init_timer((struct timer_list *) timer);
-#endif
 }
 KFIO_EXPORT_SYMBOL(fusion_init_timer);
 
@@ -190,11 +184,6 @@ KFIO_EXPORT_SYMBOL(fusion_init_timer);
 void noinline fusion_set_timer_function(struct fusion_timer_list* timer,
     void (*f) (fio_uintptr_t))
 {
-#if KFIOC_X_HAS_TIMER_SETUP
-    printk("fusion_set_timer_function");
-#else
-    ((struct timer_list *) timer)->function = f;
-#endif
 }
 KFIO_EXPORT_SYMBOL(fusion_set_timer_function);
 
@@ -203,11 +192,6 @@ KFIO_EXPORT_SYMBOL(fusion_set_timer_function);
  */
 void noinline fusion_set_timer_data(struct fusion_timer_list* timer, fio_uintptr_t d)
 {
-#if KFIOC_X_HAS_TIMER_SETUP
-    printk("fusion_set_timer_data");
-#else
-    ((struct timer_list *) timer)->data = d;
-#endif
 }
 KFIO_EXPORT_SYMBOL(fusion_set_timer_data);
 
@@ -217,7 +201,6 @@ KFIO_EXPORT_SYMBOL(fusion_set_timer_data);
  */
 void noinline fusion_set_relative_timer(struct fusion_timer_list* timer, uint64_t t)
 {
-    mod_timer((struct timer_list *) timer, fusion_get_lbolt() + t);
 }
 KFIO_EXPORT_SYMBOL(fusion_set_relative_timer);
 /**
@@ -225,7 +208,6 @@ KFIO_EXPORT_SYMBOL(fusion_set_relative_timer);
  */
 void noinline fusion_del_timer(struct fusion_timer_list* timer)
 {
-    del_timer_sync((struct timer_list *) timer);
 }
 KFIO_EXPORT_SYMBOL(fusion_del_timer);
 

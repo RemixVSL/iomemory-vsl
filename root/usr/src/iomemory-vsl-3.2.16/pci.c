@@ -228,7 +228,6 @@ uint8_t kfio_pci_bus_number(kfio_pci_bus_t *bus)
 /*   NUMA node management for PCI devices.                                           */
 /*************************************************************************************/
 
-#if PORT_SUPPORTS_PCI_NUMA_INFO
 kfio_numa_node_t kfio_pci_get_node(kfio_pci_dev_t *pci_dev)
 {
 #if KFIOC_PCI_HAS_NUMA_INFO
@@ -239,7 +238,6 @@ kfio_numa_node_t kfio_pci_get_node(kfio_pci_dev_t *pci_dev)
     return FIO_NUMA_NODE_NONE;
 #endif
 }
-#endif
 
 #if PORT_SUPPORTS_NUMA_NODE_OVERRIDE
 
