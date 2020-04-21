@@ -189,14 +189,14 @@ void fusion_destroy_rw_spin(fusion_rw_spinlock_t *s)
 
 void fusion_spin_read_lock(fusion_rw_spinlock_t *s)
 {
-#if FUSION_DEBUG && !KFIOC_CONFIG_PREEMPT_RT
+#if FUSION_DEBUG
     kassert(!irqs_disabled());
 #endif
     read_lock((rwlock_t *)s);
 }
 void fusion_spin_write_lock(fusion_rw_spinlock_t *s)
 {
-#if FUSION_DEBUG && !KFIOC_CONFIG_PREEMPT_RT
+#if FUSION_DEBUG
     kassert(!irqs_disabled());
 #endif
     write_lock((rwlock_t *)s);
@@ -245,32 +245,6 @@ void kfio_dump_stack()
 {
     dump_stack();
 }
-
-#if FIO_BITS_PER_LONG == 32
-/* 64bit divisor, dividend and result. dynamic precision */
-uint64_t kfio_div64_64(uint64_t dividend, uint64_t divisor)
-{
-    uint32_t tmp_divisor = divisor;
-    uint32_t upper = divisor >> 32;
-    uint32_t shift;
-
-    if(upper)
-    {
-        shift = fls(upper);
-        dividend = dividend >> shift;
-        tmp_divisor = divisor >> shift;
-    }
-
-    do_div(dividend, tmp_divisor);
-
-    return dividend;
-}
-
-uint64_t kfio_mod64_64(uint64_t dividend, uint64_t divisor)
-{
-    return do_div(dividend, divisor);
-}
-#endif
 
 /**
  * @}

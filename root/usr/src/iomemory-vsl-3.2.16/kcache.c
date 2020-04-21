@@ -39,11 +39,7 @@
  * @{
  */
 
-#if KFIOC_HAS_KMEM_CACHE
 #define KCACHE_PTR (struct kmem_cache *)
-#else
-#define KCACHE_PTR (struct kmem_cache_s *)
-#endif
 
 /**
  *
@@ -55,12 +51,7 @@ int noinline __kfio_create_cache(fusion_mem_cache_t *pcache, char *name, uint32_
 //    kassert(pcache->name);
 //    kassert(name);
     strncpy(pcache->name, name, 39);
-
-#if KFIOC_KMEM_CACHE_CREATE_REMOVED_DTOR
     pcache->p = kmem_cache_create(pcache->name, size, align, 0, NULL);
-#else
-    pcache->p = kmem_cache_create(pcache->name, size, align, 0, NULL, NULL);
-#endif
 
 #if FUSION_DEBUG_CACHE
     fusion_atomic_set(&pcache->count, 0);
@@ -98,15 +89,8 @@ void *kfio_cache_alloc_node(fusion_mem_cache_t *cache, int can_wait,
 
     FUSION_ALLOCATION_TRIPWIRE_TEST();
 
-#if KFIOC_CACHE_ALLOC_NODE_TAKES_FLAGS
     p = kmem_cache_alloc_node(KCACHE_PTR(cache->p),
                                (!can_wait || in_atomic() || irqs_disabled()) ? GFP_NOWAIT : GFP_NOIO, node);
-#else
-    // On ancient kernel where kmem_cache_alloc_node always uses GFP_KERNEL.
-    // Since we need to pass different GFP flags and cannot using the node allocator, use the
-    // generic allocator.
-    p = kmem_cache_alloc(KCACHE_PTR(cache->p), (!can_wait || in_atomic() || irqs_disabled()) ? GFP_NOWAIT : GFP_NOIO);
-#endif
 
 #if FUSION_DEBUG_CACHE
     if (p)

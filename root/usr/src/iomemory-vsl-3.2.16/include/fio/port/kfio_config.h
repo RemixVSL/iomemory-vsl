@@ -34,21 +34,10 @@
 
 #if defined(USERSPACE_KERNEL)
 # include <fio/port/userspace/kfio_config.h>
-#elif defined(__ESXI5__)
-#include <fio/port/esxi5/kfio_config.h>
 #elif defined(__linux__)
 #include <fio/port/linux/kfio_config.h>
-#elif defined(__SVR4) && defined(__sun)
-#include <fio/port/solaris/kfio_config.h>
-#include <fio/port/ktypes.h>
-#elif defined(__hpux__)
-#include <fio/port/hpux/kfio_config.h>
-#include <fio/port/ktypes.h>
 #elif defined(__FreeBSD__)
 #include <fio/port/freebsd/kfio_config.h>
-#include <fio/port/ktypes.h>
-#elif defined(_AIX)
-#include <fio/port/aix/kfio_config.h>
 #include <fio/port/ktypes.h>
 #elif defined(__OSX__)
 #include <fio/port/osx/kfio_config.h>
