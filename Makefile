@@ -21,6 +21,9 @@ clean:
 	cd root/usr/src/$(shell ls root/usr/src) && \
   	$(MAKE) clean
 
+define usage
+@echo Stub for making dkms, dpkg, the module and clean
+@echo usage: make "(dkms|dpkg|module|clean)"
+endef
 help:
-	@echo Stub for making dkms, dpkg, the module and clean
-	@echo usage: make (dkms|dpkg|module|clean)
+	$(usage)
