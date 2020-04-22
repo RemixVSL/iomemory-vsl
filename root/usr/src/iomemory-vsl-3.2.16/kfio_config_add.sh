@@ -9,6 +9,7 @@ TEST_RATE=$(expr $NCPUS "*" 2)
 KFIOC_TEST_LIST="${KFIOC_TEST_LIST}
 KFIOC_X_HAS_COARSE_REAL_TS
 KFIOC_X_PROC_CREATE_DATA_WANTS_PROC_OPS
+KFIOC_X_TASK_HAS_CPUS_MASK
 "
 
 ##
@@ -46,6 +47,24 @@ start_tests()
     # We want more time for ourselves than the child tests
     TIMEOUT_DELTA=$(($TIMEOUT_DELTA+$TIMEOUT_DELTA/2))
     update_timeout
+}
+
+# flag:          KFIOC_X_TASK_HAS_CPUS_MASK
+# usage:         1   Task struct has CPUs allowed as mask 5.2 and up
+#                0   5.0, 5.1 and 5.2 don't have this
+KFIOC_X_TASK_HAS_CPUS_MASK()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/sched.h>
+void kfioc_check_task_has_cpus_mask(void)
+{
+    cpumask_t *cpu_mask = NULL;
+    struct task_struct *tsk = NULL;
+    tsk->cpus_mask = *cpu_mask;
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1 -Werror
 }
 
 # flag:           KFIOC_X_REQUEST_QUEUE_HAS_QUEUE_LOCK_POINTER

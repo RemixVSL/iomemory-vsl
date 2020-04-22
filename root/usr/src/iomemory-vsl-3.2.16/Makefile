@@ -107,11 +107,11 @@ add_module_version patch_module_version:
 	fi
 
 .PHONY: dkms
-dkms:
+dkms: clean
 	./module_operations.sh -n "$(FIO_DRIVER_NAME)" -v "$(MODULE_VERSION)" -d
 
 .PHONY: dpkg
-dpkg:
+dpkg: clean
 	# patch fio_version, fio_short_version in debian/fio_values
 	cd $(shell git rev-parse --show-toplevel) && \
 		dpkg-buildpackage -rfakeroot --no-check-builddeps --no-sign
