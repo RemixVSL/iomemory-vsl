@@ -249,12 +249,7 @@ int noinline fusion_spin_is_irqsaved(fusion_spinlock_t *s)
 void noinline fusion_spin_lock_irqsave_nested(fusion_spinlock_t *s, int subclass)
 {
     linux_spinlock_t *ps = (linux_spinlock_t *) s;
-    /* XXX: old kernels do not have this function : */
-#if KFIOC_HAS_SPIN_LOCK_IRQSAVE_NESTED
     spin_lock_irqsave_nested(&ps->lock, ps->flags, subclass);
-#else
-    spin_lock_irqsave(&ps->lock, ps->flags);
-#endif
 }
 
 /*
