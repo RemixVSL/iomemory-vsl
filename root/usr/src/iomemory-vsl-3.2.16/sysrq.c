@@ -47,10 +47,6 @@ extern void iodrive_dump_all_software_state(void);
 #define SYSRQ_CSR       'z'
 
 void iodrive_handle_sysrq(int key
-#if ! KFIOC_HAS_GLOBAL_REGS_POINTER
-                          ,struct pt_regs *pt_regs
-#endif
-                          )
 {
     switch (key)
     {
@@ -67,18 +63,14 @@ struct sysrq_key_op csr_key_op = {
     .handler = iodrive_handle_sysrq,
     .help_msg = "ioDrive CSR (z)",
     .action_msg = "ioDrive CSR status:",
-#if KFIOC_HAS_SYSRQ_KEY_OP_ENABLE_MASK
     .enable_mask = 0,
-#endif
 };
 
 struct sysrq_key_op software_key_op = {
     .handler = iodrive_handle_sysrq,
     .help_msg = "ioDrive software (l)",
     .action_msg = "ioDrive Software status:",
-#if KFIOC_HAS_SYSRQ_KEY_OP_ENABLE_MASK
     .enable_mask = 0,
-#endif
 };
 
 void kfio_iodrive_sysrq_keys(void)
