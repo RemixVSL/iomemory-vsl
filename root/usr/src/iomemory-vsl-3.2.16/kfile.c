@@ -144,13 +144,7 @@ void noinline kfio_seq_commit(fusion_seq_file *sp, int num)
 */
 void *noinline kfio_inode_data(fusion_inode *ip)
 {
-#if KFIOC_HAS_PROCFS_PDE_DATA
     return PDE_DATA(ip);
-#else
-    /* get proc_dir_entry that contains this inode */
-    struct proc_dir_entry *pe = PDE((struct inode *) ip);
-    return pe->data;
-#endif
 }
 
 /**
