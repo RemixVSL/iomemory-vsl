@@ -59,7 +59,7 @@ gpl: fake_license modules patch_module_version
 
 .PHONY: fake_license
 fake_license:
-	sed -i 's/Proprietary/GPL/g' license.c
+	sed -i 's/Proprietary/GPL/g' Kbuild
 
 .PHONY: check_n_fix_kfio_ccver
 check_n_fix_kfio_ccver:
