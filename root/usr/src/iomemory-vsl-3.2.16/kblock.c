@@ -99,11 +99,6 @@ extern int enable_discard;
 
 extern int kfio_sgl_map_bio(kfio_sg_list_t *sgl, struct bio *bio);
 
-
-static void kfio_blk_complete_request(struct request *req, int error);
-static kfio_bio_t *kfio_request_to_bio(kfio_disk_t *disk, struct request *req,
-                                       bool can_block);
-
 static int kfio_bio_cnt(const struct bio * const bio)
 {
     return atomic_read(&bio->__bi_cnt);

@@ -165,11 +165,6 @@ uint64_t noinline fusion_hztousec(uint64_t hertz)
 }
 KFIO_EXPORT_SYMBOL(fusion_usectohz);
 
-/* *****
- * init_timer interface is old and deprecated
- * *****/
-static void fusion_timer_callback(struct timer_list *t) {
-}
 /**
  * support for delayed one shots
  */
