@@ -71,10 +71,7 @@ EX_OSFILE=72
 # defines 64 bit integral types with one or two "long" statements dependent on
 # architecture.
 
-KFIOC_TEST_LIST="
-KFIOC_HAS_RQ_POS_BYTES
-KFIOC_HAS_SCSI_QD_CHANGE_FN
-"
+KFIOC_TEST_LIST=""
 
 
 #

@@ -296,11 +296,7 @@ static int fio_shost_queuecommand(struct Scsi_Host *shost, struct scsi_cmnd *scm
         // FIXME This is fine for now because there is only 1 LUN per host (aka 1 VSU/device). However, I wonder if a more
         //       sophisticated mechanism would not yield better performance when there are more VSUs.
         num_luns = (uint32_t)fusion_atomic_read(&port_host->ref_count);
-#if KFIOC_HAS_SCSI_QD_CHANGE_FN
         scsi_change_queue_depth(sdev, scsi_queue_depth/num_luns); // Max # SCSI commands this LUN can handle at a time.
-#else
-        scsi_adjust_queue_depth(sdev, 0, scsi_queue_depth/num_luns); // Max # SCSI commands this LUN can handle at a time.
-#endif
 
         dbgprint(DBGS_SCSI, "%s: SCSI hooked up sdev to LU [tid %u, lun %" PRILunId "]\n",
             kfio_scsi_lu_get_bus_name(lu), sdev->id, sdev->lun);

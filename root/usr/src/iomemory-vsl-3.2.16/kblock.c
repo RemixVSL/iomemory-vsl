@@ -97,11 +97,6 @@ extern int enable_discard;
 
 #define bio_flags(bio) ((bio)->bi_opf & REQ_OP_MASK)
 
-#if KFIOC_HAS_RQ_POS_BYTES == 0
-#define blk_rq_pos(rq)    ((rq)->sector)
-#define blk_rq_bytes(rq)  ((rq)->nr_sectors << 9)
-#endif
-
 extern int kfio_sgl_map_bio(kfio_sg_list_t *sgl, struct bio *bio);
 
 
