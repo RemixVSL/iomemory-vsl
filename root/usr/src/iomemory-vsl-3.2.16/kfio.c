@@ -329,7 +329,6 @@ void fusion_rwsem_up_write(fusion_rwsem_t *x)
 #if PORT_SUPPORTS_PER_CPU
 kfio_cpu_t kfio_next_cpu_in_node(kfio_cpu_t last_cpu, kfio_numa_node_t node)
 {
-#if KFIOC_NUMA_MAPS
     if (node != FIO_NUMA_NODE_NONE)
     {
         cpumask_t *cpumask = (cpumask_t *) cpumask_of_node(node);
@@ -344,8 +343,6 @@ kfio_cpu_t kfio_next_cpu_in_node(kfio_cpu_t last_cpu, kfio_numa_node_t node)
             last_cpu = -1;
         } while (1);
     }
-#endif
-
     return -1;
 }
 #endif  /* PORT_SUPPORTS_PER_CPU */

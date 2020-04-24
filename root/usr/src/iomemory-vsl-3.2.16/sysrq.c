@@ -46,7 +46,7 @@ extern void iodrive_dump_all_software_state(void);
 #define SYSRQ_SOFTWARE  'l'
 #define SYSRQ_CSR       'z'
 
-void iodrive_handle_sysrq(int key
+void iodrive_handle_sysrq(int key)
 {
     switch (key)
     {

@@ -116,8 +116,6 @@ void kfio_create_kthread_on_cpu(fusion_kthread_func_t func, void *data,
 }
 #endif
 
-// #if PORT_SUPPORTS_PCI_NUMA_INFO
-#if KFIOC_NUMA_MAPS
 static void __kfio_bind_task_to_cpumask(struct task_struct *tsk, cpumask_t *mask)
 {
 #if KFIOC_X_TASK_HAS_CPUS_MASK
@@ -125,14 +123,15 @@ static void __kfio_bind_task_to_cpumask(struct task_struct *tsk, cpumask_t *mask
 #else
     tsk->cpus_allowed = *mask;
 #endif
+    // TODO: This is added in vsl4...
+    // tsk->nr_cpus_allowed = cpumask_weight(mask);
 }
-#endif
+
 /*
  * Will take effect on next schedule event
  */
 void kfio_bind_kthread_to_node(kfio_numa_node_t node)
 {
-#if KFIOC_NUMA_MAPS
     if (node != FIO_NUMA_NODE_NONE)
     {
         cpumask_t *cpumask = (cpumask_t *) cpumask_of_node(node);
@@ -142,7 +141,6 @@ void kfio_bind_kthread_to_node(kfio_numa_node_t node)
             )
             __kfio_bind_task_to_cpumask(current, cpumask);
     }
-#endif
 }
 
 /**
