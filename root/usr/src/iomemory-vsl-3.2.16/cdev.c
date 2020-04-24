@@ -124,40 +124,25 @@ static int fusion_control_release(struct inode *inode, struct file *filep)
     return 0;
 }
 
-#if KFIOC_FOPS_USE_LOCKED_IOCTL
-static int fusion_control_ioctl_internal(struct inode *inode, struct file *file, unsigned int cmd, fio_uintptr_t arg)
-#else
 static long fusion_control_ioctl_internal(struct file *file, unsigned int cmd, fio_uintptr_t arg)
-#endif
 {
     void *nand_dev = (struct fusion_nand_device *) kfio_fs_private_data(file);
 
     return fusion_control_ioctl( nand_dev, cmd, arg );
 }
 
-#if KFIOC_HAS_COMPAT_IOCTL_METHOD
-/*
- *  Needed for 32 bit apps to be able to ioctl a 64 bit driver
- */
 static long fusion_control_compat_ioctl_internal(struct file *file, unsigned int cmd, fio_uintptr_t arg)
 {
     void *nand_dev = (struct fusion_nand_device *) kfio_fs_private_data(file);
     return fusion_control_ioctl( nand_dev, cmd, arg );
 }
-#endif
 
 static struct file_operations fusion_control_ops =
 {
     open:    fusion_control_open,
     release: fusion_control_release,
-#if KFIOC_FOPS_USE_LOCKED_IOCTL
-    ioctl:   fusion_control_ioctl_internal,
-#else
     unlocked_ioctl: fusion_control_ioctl_internal,
-#endif
-#if KFIOC_HAS_COMPAT_IOCTL_METHOD
     compat_ioctl: fusion_control_compat_ioctl_internal,
-#endif
     poll:    fusion_control_ioctl_poll,
 };
 
