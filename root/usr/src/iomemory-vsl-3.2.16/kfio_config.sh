@@ -191,6 +191,7 @@ KFIOC_ELEVATOR_EXIT_HAS_REQQ_PARAM
 KFIOC_HAS_BLK_RQ_IS_PASSTHROUGH
 KFIOC_HAS_BLK_QUEUE_BOUNCE
 KFIOC_HAS_BLK_QUEUE_SPLIT2
+KFIOC_HAS_ELEVATOR_INIT
 "
 
 
@@ -577,6 +578,25 @@ kfioc_has_include()
 # Actual test procedures for determining Kernel capabilities
 #
 
+# flag:            KFIOC_HAS_ELEVATOR_INIT
+# usage:           1 kernel has 2 parameter elevator_init()
+#                  0 newer kernel without that function
+# kernel version:  Symbol export removed in 4.18. Since then only internal
+#                  commit: "block: unexport elevator_init/exit"
+KFIOC_HAS_ELEVATOR_INIT()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/elevator.h>
+
+test_has_elevator_init(void)
+{
+    struct request_queue *q;
+    elevator_init(q, "noop");
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1
+}
 
 # flag:           KFIOC_MISSING_WORK_FUNC_T
 # usage:          undef for automatic selection by kernel version
