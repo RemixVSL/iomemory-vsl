@@ -18,9 +18,7 @@ The modified fio-3.2.16.1732 source fixes several known bugs in the driver:
 Releases are tagged, and should be checked out by their tag. The release tags follow Linux Kernel versions. E.g. v5.6.0 (MEGACHONKER) will work on all 5.x kernels that are 5.6 and lower, but is not guaranteed to work on 5.7.
 
 | Tag | Codename |
-23
 | --- | --- |
-24
 | v5.6.0 | MEGACHONKER |
 
 ## Important note!!!
