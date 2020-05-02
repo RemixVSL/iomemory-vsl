@@ -51,7 +51,7 @@
 # if GCC_VERSION > 70300
 #define C_ASSERT(x) extern int __C_ASSERT__ [(x)?1:1]
 # else
-#define C_ASSERT(X) extern int __C_ASSERT__ [(x)?1:-1]
+#define C_ASSERT(x) extern int __C_ASSERT__ [(x)?1:-1]
 # endif
 #endif
 
