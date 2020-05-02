@@ -22,14 +22,7 @@ Releases are tagged, and should be checked out by their tag. The release tags fo
 | v5.6.0 | MEGACHONKER |
 
 ## Important note!!!
-Commits to master are not write tested, just compile tested. Releases have gone through testing with Flexible I/O Tester.
-
-Only the version and next_generation branches are tested, nothing else.
-The driver may in fact work with older or newer kernels. The next_generation
-branch is currently running in a CEPH cluster with official LTS kernel 4.14 and
-works quite well. Testing and running with the kernel module has been done on
-Ubuntu and Redhat.
-*** the untested branch has only been compiled and loaded not device tested ***
+Commits to master are not "always" write tested, just compile tested. Releases have gone through testing with Flexible I/O Tester. Testing for page_cache errors, and generic FIO checksumming on read and write and different block sizes.
 
 ## Building
 ### Source
