@@ -19,7 +19,7 @@ Releases are tagged, and should be checked out by their tag. The release tags fo
 
 | Tag | Codename |
 | --- | --- |
-| v5.6.0 | MEGACHONKER |
+| v5.6.0 | [MEGACHONKER](https://www.reddit.com/r/Chonkers/) |
 
 ## Important note!!!
 Commits to master are not "always" write tested, just compile tested. Releases have gone through testing with Flexible I/O Tester. Testing for page_cache errors, and generic FIO checksumming on read and write and different block sizes.
