@@ -7,7 +7,7 @@ set -e
 
 dkms_ver() {
     name=$1
-    ver=$(dkms status | grep "$name " | cut -d, -f2 | sed -e s/\ //)
+    ver=$(dkms status | grep "$name " | grep -v added | cut -d, -f2 | sed -e s/\ //)
     if [ "$?" != "0" ]; then
         echo "DKMS problem"
         exit 1
@@ -28,7 +28,7 @@ dkms_install() {
     echo "Adding, buidling and installing $name/$ver with DKMS"
 
     if [ "$(dkms status | grep $name | grep added)" == "" ]; then
-        dkms add $name/$ver
+      dkms add $name/$ver
     fi
     dkms build $name/$ver
     dkms install $name/$ver --force
@@ -112,12 +112,23 @@ patchLicenseVersion() {
     tag=$1
     src=license.c
     echo "Adding module version $tag to source $src"
+    set +e
     grep -q MODULE_VERSION $src
     if [ "$?" == "0" ]; then
         replace=$(perl -sne 'print "s/$2/$tag/\n" if /(MODULE_VERSION)\(\"([\d\w\._-]+)\"\)/' -- -tag=$tag $src | head -1)
         sed -i "$replace" $src
     else
+        echo "#include \"linux/module.h\"" > $src
+        echo "MODULE_LICENSE(\"GPL\");" >> $src
         echo "MODULE_VERSION(\""$tag"\");" >> $src
+    fi
+    set -e
+}
+
+sanity_check() {
+    if [ ! -e "Makefile" ]; then
+        echo "This script should run from the directory with the Makefile!"
+        exit 6
     fi
 }
 
@@ -127,13 +138,6 @@ install_libvsl() {
     src_dir=$(git rev-parse --show-toplevel)
     libvsl=$(find ${src_dir}/root/usr/lib/fio -type f| grep libvsl)
     cp $libvsl $target_dir
-}
-
-sanity_check() {
-    if [ ! -e "Makefile" ]; then
-        echo "This script should run from the directory with the Makefile!"
-        exit 6
-    fi
 }
 
 usage() {

@@ -1,17 +1,31 @@
 # IOMemory-VSL
-
 This is an unsupported update of the original driver source for FusionIO
 cards. It comes with no warranty, it may cause DATA LOSS or CORRUPTION.
 Therefore it is NOT meant for production use, just for testing purposes.
 
+## Background
+Driver support for FusionIO cards has been lagging behind kernel releases, effectively making these cards an expensive paperweight when running a distribution like Ubuntu / Arch / Fedora / ProxMox which all supply newer kernels than supported.
+
 ## Current version
-The current version is derived from iomemory-vsl-3.2.16. At the moment there is a lot of code redesign ongoing. You can find the bleeding edge development in the next_generation branch. Despite its name it is more mature than the master. Especially it fixes several known bugs:
+The current version is derived from iomemory-vsl-3.2.16, with several fixes and gone through rigorous cleaning of redundant unused and old code. This driver is aimed to only support Linux kernels from 5.0 and upwards. Older versions require using the fio-3.2.16.1732 (formerly next_generation) branch.
+The modified fio-3.2.16.1732 source fixes several known bugs in the driver:
 - silent IO drops
 - crashes during driver unload
 - SCSI queue settings
 - BIO status handling
 
+## Releases
+Releases are tagged, and should be checked out by their tag. The release tags follow Linux Kernel versions. E.g. v5.6.0 (MEGACHONKER) will work on all 5.x kernels that are 5.6 and lower, but is not guaranteed to work on 5.7.
+
+| Tag | Codename |
+23
+| --- | --- |
+24
+| v5.6.0 | MEGACHONKER |
+
 ## Important note!!!
+Commits to master are not write tested, just compile tested. Releases have gone through testing with Flexible I/O Tester.
+
 Only the version and next_generation branches are tested, nothing else.
 The driver may in fact work with older or newer kernels. The next_generation
 branch is currently running in a CEPH cluster with official LTS kernel 4.14 and
@@ -19,98 +33,105 @@ works quite well. Testing and running with the kernel module has been done on
 Ubuntu and Redhat.
 *** the untested branch has only been compiled and loaded not device tested ***
 
-## Background
-Driver support for FusionIO cards has been lagging behind kernel
-releases, effectively making the cards an expensive paperweight
-when running a distribution like Ubuntu which supplies newer kernels.
-Deemed a trivial task to update the drivers and actually make them work
-with said newer kernels, and putting the expensive paperweight to use again
-so I could access my data..., set forking and fixing the code in motion
-quite a while ago.
-
 ## Building
 ### Source
 ```
 git clone https://github.com/snuf/iomemory-vsl
-cd iomemory-vsl4/
-git checkout backport-iomemory-vsl
-cd root/usr/src/iomemory-vsl4-3.2.16
+cd iomemory-vsl/
+git checkout <release-tag>
+cd root/usr/src/iomemory-vsl-3.2.16
 make gpl
 sudo insmod iomemory-vsl.ko
 ```
-### Ubuntu / Debian
+### .deb Ubuntu / Debian
+```
+git clone https://github.com/snuf/iomemory-vsl
+cd iomemory-vsl
+git checkout <release-tag>
+make dpkg
+```
 
-### CentOS / RHEL
-If you are on CentOS or similiar distribution simply run
+### .rpm CentOS / RHEL
 ```
 git clone https://github.com/snuf/iomemory-vsl
 cd iomemory-vsl/
-git checkout next_generation
-rpmbuild -ba fio-driver.spec
+git checkout <release-tag>
+make rpm
 ```
-Otherwise module building can be done according to the original README.
 
 ## Installation
-Installation can be done according to the original README.
+Installation can be done with created packages, DKMS or other options described in the original README.
+
 
 ## DKMS
-A dkms.conf file is supplied, so it should be plug and play:
+Dynamic Kernel Module Support automates away the requirement of having to repackage the kernel module with every kernel and headers update that takes place on the system.
 ```
-sudo cp -r iomemory-vsl/root/usr/src/iomemory-vsl-3.2.16 /usr/src/
-sudo mkdir -p /var/lib/dkms/iomemory-vsl/3.2.16/build
-sudo ln -s /usr/src/iomemory-vsl-3.2.16 /var/lib/dkms/iomemory-vsl/3.2.16/source
-sudo dkms build -m iomemory-vsl -v 3.2.16
-sudo dkms install -m iomemory-vsl -v 3.2.16
-sudo modprobe iomemory-vsl
+git clone https://github.com/snuf/iomemory-vsl
+cd iomemory-vsl/
+git checkout <release-tag>
+make dkms
 ```
-With fio-utils installed you should see the following kind of...:
-```
-snuf@scipio:~/Downloads/ark/usr/bin$ sudo ./fio-status
-[sudo] password for snuf:
 
-Found 2 ioMemory devices in this system with 1 ioDrive Duo
-Driver version: 3.2.15 build 1700
+# Utils
+With fio-utils installed and passing a single device through to a VM  you should see the following kind of...:
+```
+vagrant@fio:~/iomemory-vsl/root/usr/src/iomemory-vsl-3.2.16$ sudo fio-status -a
+
+Found 1 ioMemory device in this system with 1 ioDrive Duo
+Driver version: 3.2.16 build 1731
 
 Adapter: Dual Adapter
-    Fusion-io ioDrive Duo 640GB, Product Number:FS3-204-320-CS, SN:440178, FIO SN:440178
-    External Power: NOT connected
-    PCIe Power limit threshold: 24.75W
-    Connected ioMemory modules:
-      fct0: SN:443248
-      fct1: SN:443247
+	Fusion-io ioDrive Duo 640GB, Product Number:FS3-204-320-CS, SN:440178, FIO SN:440178
+	ioDrive Duo HL, PN:00190000108
+	External Power: NOT connected
+	PCIe Bus voltage: avg 11.93V min 11.88V max 11.94V
+	PCIe Bus current: avg 0.89A max 1.28A
+	PCIe Bus power: avg 10.83W max 15.23W
+	PCIe Power limit threshold: 24.75W
+	PCIe slot available power: unavailable
+	Connected ioMemory modules:
+	  fct0:	SN:443248
 
-fct0    Attached
-    ioDIMM3 320G MLC, SN:443248
-    Located in slot 0 Upper of ioDrive Duo HL SN:440178
-    Last Power Monitor Incident: 693 sec
-    PCI:0b:00.0, Slot Number:17
-    Firmware v7.1.13, rev 109322 Public
-    320.00 GBytes device size
-    Internal temperature: 49.71 degC, max 51.68 degC
-    Reserve space status: Healthy; Reserves: 100.00%, warn at 10.00%
-    Contained VSUs:
-      fioa: ID:0, UUID:43836c20-2782-4279-91a3-25ac72c1a270
+fct0	Attached
+	ioDIMM3 320G MLC, SN:443248
+	ioDIMM3 320G MLC, PN:00276700903
+	Located in slot 0 Upper of ioDrive Duo HL SN:440178
+	Powerloss protection: protected
+	PCI:00:04.0, Slot Number:3
+	Vendor:1aed, Device:1005, Sub vendor:1aed, Sub device:1010
+	Firmware v7.1.13, rev 109322 Public
+	320.00 GBytes device size
+	Format: v500, 625000000 sectors of 512 bytes
+	PCIe slot available power: 25.00W
+	PCIe negotiated link: 4 lanes at 2.5 Gt/sec each, 1000.00 MBytes/sec total
+	Internal temperature: 63.98 degC, max 64.47 degC
+	Internal voltage: avg 1.02V, max 1.02V
+	Aux voltage: avg 2.48V, max 2.48V
+	Reserve space status: Healthy; Reserves: 100.00%, warn at 10.00%
+	Active media: 100.00%
+	Rated PBW: 5.00 PB, 99.41% remaining
+	Lifetime data volumes:
+	   Physical bytes written: 29,684,767,106,744
+	   Physical bytes read   : 34,299,628,056,072
+	RAM usage:
+	   Current: 136,650,432 bytes
+	   Peak   : 2,621,233,792 bytes
+	Contained VSUs:
+	  fioa:	ID:0, UUID:43836c20-2782-4279-91a3-25ac72c1a270
 
-fioa    State: Online, Type: block device
-    ID:0, UUID:43836c20-2782-4279-91a3-25ac72c1a270
-    320.00 GBytes device size
-
-fct1    Attached
-    ioDIMM3 320G MLC, SN:443247
-    Located in slot 1 Lower of ioDrive Duo HL SN:440178
-    Last Power Monitor Incident: 693 sec
-    PCI:0c:00.0, Slot Number:10
-    Firmware v7.1.13, rev 109322 Public
-    320.00 GBytes device size
-    Internal temperature: 52.17 degC, max 53.65 degC
-    Reserve space status: Healthy; Reserves: 100.00%, warn at 10.00%
-    Contained VSUs:
-      fiob: ID:0, UUID:e6cf3046-bf97-49c2-810e-81e14620b1d8
-
-fiob    State: Online, Type: block device
-    ID:0, UUID:e6cf3046-bf97-49c2-810e-81e14620b1d8
-    320.00 GBytes device size
+fioa	State: Online, Type: block device
+	ID:0, UUID:43836c20-2782-4279-91a3-25ac72c1a270
+	320.00 GBytes device size
+	Format: 625000000 sectors of 512 bytes
 ```
+Where `dmesg` contains the actual driver version tag of the running driver
+```
+vagrant@fio:~/iomemory-vsl/root/usr/src/iomemory-vsl-3.2.16$ dmesg | grep "ioDrive driver"
+[91439.667645] <6>fioinf ioDrive driver 745cc88-3.2.16.1731                loading...
+```
+
+# Support
+Join us on the Discord Server in the Wiki, or create a bug report
 
 ## Other notes
 Installing the fio-util, fio-common, fio-preinstall and fio-sysvinit are

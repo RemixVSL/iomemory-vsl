@@ -6,13 +6,13 @@ dkms: clean
 		$(MAKE) dkms
 
 .PHONY: dpkg
-dpkg: clean
+dpkg: clean patch_module_version
 	# patch fio_version, fio_short_version in debian/fio_values
 	cd $(shell git rev-parse --show-toplevel) && \
 		dpkg-buildpackage -rfakeroot --no-check-builddeps --no-sign
 
 .PHONY: rpm
-rpm: clean
+rpm: clean patch_module_version
 	#	patch fio_version in fio-driver.spec
 	mkdir -p ~/rpmbuild/SOURCES && \
 	tar -zcvf ~/rpmbuild/SOURCES/iomemory-vsl-3.2.16.1732.tar.gz \
@@ -29,6 +29,11 @@ module: clean
 clean:
 	cd root/usr/src/$(shell ls root/usr/src) && \
   	$(MAKE) clean
+
+patch_module_version:
+	cd root/usr/src/$(shell ls root/usr/src) && \
+		$(MAKE) patch_module_version
+
 
 define usage
 @echo Stub for making dkms, dpkg, the module and clean
