@@ -32,9 +32,9 @@ quite a while ago.
 ### Source
 ```
 git clone https://github.com/snuf/iomemory-vsl
-cd iomemory-vsl4/
+cd iomemory-vsl/
 git checkout backport-iomemory-vsl
-cd root/usr/src/iomemory-vsl4-3.2.16
+cd root/usr/src/iomemory-vsl-3.2.16
 make gpl
 sudo insmod iomemory-vsl.ko
 ```
