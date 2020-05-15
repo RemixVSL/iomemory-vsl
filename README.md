@@ -6,20 +6,22 @@ Therefore it is NOT meant for production use, just for testing purposes.
 ## Background
 Driver support for FusionIO cards has been lagging behind kernel releases, effectively making these cards an expensive paperweight when running a distribution like Ubuntu / Arch / Fedora / ProxMox which all supply newer kernels than supported.
 
-## Current version
-The current version is derived from iomemory-vsl-3.2.16, with several fixes and gone through rigorous cleaning of redundant unused and old code. This driver is aimed to only support Linux kernels from 5.0 and upwards. Older versions require using the fio-3.2.16.1732 (formerly next_generation) branch.
-The modified fio-3.2.16.1732 source fixes several known bugs in the driver:
-- silent IO drops
-- crashes during driver unload
-- SCSI queue settings
-- BIO status handling
-
 ## Releases
-Releases are tagged, and should be checked out by their tag. The release tags follow Linux Kernel versions. E.g. v5.6.0 (MEGACHONKER) will work on all 5.x kernels that are 5.6 and lower, but is not guaranteed to work on 5.7.
+Releases are tagged, and should be checked out by their tag. The release tags follow Linux Kernel versions. E.g. **v5.6.0 (MEGACHONKER)** will work on all 5.x kernels that are 5.6 and lower, but is not guaranteed to work on 5.7. **v4.20.0 - Grey Dawn** supports most kernels that pre-date 5.3.
 
 | Tag | Codename |
 | --- | --- |
 | v5.6.0 | [MEGACHONKER](https://www.reddit.com/r/Chonkers/) |
+| v4.20.0 | Grey Dawn |
+
+## Versions
+The driver is derived from the original iomemory-vsl-3.2.16, but has several fixes and gone through rigorous cleaning of redundant unused and old code. Active development is done on master, while *tags* are used for releases. The new releases are all tagged from master, whereas the v4.20 releases are tagged from fio-3.2.16.1732.
+
+The modified source fixes several known bugs in the driver:
+- silent IO drops
+- crashes during driver unload
+- SCSI queue settings
+- BIO status handling
 
 ## Important note!!!
 Commits to master are not "always" write tested, just compile tested. Releases have gone through testing with Flexible I/O Tester. Testing for page_cache errors, and generic FIO checksumming on read and write and different block sizes.
