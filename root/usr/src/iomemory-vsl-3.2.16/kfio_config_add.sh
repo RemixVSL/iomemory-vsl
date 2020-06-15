@@ -217,7 +217,7 @@ void has_queue_blk_queue_flag_ops(void)
      blk_queue_flag_clear(0, &q);
 }
 '
-    kfioc_test "$test_code" "$test_flag" 1 "-Werror -Werror=frame-larger-than=4096"
+    kfioc_test "$test_code" "$test_flag" 1 "-Werror -Wframe-larger-than=4096"
 }
 
 # flag:           KFIOC_X_BIO_HAS_ERROR
