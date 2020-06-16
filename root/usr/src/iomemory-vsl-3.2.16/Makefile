@@ -50,14 +50,17 @@ FIOARCH ?= $(shell uname -m)
 CCMAJOR ?= $(shell echo __GNUC__ | $(FIOCC) -E -xc - | tail -n 1)
 CCMINOR ?= $(shell echo __GNUC_MINOR__ | $(FIOCC) -E -xc - | tail -n 1)
 CCVER=$(CCMAJOR)$(CCMINOR)
-LAST_CCVER := $(shell ls -1 kfio | sed -n 's/.*_cc\([0-9][0-9]*\)_.*/\1/p' | tail -1)
+# This is a hack till we have something else figured out..... *sauces*
+LAST_REAL_CCVER ?= "x86_64_cc63_libkfio.o_shipped"
+LAST_CCVER := $(shell ls -1 kfio | grep $(LAST_REAL_CCVER) | sed -n 's/.*_cc\([0-9][0-9]*\)_.*/\1/p' | tail -1)
+
 # Get the tag and push it in here too.... if not too long...
 MODULE_VERSION ?= $(shell git rev-parse --short HEAD)
 
 TARGET ?= $(FIOARCH)_cc$(CCMAJOR)$(CCMINOR)
 
 KFIO_LIB ?= kfio/$(TARGET)_libkfio.o_shipped
-LAST_KFIO_LIB := $(shell ls -1 kfio | sort | tail -1)
+LAST_KFIO_LIB := $(shell ls -1 kfio | grep $(LAST_REAL_CCVER) | sort | tail -1)
 
 NCPUS:=$(shell grep -c ^processor /proc/cpuinfo)
 
