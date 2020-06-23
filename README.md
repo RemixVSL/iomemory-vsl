@@ -3,6 +3,9 @@ This is an unsupported update of the original driver source for FusionIO
 cards. It comes with no warranty, it may cause DATA LOSS or CORRUPTION.
 Therefore it is NOT meant for production use, just for testing purposes.
 
+# IOMemory-VSL4
+For the iomemory-vsl4 driver please go to the [iomemory-vsl4](https://github.com/snuf/iomemory-vsl4) repo.
+
 ## Background
 Driver support for FusionIO cards has been lagging behind kernel releases, effectively making these cards an expensive paperweight when running a distribution like Ubuntu / Arch / Fedora / ProxMox which all supply newer kernels than supported.
 
