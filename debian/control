@@ -1,33 +1,53 @@
 Source: iomemory-vsl
 Section: non-free
 Priority: extra
-Maintainer: snuf
-Build-Depends: debhelper (>= 10), linux-headers, gcc, make, rsync
-Standards-Version: 3.7.3.x
-Homepage: https://github.com/snuf/iomemory-vsl
+Maintainer: Support <support@fusionio.com>
+Build-Depends: debhelper (>= 5), linux-headers | linux-headers-amd64, gcc, make, rsync
+Standards-Version: 3.7.3
+Homepage: http://support.fusionio.com
 
-Package: iomemory-vsl-5.3.0-42-generic
+Package: iomemory-vsl-5.3.0-64-generic
 Architecture: amd64
 Provides: iomemory-vsl,
-          iomemory-vsl-${fio-version}
-Conflicts: iodrive-driver, fio-driver
-Replaces: iodrive-driver, fio-driver
-Description: Modified driver for FIO devices
- Modified driver for FIO devices
+          iomemory-vsl-${fio-version},
+          iomemory-vsl,
+          libvsl
+Conflicts: iodrive-driver, fio-driver, libvsl, iomemory-vsl-source
+Replaces: iodrive-driver, fio-driver, libvsl
+Description: Driver for SanDisk Fusion ioMemory devices
+ Driver for SanDisk Fusion ioMemory devices
 
-Package: iomemory-vsl-config-5.3.0-42-generic
+Package: iomemory-vsl-config-5.3.0-64-generic
 Architecture: amd64
 Provides: iomemory-vsl-config,
           iomemory-vsl-config-${fio-version}
-Depends: iomemory-vsl-source
-Description: Configuration of iomemory-vsl for FIO drivers %{fio-version}
- Configuration of iomemory-vsl for FIO drivers %{fio-version}
+Description: Configuration of iomemory-vsl for SanDisk Fusion ioMemory drivers
+ Configuration of iomemory-vsl for SanDisk Fusion ioMemory drivers
 
 Package: iomemory-vsl-source
 Architecture: amd64
-Depends: linux-headers, gcc, make, lsb-release
+Depends: linux-headers | linux-headers-amd64, gcc, make, lsb-release
 Provides: iomemory-vsl,
           iomemory-vsl-${fio-version},
+          iomemory-vsl,
           libvsl
-Description: Modified source to build driver for FIO devices
- Modified source to build driver for FIO devices
+Conflicts: iomemory-vsl-${fio-version}, iomemory-vsl
+Description: Source to build driver for SanDisk Fusion ioMemory devices
+ Source to build driver for SanDisk Fusion ioMemory devices
+
+Package: iomemory-vsl-di-5.3.0-64-generic
+Package-Type: udeb
+Architecture: amd64
+Depends:
+XB-Kernel-Version: 5.3.0-64-generic
+Section: debian-installer
+Description: Source to build driver for SanDisk Fusion ioMemory devices
+ Source to build driver for SanDisk Fusion ioMemory devices
+
+Package: iomemory-vsl-initrd-5.3.0-64-generic
+Architecture: amd64
+Depends: iomemory-vsl
+XB-Modaliases:
+Description: Driver for SanDisk Fusion ioMemory devices for inclusion in ram disk
+ Driver for SanDisk Fusion ioMemory devices for inclusion in ram disk
+
