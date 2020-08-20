@@ -61,6 +61,7 @@ TARGET ?= $(FIOARCH)_cc$(CCMAJOR)$(CCMINOR)
 
 KFIO_LIB ?= kfio/$(TARGET)_libkfio.o_shipped
 LAST_KFIO_LIB := $(shell ls -1 kfio | grep $(LAST_REAL_CCVER) | sort | tail -1)
+KFIO_LIB_CMD ?= kfio/.$(TARGET)_libkfio.o.cmd
 
 NCPUS:=$(shell grep -c ^processor /proc/cpuinfo)
 
@@ -79,6 +80,7 @@ check_n_fix_kfio_ccver:
 			cp kfio/${LAST_KFIO_LIB} ${KFIO_LIB}; \
 		fi \
 	fi
+	$(shell touch ${KFIO_LIB_CMD})
 
 clean modules_clean:
 	$(MAKE) \
