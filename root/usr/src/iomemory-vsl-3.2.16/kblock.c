@@ -47,6 +47,9 @@
 #include <linux/fs.h>
 #include <fio/port/cdev.h>
 #include <linux/buffer_head.h>
+#if KFIOC_X_LINUX_HAS_PART_STAT_H
+#include <linux/part_stat.h>
+#endif
 
 extern int use_workqueue;
 static int fio_major;
@@ -957,12 +960,18 @@ static struct request_queue *kfio_alloc_queue(struct kfio_disk *dp,
 
     test_safe_plugging();
 
+#if KFIOC_X_BLK_ALLOC_QUEUE_NODE_EXISTS
     rq = blk_alloc_queue_node(GFP_NOIO, node);
+#else
+    rq = blk_alloc_queue(kfio_make_request, node);
+#endif
     if (rq != NULL)
     {
         rq->queuedata = dp;
-        blk_queue_make_request(rq, kfio_make_request);
 
+#if KFIOC_X_BLK_ALLOC_QUEUE_NODE_EXISTS
+        blk_queue_make_request(rq, kfio_make_request);
+#endif
         // TODO:
         // rq->queue_lock = (spinlock_t *)dp->queue_lock;
         memcpy(&dp->queue_lock, &rq->queue_lock, sizeof(dp->queue_lock));

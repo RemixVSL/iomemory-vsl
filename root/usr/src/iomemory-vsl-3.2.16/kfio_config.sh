@@ -75,6 +75,8 @@ KFIOC_TEST_LIST="
 KFIOC_X_HAS_COARSE_REAL_TS
 KFIOC_X_PROC_CREATE_DATA_WANTS_PROC_OPS
 KFIOC_X_TASK_HAS_CPUS_MASK
+KFIOC_X_LINUX_HAS_PART_STAT_H
+KFIOC_X_BLK_ALLOC_QUEUE_NODE_EXISTS
 "
 
 
@@ -94,6 +96,45 @@ done
 #
 # Actual test procedures for determining Kernel capabilities
 #
+####
+# flag:            KFIOC_X_BLK_ALLOC_QUEUE_NODE_EXISTS
+# usage:           1   Kernels that do have blk_alloc_queue_node
+#                  0   Kernels that don't have blk_alloc_queue_node
+# kernel_version:  In 5.7 blk_alloc_queue node got removed, which simplifies things
+KFIOC_X_BLK_ALLOC_QUEUE_NODE_EXISTS()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/blkdev.h>
+void kfioc_check_blk_alloc_queue_node(void)
+{
+  struct request_queue *rq;
+  int node = 1;
+
+  rq = blk_alloc_queue_node(GFP_NOIO, node);
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1 -Werror
+}
+
+# flag:            KFIOC_X_LINUX_HAS_PART_STAT_H
+# usage:           1   Kernels that have linux/part_stats.h
+#                  0   No kernel before 5.7 has linux/part_stat.h
+# kernel_version:  Partition statistics got their own header file in 5.7 and
+#                  onwards
+KFIOC_X_LINUX_HAS_PART_STAT_H()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/part_stat.h>
+void kfioc_check_linux_has_part_stats_h(void)
+{
+    part_stat_lock();
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1 -Werror
+}
+
 ####
 # flag:          KFIOC_X_TASK_HAS_CPUS_MASK
 # usage:         1   Task struct has CPUs allowed as mask 5.2 and up
