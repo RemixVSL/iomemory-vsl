@@ -133,7 +133,7 @@ rpm:
 		cd $(shell git rev-parse --show-toplevel) && \
 			$(MAKE) rpm
 
-modules modules_install: check_n_fix_kfio_ccver check_target_kernel include/fio/port/linux/kfio_config.h add_module_version
+modules modules_install: check_target_kernel check_n_fix_kfio_ccver include/fio/port/linux/kfio_config.h add_module_version
 	$(MAKE) \
     -j$(NCPUS) \
 	-C $(KERNEL_BUILD) \
