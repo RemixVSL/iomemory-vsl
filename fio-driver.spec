@@ -29,6 +29,9 @@
 # Turn off silly debug packages
 %define debug_package %{nil}
 
+# Turn off fail on unpackaged files
+%define _unpackaged_files_terminate_build 0
+
 
 Summary: Driver for SanDisk Fusion ioMemory devices
 Name: iomemory-vsl
