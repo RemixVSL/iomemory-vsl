@@ -59,7 +59,6 @@
 
 #include <fio/port/common-linux/kassert.h>
 #include <fio/port/common-linux/commontypes.h>
-#include <fio/port/common-linux/kflux.h>
 #include <fio/port/kfio_config.h>
 #include <linux/blkdev.h>
 #include <linux/cdev.h>
