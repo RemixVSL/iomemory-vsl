@@ -1,0 +1,28 @@
+# persistent storage links for iomemory-vsl devices.
+# requires fio-status in /usr/bin.
+
+ACTION=="remote", GOTO="persistent_fio_end"
+ENV{UDEV_DISABLE_PERSISTENT_STORAGE_RULES_FLAG}=="1", GOTO="persistent_fio_end"
+
+SUBSYSTEM!="block", GOTO="persistent_fio_end"
+KERNEL!="fio*", GOTO="persistent_fio_end"
+
+# this was copied over from 60-persistent-storage, I believe it tries to see
+# if /sys/block/fio*/whole_disk merely exists
+TEST=="whole_disk", GOTO="persistent_fio_end"
+
+# partition handling also originates there.
+ENV{DEVTYPE}=="partition", \
+  IMPORT{parent}="ID_[!F]*", IMPORT{parent}="ID_", \
+  IMPORT{parent}="ID_F[!S]*", IMPORT{parent}="ID_F", \
+  IMPORT{parent}="ID_FS[!_]*", IMPORT{parent}="ID_FS"
+
+# by-id
+KERNEL=="fio[a-z]", PROGRAM="/usr/bin/fio-status --field iom.format_uuid /dev/%k", SYMLINK+="disk/by-id/fio-%c"
+KERNEL=="fio[a-z][0-9]*", ENV{DEVTYPE}=="partition", PROGRAM="/usr/bin/fio-status --field iom.format_uuid /dev/%P", SYMLINK+="disk/by-id/fio-%c-part%n"
+
+# by-path
+KERNEL=="fio[a-z]", PROGRAM="/usr/bin/fio-status --field iom.pci_addr /dev/%k", SYMLINK+="disk/by-path/pci-0000:%c-%k"
+KERNEL=="fio[a-z][0-9]*", ENV{DEVTYPE}=="partition", PROGRAM="/usr/bin/fio-status --field iom.pci_addr /dev/%P", SYMLINK+="disk/by-path/pci-0000:%c-%P-part%n"
+
+LABEL="persistent_fio_end"
