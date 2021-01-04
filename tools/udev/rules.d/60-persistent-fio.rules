@@ -1,7 +1,7 @@
 # persistent storage links for iomemory-vsl devices.
 # requires fio-status in /usr/bin.
 
-ACTION=="remote", GOTO="persistent_fio_end"
+ACTION=="remove", GOTO="persistent_fio_end"
 ENV{UDEV_DISABLE_PERSISTENT_STORAGE_RULES_FLAG}=="1", GOTO="persistent_fio_end"
 
 SUBSYSTEM!="block", GOTO="persistent_fio_end"
