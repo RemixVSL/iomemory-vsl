@@ -47,11 +47,7 @@
 #include <linux/fs.h>
 #include <fio/port/cdev.h>
 #include <linux/buffer_head.h>
-#if KFIOC_X_LINUX_HAS_PART_STAT_H
-#include <linux/part_stat.h>
-#endif
-
-blk_qc_t kfio_submit_bio(struct bio *bio);
+#include <kblock_meta.h>
 
 extern int use_workqueue;
 static int fio_major;
@@ -213,9 +209,7 @@ static struct block_device_operations fio_bdev_ops =
 
 
 static struct request_queue *kfio_alloc_queue(struct kfio_disk *dp, kfio_numa_node_t node);
-#if KFIOC_X_HAS_MAKE_REQUEST_FN
-static unsigned int kfio_make_request(struct request_queue *queue, struct bio *bio);
-#endif /* KFIOC_X_HAS_MAKE_REQUEST_FN */
+
 static void __kfio_bio_complete(struct bio *bio, uint32_t bytes_complete, int error);
 static void kfio_invalidate_bdev(struct block_device *bdev);
 
@@ -969,15 +963,7 @@ static struct request_queue *kfio_alloc_queue(struct kfio_disk *dp,
 
     test_safe_plugging();
 
-#if KFIOC_X_HAS_MAKE_REQUEST_FN
-  #if KFIOC_X_BLK_ALLOC_QUEUE_NODE_EXISTS
-    rq = blk_alloc_queue_node(GFP_NOIO, node);
-  #else /* KFIOC_X_BLK_ALLOC_QUEUE_NODE_EXISTS */
-    rq = blk_alloc_queue(kfio_make_request, node);
-  #endif /* KFIOC_X_BLK_ALLOC_QUEUE_NODE_EXISTS */
-#endif /* KFIOC_X_HAS_MAKE_REQUEST_FN */
-
-    rq = blk_alloc_queue(node);
+    rq = BLK_ALLOC_QUEUE;
     if (rq != NULL)
     {
         rq->queuedata = dp;
@@ -1149,11 +1135,7 @@ blk_qc_t kfio_submit_bio(struct bio *bio)
     }
 
     if (bio_segments(bio) >= queue_max_segments(queue))
-#if KFIOC_X_HAS_MAKE_REQUEST_FN
-        blk_queue_split(queue, &bio);
-#else
-        blk_queue_split(&bio);
-#endif
+        BLK_QUEUE_SPLIT;
     // iomemory-vsl4 has atom bio here
 
     plug_data = kfio_should_plug(queue);
