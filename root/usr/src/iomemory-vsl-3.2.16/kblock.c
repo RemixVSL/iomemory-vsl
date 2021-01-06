@@ -953,9 +953,6 @@ static void test_safe_plugging(void)
     }
 }
 
-
-// ** ifndef check for make_request_fn or submit_bio?
-// The nice ZFS people use HAVE_SUBMIT_BIO_IN_BLOCK_DEVICE_OPERATIONS
 static struct request_queue *kfio_alloc_queue(struct kfio_disk *dp,
                                               kfio_numa_node_t node)
 {
@@ -1114,6 +1111,9 @@ static struct bio *kfio_add_bio_to_plugged_list(void *data, struct bio *bio)
     return ret;
 }
 
+/*
+  This hinges kfio_submit_bio or kfio_make_request which hinges on make_request_fn
+*/
 #if KFIOC_X_HAS_MAKE_REQUEST_FN
 static unsigned int kfio_make_request(struct request_queue *queue, struct bio *bio)
 #else
