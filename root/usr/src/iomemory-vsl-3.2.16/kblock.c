@@ -87,7 +87,9 @@ struct kfio_disk
     struct list_head      retry_list;
     unsigned int          retry_cnt;
 
-    // make_request_fn       *make_request_fn;
+#if KFIOC_X_HAS_MAKE_REQUEST_FN
+    make_request_fn       *make_request_fn;
+#endif
 };
 
 enum {
@@ -204,16 +206,18 @@ static struct block_device_operations fio_bdev_ops =
     .release =      kfio_release,
     .ioctl =        kfio_ioctl,
     .compat_ioctl = kfio_compat_ioctl,
+#if ! KFIOC_X_HAS_MAKE_REQUEST_FN
     .submit_bio =   kfio_submit_bio,
+#endif
 };
 
 
 static struct request_queue *kfio_alloc_queue(struct kfio_disk *dp, kfio_numa_node_t node);
-// static unsigned int kfio_make_request(struct request_queue *queue, struct bio *bio);
+#if KFIOC_X_HAS_MAKE_REQUEST_FN
+static unsigned int kfio_make_request(struct request_queue *queue, struct bio *bio);
+#endif /* KFIOC_X_HAS_MAKE_REQUEST_FN */
 static void __kfio_bio_complete(struct bio *bio, uint32_t bytes_complete, int error);
-
 static void kfio_invalidate_bdev(struct block_device *bdev);
-
 
 kfio_bio_t *kfio_fetch_next_bio(struct kfio_disk *disk)
 {
@@ -965,20 +969,22 @@ static struct request_queue *kfio_alloc_queue(struct kfio_disk *dp,
 
     test_safe_plugging();
 
-/*
-#if KFIOC_X_BLK_ALLOC_QUEUE_NODE_EXISTS
+#if KFIOC_X_HAS_MAKE_REQUEST_FN
+  #if KFIOC_X_BLK_ALLOC_QUEUE_NODE_EXISTS
     rq = blk_alloc_queue_node(GFP_NOIO, node);
-#else
+  #else /* KFIOC_X_BLK_ALLOC_QUEUE_NODE_EXISTS */
     rq = blk_alloc_queue(kfio_make_request, node);
-#endif
-*/
+  #endif /* KFIOC_X_BLK_ALLOC_QUEUE_NODE_EXISTS */
+#endif /* KFIOC_X_HAS_MAKE_REQUEST_FN */
+
     rq = blk_alloc_queue(node);
     if (rq != NULL)
     {
         rq->queuedata = dp;
 
-#if KFIOC_X_BLK_ALLOC_QUEUE_NODE_EXISTS
-        // blk_queue_make_request(rq, kfio_make_request);
+// #if KFIOC_X_BLK_ALLOC_QUEUE_NODE_EXISTS
+#if KFIOC_X_HAS_MAKE_REQUEST_FN
+        blk_queue_make_request(rq, kfio_make_request);
 #endif
         // TODO:
         // rq->queue_lock = (spinlock_t *)dp->queue_lock;
@@ -1123,12 +1129,16 @@ static struct bio *kfio_add_bio_to_plugged_list(void *data, struct bio *bio)
     return ret;
 }
 
-
-// static unsigned int kfio_make_request(struct request_queue *queue, struct bio *bio)
+#if KFIOC_X_HAS_MAKE_REQUEST_FN
+static unsigned int kfio_make_request(struct request_queue *queue, struct bio *bio)
+#else
 blk_qc_t kfio_submit_bio(struct bio *bio)
+#endif
 #define FIO_MFN_RET 0
 {
+#if ! KFIOC_X_HAS_MAKE_REQUEST_FN
     struct request_queue *queue = bio->bi_disk->queue;
+#endif
     struct kfio_disk *disk = queue->queuedata;
     void *plug_data;
 
@@ -1139,11 +1149,12 @@ blk_qc_t kfio_submit_bio(struct bio *bio)
         return FIO_MFN_RET;
     }
 
-
     if (bio_segments(bio) >= queue_max_segments(queue))
+#if KFIOC_X_HAS_MAKE_REQUEST_FN
+        blk_queue_split(queue, &bio);
+#else
         blk_queue_split(&bio);
-
-
+#endif
     // iomemory-vsl4 has atom bio here
 
     plug_data = kfio_should_plug(queue);

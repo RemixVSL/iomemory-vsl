@@ -77,6 +77,7 @@ KFIOC_X_PROC_CREATE_DATA_WANTS_PROC_OPS
 KFIOC_X_TASK_HAS_CPUS_MASK
 KFIOC_X_LINUX_HAS_PART_STAT_H
 KFIOC_X_BLK_ALLOC_QUEUE_NODE_EXISTS
+KFIOC_X_HAS_MAKE_REQUEST_FN
 "
 
 
@@ -102,6 +103,25 @@ done
 ## to documentation describing the change in the kernel.
 ##
 ####
+# flag:            KFIOC_X_HAS_MAKE_REQUEST_FN
+# usage:           1   Kernels that do have blk_alloc_queue_node
+#                  0   Kernels that don't have blk_alloc_queue_node
+# kernel_version:  In 5.9 make_request_fn got removed and we move to bio_submit
+KFIOC_X_HAS_MAKE_REQUEST_FN()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/blkdev.h>
+void kfioc_has_make_request_fn(void)
+{
+  struct kfio_disk
+  {
+      make_request_fn       *make_request_fn;
+  };
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1 -Werror
+}
 
 # flag:            KFIOC_X_BLK_ALLOC_QUEUE_NODE_EXISTS
 # usage:           1   Kernels that do have blk_alloc_queue_node
