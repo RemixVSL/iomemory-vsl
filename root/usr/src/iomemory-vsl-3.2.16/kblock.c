@@ -982,8 +982,7 @@ static struct request_queue *kfio_alloc_queue(struct kfio_disk *dp,
     {
         rq->queuedata = dp;
 
-// #if KFIOC_X_BLK_ALLOC_QUEUE_NODE_EXISTS
-#if KFIOC_X_HAS_MAKE_REQUEST_FN
+#if KFIOC_X_BLK_ALLOC_QUEUE_NODE_EXISTS
         blk_queue_make_request(rq, kfio_make_request);
 #endif
         // TODO:
