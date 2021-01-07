@@ -77,7 +77,7 @@ KFIOC_X_PROC_CREATE_DATA_WANTS_PROC_OPS
 KFIOC_X_TASK_HAS_CPUS_MASK
 KFIOC_X_LINUX_HAS_PART_STAT_H
 KFIOC_X_BLK_ALLOC_QUEUE_NODE_EXISTS
-KFIOC_X_HAS_MMAP_LOCK
+KFIOC_X_HAS_MAKE_REQUEST_FN
 "
 
 
@@ -103,21 +103,22 @@ done
 ## to documentation describing the change in the kernel.
 ##
 ####
-# flag:            KFIOC_X_HAS_MMAP_LOCK
-# usage:           0   Kernels that do have mmap_lock
-#                  1   Kernels that don't have mmap_lock
-# kernel_version:  In 5.8 mmap_sem is removed from mm, and is moved to the new mmap_lock API
-# lwn_reference:   https://lwn.net/Articles/816059/
-# doc_reference:   https://linuxplumbersconf.org/event/4/contributions/556/attachments/304/509/fine_grained_mm.pdf
-KFIOC_X_HAS_MMAP_LOCK()
+# flag:            KFIOC_X_HAS_MAKE_REQUEST_FN
+# usage:           1   Kernels that do have blk_alloc_queue_node
+#                  0   Kernels that don't have blk_alloc_queue_node
+# kernel_version:  In 5.9 make_request_fn got removed and we move to bio_submit
+KFIOC_X_HAS_MAKE_REQUEST_FN()
 {
     local test_flag="$1"
     local test_code='
-#include <linux/version.h>
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5,8,0)
-    #error Kernel older than 5.8.0 no mmap_lock in mm
-#endif
+#include <linux/blkdev.h>
+void kfioc_has_make_request_fn(void)
+{
+  struct kfio_disk
+  {
+      make_request_fn       *make_request_fn;
+  };
+}
 '
     kfioc_test "$test_code" "$test_flag" 1 -Werror
 }

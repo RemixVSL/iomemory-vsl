@@ -200,9 +200,7 @@ int kfio_get_user_pages(fusion_user_page_t *pages, int nr_pages, fio_uintptr_t s
 {
     int retval;
 
-    down_read(&current->mm->MMAP_LOCK_SEM);
-    retval =  get_user_pages(start, nr_pages, GET_USER_PAGES_FLAGS(write, 0), (struct page **) pages, NULL);
-    up_read(&current->mm->MMAP_LOCK_SEM);
+    retval = get_user_pages_fast(start, nr_pages, write, (struct page **) pages);
     return retval;
 }
 

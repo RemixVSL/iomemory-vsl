@@ -47,9 +47,7 @@
 #include <linux/fs.h>
 #include <fio/port/cdev.h>
 #include <linux/buffer_head.h>
-#if KFIOC_X_LINUX_HAS_PART_STAT_H
-#include <linux/part_stat.h>
-#endif
+#include <kblock_meta.h>
 
 extern int use_workqueue;
 static int fio_major;
@@ -85,14 +83,15 @@ struct kfio_disk
     struct list_head      retry_list;
     unsigned int          retry_cnt;
 
+#if KFIOC_X_HAS_MAKE_REQUEST_FN
     make_request_fn       *make_request_fn;
+#endif
 };
 
 enum {
     KFIO_DISK_HOLDOFF_BIT   = 0,
     KFIO_DISK_COMPLETION    = 1,
 };
-
 
 int iodrive_barrier_sync = 0;
 
@@ -203,15 +202,16 @@ static struct block_device_operations fio_bdev_ops =
     .release =      kfio_release,
     .ioctl =        kfio_ioctl,
     .compat_ioctl = kfio_compat_ioctl,
+#if ! KFIOC_X_HAS_MAKE_REQUEST_FN
+    .submit_bio =   kfio_submit_bio,
+#endif
 };
 
 
 static struct request_queue *kfio_alloc_queue(struct kfio_disk *dp, kfio_numa_node_t node);
-static unsigned int kfio_make_request(struct request_queue *queue, struct bio *bio);
+
 static void __kfio_bio_complete(struct bio *bio, uint32_t bytes_complete, int error);
-
 static void kfio_invalidate_bdev(struct block_device *bdev);
-
 
 kfio_bio_t *kfio_fetch_next_bio(struct kfio_disk *disk)
 {
@@ -960,11 +960,7 @@ static struct request_queue *kfio_alloc_queue(struct kfio_disk *dp,
 
     test_safe_plugging();
 
-#if KFIOC_X_BLK_ALLOC_QUEUE_NODE_EXISTS
-    rq = blk_alloc_queue_node(GFP_NOIO, node);
-#else
-    rq = blk_alloc_queue(kfio_make_request, node);
-#endif
+    rq = BLK_ALLOC_QUEUE;
     if (rq != NULL)
     {
         rq->queuedata = dp;
@@ -1115,9 +1111,19 @@ static struct bio *kfio_add_bio_to_plugged_list(void *data, struct bio *bio)
     return ret;
 }
 
+/*
+  This hinges kfio_submit_bio or kfio_make_request which hinges on make_request_fn
+*/
+#if KFIOC_X_HAS_MAKE_REQUEST_FN
 static unsigned int kfio_make_request(struct request_queue *queue, struct bio *bio)
+#else
+blk_qc_t kfio_submit_bio(struct bio *bio)
+#endif
 #define FIO_MFN_RET 0
 {
+#if ! KFIOC_X_HAS_MAKE_REQUEST_FN
+    struct request_queue *queue = bio->bi_disk->queue;
+#endif
     struct kfio_disk *disk = queue->queuedata;
     void *plug_data;
 
@@ -1128,11 +1134,8 @@ static unsigned int kfio_make_request(struct request_queue *queue, struct bio *b
         return FIO_MFN_RET;
     }
 
-
     if (bio_segments(bio) >= queue_max_segments(queue))
-        blk_queue_split(queue, &bio);
-
-
+        BLK_QUEUE_SPLIT;
     // iomemory-vsl4 has atom bio here
 
     plug_data = kfio_should_plug(queue);
