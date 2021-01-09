@@ -82,7 +82,6 @@ struct kfio_disk
     int                   in_do_request;
     struct list_head      retry_list;
     unsigned int          retry_cnt;
-
 #if KFIOC_X_HAS_MAKE_REQUEST_FN
     make_request_fn       *make_request_fn;
 #endif
@@ -109,7 +108,6 @@ static int kfio_bio_cnt(const struct bio * const bio)
 /******************************************************************************
  *   Functions required to register and unregister fio block device driver    *
  ******************************************************************************/
-
 
 int kfio_register_blkdev_pre_init(kfio_pci_dev_t *pdev)
 {
@@ -964,7 +962,6 @@ static struct request_queue *kfio_alloc_queue(struct kfio_disk *dp,
     if (rq != NULL)
     {
         rq->queuedata = dp;
-
 #if KFIOC_X_BLK_ALLOC_QUEUE_NODE_EXISTS
         blk_queue_make_request(rq, kfio_make_request);
 #endif
@@ -1136,6 +1133,7 @@ blk_qc_t kfio_submit_bio(struct bio *bio)
 
     if (bio_segments(bio) >= queue_max_segments(queue))
         BLK_QUEUE_SPLIT;
+
     // iomemory-vsl4 has atom bio here
 
     plug_data = kfio_should_plug(queue);

@@ -1,3 +1,6 @@
+FIO_DRIVER = $(shell grep fio_driver_name fio-driver.spec | awk '{print $$3}' | head -1)
+FIO_VERSION = $(shell grep fio_version fio-driver.spec | awk '{print $$3}' | head -1)
+
 all: help
 
 .PHONY: dkms
@@ -15,9 +18,9 @@ dpkg: clean patch_module_version
 rpm: clean patch_module_version
 	#	patch fio_version in fio-driver.spec
 	mkdir -p ~/rpmbuild/SOURCES && \
-	tar -zcvf ~/rpmbuild/SOURCES/iomemory-vsl-3.2.16.1732.tar.gz \
-		--transform s/iomemory-vsl/iomemory-vsl-3.2.16.1732/ \
-		../iomemory-vsl && \
+	tar -zcvf ~/rpmbuild/SOURCES/${FIO_DRIVER}-${FIO_VERSION}.tar.gz \
+		--transform s/${FIO_DRIVER}/${FIO_DRIVER}-${FIO_VERSION}/ \
+		../${FIO_DRIVER} && \
 	cd $(shell git rev-parse --show-toplevel) && \
 			rpmbuild -ba fio-driver.spec
 
