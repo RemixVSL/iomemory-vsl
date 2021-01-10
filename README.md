@@ -10,10 +10,11 @@ For the iomemory-vsl4 driver please go to the [iomemory-vsl4](https://github.com
 Driver support for FusionIO cards has been lagging behind kernel releases, effectively making these cards an expensive paperweight when running a distribution like Ubuntu / Arch / Fedora / ProxMox which all supply newer kernels than supported.
 
 ## Releases
-Releases are tagged, and should be checked out by their tag. The release tags follow Linux Kernel versions. E.g. **v5.6.0 (MEGACHONKER)** will work on all 5.x kernels that are 5.6 and lower, but is not guaranteed to work on 5.7. **v4.20.0 - Grey Dawn** supports most kernels that pre-date 5.0.
+Releases are tagged, and should be checked out by their tag. The release tags follow Linux Kernel versions. E.g. **v5.10.0 (Fatto Catto)** will work on all 5.x kernels that are 5.10 and lower, but is not guaranteed to work on 5.11. **v4.20.0 - Grey Dawn** supports most kernels that pre-date 5.0.
 
 | Tag | Codename |
 | --- | --- |
+| v5.10.0 | [Fatto Catto](https://www.youtube.com/watch?v=1S69FTdTS8g) |
 | v5.6.0 | [MEGACHONKER](https://www.reddit.com/r/Chonkers/) |
 | v4.20.1 | [Grey Dawn](https://southpark.cc.com/clips/154175/crazy-old-drivers) |
 
