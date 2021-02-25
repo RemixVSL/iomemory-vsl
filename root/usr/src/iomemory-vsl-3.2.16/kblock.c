@@ -419,7 +419,7 @@ void kfio_destroy_disk(kfio_disk_t *disk, destroy_type_t dt)
     {
         struct block_device *bdev;
 
-        bdev = bdget_disk(disk->gd, 0);
+        bdev = GET_BDEV;
 
         if (bdev != NULL)
         {
@@ -508,9 +508,9 @@ void kfio_disk_stat_write_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t 
     {
         struct gendisk *gd = fgd->gd;
         part_stat_lock();
-        part_stat_inc(&gd->part0, ios[1]);
-        part_stat_add(&gd->part0, sectors[1], totalsize >> 9);
-	      part_stat_add(&gd->part0, nsecs[1],   duration * 1000);
+        part_stat_inc(GD_PART0, ios[1]);
+        part_stat_add(GD_PART0, sectors[1], totalsize >> 9);
+	      part_stat_add(GD_PART0, nsecs[1],   duration * 1000);
         part_stat_unlock();
     }
 }
@@ -521,9 +521,9 @@ void kfio_disk_stat_read_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t d
     {
         struct gendisk *gd = fgd->gd;
         part_stat_lock();
-        part_stat_inc(&gd->part0, ios[0]);
-        part_stat_add(&gd->part0, sectors[0], totalsize >> 9);
-        part_stat_add(&gd->part0, nsecs[0],   duration * 1000);
+        part_stat_inc(GD_PART0, ios[0]);
+        part_stat_add(GD_PART0, sectors[0], totalsize >> 9);
+        part_stat_add(GD_PART0, nsecs[0],   duration * 1000);
         part_stat_unlock();
     }
 }
@@ -532,7 +532,7 @@ void kfio_disk_stat_read_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t d
 int kfio_get_gd_in_flight(kfio_disk_t *fgd, int rw)
 {
     struct gendisk *gd = fgd->gd;
-    return part_stat_read(&gd->part0, ios[STAT_WRITE]);
+    return part_stat_read(GD_PART0, ios[STAT_WRITE]);
 }
 
 void kfio_set_gd_in_flight(kfio_disk_t *fgd, int rw, int in_flight)
@@ -542,7 +542,7 @@ void kfio_set_gd_in_flight(kfio_disk_t *fgd, int rw, int in_flight)
 
     if (use_workqueue != USE_QUEUE_RQ)
     {
-        part_stat_set_all(&gd->part0, in_flight);
+        part_stat_set_all(GD_PART0, in_flight);
     }
 }
 

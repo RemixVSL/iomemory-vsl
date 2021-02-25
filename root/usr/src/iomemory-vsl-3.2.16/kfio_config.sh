@@ -78,6 +78,7 @@ KFIOC_X_TASK_HAS_CPUS_MASK
 KFIOC_X_LINUX_HAS_PART_STAT_H
 KFIOC_X_BLK_ALLOC_QUEUE_NODE_EXISTS
 KFIOC_X_HAS_MAKE_REQUEST_FN
+KFIOC_X_GENHD_PART0_IS_A_POINTER
 "
 
 
@@ -103,6 +104,27 @@ done
 ## to documentation describing the change in the kernel.
 ##
 ####
+# flag:            KFIOC_X_GENHD_PART0_IS_A_POINTER
+# usage:           1   genhd disk part is a pointer
+#                  0   genhd disk part is not a pointer
+# kernel_version:  In 5.11 the gendisk part becomes a pointer and also a
+# block_device, which causes two changes in the code. These are reflected by
+# two defines in block_meta.h
+KFIOC_X_GENHD_PART0_IS_A_POINTER()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/blkdev.h>
+#include <linux/part_stat.h>
+void kfioc_genhd_part0_is_a_pointer(void)
+{
+  struct gendisk *gd = NULL;
+  part_stat_set_all(gd->part0, 0);
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1 -Werror
+}
+
 # flag:            KFIOC_X_HAS_MAKE_REQUEST_FN
 # usage:           1   Kernels that do have blk_alloc_queue_node
 #                  0   Kernels that don't have blk_alloc_queue_node
@@ -241,6 +263,7 @@ update_timeout()
 open_log()
 {
     FIFO_DIR=$CONFIGDIR
+    FIFO_DIR=/tmp
     # The tee processes will die when this process exits.
     rm -f "$FIFO_DIR/kfio_config.stdout" "$FIFO_DIR/kfio_config.stderr" "$FIFO_DIR/kfio_config.log"
     exec 3>&1 4>&2
