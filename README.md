@@ -1,21 +1,9 @@
-<!-- PROJECT SHIELDS -->
-<!--
-*** I'm using markdown "reference style" links for readability.
-*** Reference links are enclosed in brackets [ ] instead of parentheses ( ).
-*** See the bottom of this document for the declaration of the reference variables
-*** for contributors-url, forks-url, etc. This is an optional, concise syntax you may use.
-*** https://www.markdownguide.org/basic-syntax/#reference-style-links
--->
-[![Contributors][contributors-shield]][contributors-url]
-[![Forks][forks-shield]][forks-url]
-[![Stargazers][stars-shield]][stars-url]
-[![Issues][issues-shield]][issues-url]
-
 <br />
 <p align="center">
-  <a href="https://github.com/snuf/iomemory-docs">
+
+  <!-- <a href="https://github.com/snuf/iomemory-docs">
     <img src="https://github.com/snuf/iomemory-docs/images/logo.png" alt="Logo" width="80" height="80">
-  </a>
+  </a> -->
 
   <h3 align="center"></h3>
 
@@ -155,26 +143,34 @@ vagrant@fio:~/iomemory-vsl/root/usr/src/iomemory-vsl-3.2.16$ dmesg | grep "ioDri
 ```
 
 # Acknowledgements
-The support and maintenance of this driver is made possible by the people that actively contribute or contributed to its code base or by supporting the project in other ways. This list is in no particular order, besides people first. It may mis a couple of names or entities, but obviously all the regulars on the Discord channel with the wealth of knowledge and insights they bring should be on here.
+The support and maintenance of this driver is made possible by the people that actively contribute or contributed to its code base or by supporting the project in other ways.
 
 | Name | Discord |  | URL |
 |---|---|---|---|
-| Demetrius Cassidy | Tourman | Long nights of cleaning the codebase, setting up the Discord channel and guiding peopple through firmware upgrades ||
-| Vince Fleming | NaN | Donating a 1.2TB IoDrive2 for debugging problems ||
-| Elixir | NaN | Making the Linux source code browsable and easy to compare changes over time | https://elixir.bootlin.com/linux/latest/source | 
-| ZOL | NaN | Also a source of inspiration for changes in the block layers of the linux kernel that we get to work around | https://zfsonlinux.org/ | 
-| LKML | NaN | Sometimes the first or last resort to figure out why something changed, or where | https://lkml.org/ |
-| Nvidia | NaN | Becaus they are hot to trot they encounter problems before we do, so we get to ride on their coat tails.... sometimes....though not often | www.nvidia.com |
-| Ghidra | NaN | The Ghidra project from the NSA that allows a look under the covers to figure out things | https://ghidra-sre.org/ |
+| Demetrius Cassidy | @Tourman | Long nights of cleaning the codebase, setting up the Discord channel and guiding people through firmware upgrades ||
+| Vince Fleming |  | Donating a 1.2TB IoDrive2 for debugging problems ||
 
-Oh yes and all the folks that were at <b>Fusion IO</b> for creating this product that was way ahead of its time.
+Obviously all the regulars on the Discord channel, notably @bplein, @AcquaCow and @Tear.
+
+Oh yes and the folks that were at <b>Fusion IO</b> for creating this product that was way ahead of its time and delivering the integration shim sources with the driver core.
+
+## Resources
+Tools and resources often used to figure out what changed, and why things are not working as they are supposed to.
+| Source | |
+| --- | --- |
+| [Elixir](https://elixir.bootlin.com/linux/latest/source) | Making the Linux source code browsable and easy to compare changes over time | 
+| [ZOL](https://zfsonlinux.org/) |  A source of inspiration for changes in the block layers of the linux kernel that we get to deal with | 
+| [LKML](https://lkml.org/) | Sometimes the first or last resort to figure out why something changed in the kernel, or where |
+| [The Nvidia Forum](https://forums.developer.nvidia.com/c/gpu-unix-graphics/linux/148) | Because they are hot to trot they encounter problems before we do, so we get to ride on their coat tails.... sometimes....though  often not | 
+| [Ghidra](https://ghidra-sre.org/) | The Ghidra project from the NSA that allows a look under the covers to figure out things inside non-sourcy libs|
+
 
 # Support
 Join us on the Discord Server in the Wiki, or create a bug report.
 
 ## Notes
 Installing the fio-util, fio-common, fio-preinstall and fio-sysvinit are recommended.
-When moving from source 2.3.11 to source 3.2.10 the firmware HAS TO BE UPDATED to 3.2.10.20150212. For the move to 3.2.15, and 3.2.16 from 3.2.10 we've not seen any issues
+When moving from source 2.3.11 to source 3.2.10 the firmware HAS TO BE UPDATED to 3.2.10.20150212. For the move to 3.2.15, and 3.2.16 from 3.2.10 we've not seen any issues.
 
 ## Firmware
-Though the newer the firmware often the better. If your card is not supported with the latest firmware drop by the Discord channel and someone might be able to help you. We are recently with kernel 5.11 experiencing issues with firwmare above 7.1.13.
+Though the newer the firmware often the better. If your card is not supported with the latest firmware drop by the Discord channel and someone might be able to help you.
