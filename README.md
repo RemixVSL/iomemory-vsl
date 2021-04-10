@@ -145,10 +145,10 @@ vagrant@fio:~/iomemory-vsl/root/usr/src/iomemory-vsl-3.2.16$ dmesg | grep "ioDri
 # Acknowledgements
 The support and maintenance of this driver is made possible by the people that actively contribute or contributed to its code base or by supporting the project in other ways.
 
-| Name | Discord |  | URL |
-|---|---|---|---|
-| Demetrius Cassidy | @Tourman | Long nights of cleaning the codebase, setting up the Discord channel and guiding people through firmware upgrades ||
-| Vince Fleming |  | Donating a 1.2TB IoDrive2 for debugging problems ||
+| Name | Discord |  |
+|---|---|---|
+| Demetrius Cassidy | @Tourman | Long nights of cleaning the codebase, setting up the Discord channel and guiding people through firmware upgrades |
+| Vince Fleming |  | Donating a 1.2TB IoDrive2 for debugging problems |
 
 Obviously all the regulars on the Discord channel, notably @bplein, @AcquaCow and @Tear.
 
