@@ -30,7 +30,7 @@
 #include <fio/port/ktime.h>
 
 #include <linux/jiffies.h>
-#include <linux/time.h>
+#include <linux/timekeeping.h>
 #include <linux/delay.h>
 #ifndef __KERNEL__
 #include <unistd.h>
@@ -107,7 +107,9 @@ int noinline fusion_HZ(void)
  */
 uint32_t noinline kfio_get_seconds(void)
 {
-    return get_seconds();
+    // this hurts...till we can patch the binary .so we just do this
+    // means we are toast in 2038 though....
+    return (uint32_t) ktime_get_real_seconds();
 }
 
 /**

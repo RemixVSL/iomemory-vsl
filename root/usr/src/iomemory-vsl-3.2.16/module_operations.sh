@@ -36,6 +36,7 @@ dkms_install() {
 
 get_rel_ver() {
     version=$1
+    kname=$(uname -r)
     release=$(git describe --tag)
     if [ "$version" == "" ]; then
         tag=$(git rev-parse --short HEAD)
@@ -43,10 +44,10 @@ get_rel_ver() {
     if [ "$version" == "" -a "$release" == "" ]; then
         echo "Error: not a release and no git tag, aborting."
         exit 1
+    elif [ "$version" != "" ]; then
+        echo ${kname%-*}-${version}
     elif [ "$release" != "" ]; then
         echo $release
-    elif [ "$version" != "" ]; then
-        echo $version
     else
         echo "deadbeef"
     fi
