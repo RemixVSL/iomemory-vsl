@@ -543,7 +543,7 @@ KFIO_EXPORT_SYMBOL(kfio_info_remove_node);
 KFIO_EXPORT_SYMBOL(kfio_info_handle_cmd);
 KFIO_EXPORT_SYMBOL(kfio_info_create_proc);
 KFIO_EXPORT_SYMBOL(kfio_info_printf);
-KFIO_EXPORT_SYMBOL(fusion_info_root);
+KFIO_EXPORT_SYMBOL(g_fusion_info_root);
 
 /**
  * @}
