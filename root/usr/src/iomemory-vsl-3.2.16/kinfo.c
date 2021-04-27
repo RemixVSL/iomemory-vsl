@@ -544,8 +544,11 @@ KFIO_EXPORT_SYMBOL(kfio_info_handle_cmd);
 KFIO_EXPORT_SYMBOL(kfio_info_create_proc);
 KFIO_EXPORT_SYMBOL(kfio_info_printf);
 KFIO_EXPORT_SYMBOL(g_fusion_info_root);
+<<<<<<< HEAD
 KFIO_EXPORT_SYMBOL(g_fusion_info_fio);
 KFIO_EXPORT_SYMBOL(g_fusion_info_iodrive);
+=======
+>>>>>>> call correct export
 
 /**
  * @}
