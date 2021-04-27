@@ -74,7 +74,11 @@ extern void fio_stop_submit_thread(struct fio_device *dev);
  */
 extern int  fio_open(struct fio_device *dev);
 extern int  fio_release(struct fio_device *dev);
+<<<<<<< HEAD
 extern int  fio_open_or_release(struct fio_device *dev, bool open);
+=======
+extern int  fio_open_or_release(struct fio_device *dev, char open);
+>>>>>>> rename smybols
 extern int  fio_ioctl(struct fio_device *dev, unsigned cmd, fio_uintptr_t arg);
 
 extern int  fio_handle_read_bio(struct fio_device *dev, struct kfio_bio *bio);
