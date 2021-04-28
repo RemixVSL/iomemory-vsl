@@ -53,9 +53,13 @@ typedef int    kfio_info_text_handler_t(void *param, int cmd, kfio_info_data_t *
 extern kfio_info_node_t *g_fusion_info_root;
 extern kfio_info_node_t *g_fusion_info_fio;
 <<<<<<< HEAD
+<<<<<<< HEAD
 extern kfio_info_node_t *g_fusion_info_iodrive;
 =======
 >>>>>>> rename smybols
+=======
+extern kfio_info_node_t *g_fusion_info_iodrive;
+>>>>>>> add some more symbols
 
 extern int  kfio_info_create_dir(kfio_info_node_t *parent, const char *name, kfio_info_node_t **newdir);
 extern int  kfio_info_create_type(kfio_info_node_t *parent, const char *name, int type, fio_mode_t mode,
