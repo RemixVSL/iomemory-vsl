@@ -52,6 +52,7 @@ typedef int    kfio_info_text_handler_t(void *param, int cmd, kfio_info_data_t *
 
 extern kfio_info_node_t *g_fusion_info_root;
 extern kfio_info_node_t *g_fusion_info_fio;
+extern kfio_info_node_t *g_fusion_info_iodrive;
 
 extern int  kfio_info_create_dir(kfio_info_node_t *parent, const char *name, kfio_info_node_t **newdir);
 extern int  kfio_info_create_type(kfio_info_node_t *parent, const char *name, int type, fio_mode_t mode,
@@ -63,6 +64,7 @@ extern int  kfio_info_create_seqf(kfio_info_node_t *parent, const char *name, fi
 extern int  kfio_info_create_text(kfio_info_node_t *parent, const char *name, fio_mode_t mode,
                                   kfio_info_text_handler_t *handler, void *param);
 extern void kfio_info_remove_node(kfio_info_node_t **dirp);
+extern void kfio_info_remove_node_fio(void);
 
 extern int    kfio_info_node_get_type(kfio_info_node_t *node);
 extern fio_ssize_t kfio_info_node_get_size(kfio_info_node_t *node);

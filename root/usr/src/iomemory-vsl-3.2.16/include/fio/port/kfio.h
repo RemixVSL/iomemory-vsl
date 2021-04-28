@@ -69,6 +69,7 @@
 kfio_irqreturn_t iodrive_intr_fast(int irq, void *dev_id);
 kfio_irqreturn_t iodrive_intr_fast_pipeline(int irq, void *dev_id);
 extern const char *fio_device_get_bus_name(struct fio_device *dev);
+extern void fio_detach_devices(void);
 
 /* Memory Functions */
 extern int kfio_print(const char *format, ...)
