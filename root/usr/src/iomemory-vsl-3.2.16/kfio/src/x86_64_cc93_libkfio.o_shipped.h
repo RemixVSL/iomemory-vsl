@@ -56,8 +56,6 @@ typedef unsigned short    word;
 #define BADSPACEBASE   void
 #define code   void
 
-typedef ulong size_t;
-
 typedef struct Elf64_Rela Elf64_Rela, *PElf64_Rela;
 
 struct Elf64_Rela {
@@ -150,9 +148,7 @@ struct Elf64_Ehdr {
     word e_shstrndx;
 };
 
-#define __WORDSIZE 64
-
-#define __GLIBC_HAVE_LONG_LONG 1
+typedef ulong size_t;
 
 
 
