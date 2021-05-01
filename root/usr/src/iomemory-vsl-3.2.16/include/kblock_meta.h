@@ -11,6 +11,12 @@
 #include <linux/part_stat.h>
 #endif /* KFIOC_X_LINUX_HAS_PART_STAT_H */
 
+#if KFIOC_X_BIO_HAS_BI_BDEV
+  #define BIO_DISK bi_bdev->bd_disk
+#else /* KFIOC_X_BIO_HAS_BI_BDEV */
+  #define BIO_DISK bi_disk
+#endif /* KFIOC_X_BIO_HAS_BI_BDEV */
+
 #if KFIOC_X_HAS_MAKE_REQUEST_FN
   static unsigned int kfio_make_request(struct request_queue *queue, struct bio *bio);
   #define BLK_QUEUE_SPLIT blk_queue_split(queue, &bio);
