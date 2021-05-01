@@ -1119,7 +1119,7 @@ blk_qc_t kfio_submit_bio(struct bio *bio)
 #define FIO_MFN_RET 0
 {
 #if ! KFIOC_X_HAS_MAKE_REQUEST_FN
-    struct request_queue *queue = bio->bi_disk->queue;
+    struct request_queue *queue = bio->BIO_DISK->queue;
 #endif
     struct kfio_disk *disk = queue->queuedata;
     void *plug_data;
