@@ -76,9 +76,9 @@ KFIOC_X_PROC_CREATE_DATA_WANTS_PROC_OPS
 KFIOC_X_TASK_HAS_CPUS_MASK
 KFIOC_X_LINUX_HAS_PART_STAT_H
 KFIOC_X_BLK_ALLOC_QUEUE_NODE_EXISTS
-KFIOC_X_BIO_HAS_BI_BDEV
 KFIOC_X_HAS_MAKE_REQUEST_FN
 KFIOC_X_GENHD_PART0_IS_A_POINTER
+KFIOC_X_BIO_HAS_BI_BDEV
 "
 
 
@@ -99,7 +99,11 @@ done
 # Actual test procedures for determining Kernel capabilities
 #
 ##
-
+## Newly added tests HAVE to contain the kernel version it appeared in and an
+## LWN reference where the change in the kernel is and some form of reference
+## to documentation describing the change in the kernel.
+##
+####
 # flag:            KFIOC_X_BIO_HAS_BI_BDEV
 # usage:           1   bio->bi_bdev exists
 #                  0   it doesn't and we assume bio->bi_disk is a thing
@@ -120,11 +124,7 @@ void kfioc_bio_has_bi_bdev(void)
 '
     kfioc_test "$test_code" "$test_flag" 1 -Werror
 }
-## Newly added tests HAVE to contain the kernel version it appeared in and an
-## LWN reference where the change in the kernel is and some form of reference
-## to documentation describing the change in the kernel.
-##
-####
+
 # flag:            KFIOC_X_GENHD_PART0_IS_A_POINTER
 # usage:           1   genhd disk part is a pointer
 #                  0   genhd disk part is not a pointer
@@ -264,7 +264,7 @@ update_timeout()
 open_log()
 {
     FIFO_DIR=$CONFIGDIR
-    FIFO_DIR=/tmp
+    # FIFO_DIR=/tmp
     # The tee processes will die when this process exits.
     rm -f "$FIFO_DIR/kfio_config.stdout" "$FIFO_DIR/kfio_config.stderr" "$FIFO_DIR/kfio_config.log"
     exec 3>&1 4>&2
