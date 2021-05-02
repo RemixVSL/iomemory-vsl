@@ -510,7 +510,7 @@ void kfio_disk_stat_write_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t 
         part_stat_lock();
         part_stat_inc(GD_PART0, ios[1]);
         part_stat_add(GD_PART0, sectors[1], totalsize >> 9);
-	      part_stat_add(GD_PART0, nsecs[1],   duration * 1000);
+        part_stat_add(GD_PART0, nsecs[1],   duration * 1000);
         part_stat_unlock();
     }
 }
@@ -531,19 +531,11 @@ void kfio_disk_stat_read_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t d
 
 int kfio_get_gd_in_flight(kfio_disk_t *fgd, int rw)
 {
-    struct gendisk *gd = fgd->gd;
-    return part_stat_read(GD_PART0, ios[STAT_WRITE]);
+   return 0;
 }
 
 void kfio_set_gd_in_flight(kfio_disk_t *fgd, int rw, int in_flight)
 {
-    struct gendisk *gd = fgd->gd;
-
-
-    if (use_workqueue != USE_QUEUE_RQ)
-    {
-        part_stat_set_all(GD_PART0, in_flight);
-    }
 }
 
 /**
