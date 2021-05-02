@@ -54,12 +54,16 @@ extern kfio_info_node_t *g_fusion_info_root;
 extern kfio_info_node_t *g_fusion_info_fio;
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 extern kfio_info_node_t *g_fusion_info_iodrive;
 =======
 >>>>>>> rename smybols
 =======
 extern kfio_info_node_t *g_fusion_info_iodrive;
 >>>>>>> add some more symbols
+=======
+extern kfio_info_node_t *g_fusion_info_iodrive;
+>>>>>>> 20982dd5695455cdc7cb31196178e4e618c6eaf1
 
 extern int  kfio_info_create_dir(kfio_info_node_t *parent, const char *name, kfio_info_node_t **newdir);
 extern int  kfio_info_create_type(kfio_info_node_t *parent, const char *name, int type, fio_mode_t mode,

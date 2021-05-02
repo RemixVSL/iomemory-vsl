@@ -76,6 +76,7 @@ extern int  fio_open(struct fio_device *dev);
 extern int  fio_release(struct fio_device *dev);
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 extern int  fio_open_or_release(struct fio_device *dev, bool open);
 =======
 extern int  fio_open_or_release(struct fio_device *dev, char open);
@@ -83,6 +84,9 @@ extern int  fio_open_or_release(struct fio_device *dev, char open);
 =======
 extern int  fio_open_or_release(struct fio_device *dev, bool open);
 >>>>>>> add some more symbols
+=======
+extern int  fio_open_or_release(struct fio_device *dev, bool open);
+>>>>>>> 20982dd5695455cdc7cb31196178e4e618c6eaf1
 extern int  fio_ioctl(struct fio_device *dev, unsigned cmd, fio_uintptr_t arg);
 
 extern int  fio_handle_read_bio(struct fio_device *dev, struct kfio_bio *bio);

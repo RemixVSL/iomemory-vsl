@@ -546,6 +546,7 @@ KFIO_EXPORT_SYMBOL(kfio_info_printf);
 KFIO_EXPORT_SYMBOL(g_fusion_info_root);
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 KFIO_EXPORT_SYMBOL(g_fusion_info_fio);
 KFIO_EXPORT_SYMBOL(g_fusion_info_iodrive);
 =======
@@ -554,6 +555,10 @@ KFIO_EXPORT_SYMBOL(g_fusion_info_iodrive);
 KFIO_EXPORT_SYMBOL(g_fusion_info_fio);
 KFIO_EXPORT_SYMBOL(g_fusion_info_iodrive);
 >>>>>>> add some more symbols
+=======
+KFIO_EXPORT_SYMBOL(g_fusion_info_fio);
+KFIO_EXPORT_SYMBOL(g_fusion_info_iodrive);
+>>>>>>> 20982dd5695455cdc7cb31196178e4e618c6eaf1
 
 /**
  * @}
