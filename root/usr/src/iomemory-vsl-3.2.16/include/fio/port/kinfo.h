@@ -29,9 +29,24 @@
 #ifndef FIO_PORT_KINFO_H
 #define FIO_PORT_KINFO_H
 
+# include <fio/port/common-linux/stdint.h>
+
 typedef struct kfio_info_val     kfio_info_val_t;
 typedef struct kfio_info_data    kfio_info_data_t;
-typedef struct kfio_info_node    kfio_info_node_t;
+//typedef struct kfio_info_node    kfio_info_node_t;
+typedef struct kfio_info_node {
+    char unknown1[8];
+    void * param;
+    int32_t node_type;
+    char unknown2[4];
+    int64_t node_size;
+    int32_t node_mode;
+    char unknown3[4];
+    void * os_private;
+    char unknown4[48];
+    char node_name[8];
+} kfio_info_node_t;
+
 typedef struct kfio_info_seq_ops kfio_info_seq_ops_t;
 
 typedef int    kfio_info_type_handler_t(void *param, int cmd, kfio_info_val_t *oldval,
@@ -52,6 +67,7 @@ typedef int    kfio_info_text_handler_t(void *param, int cmd, kfio_info_data_t *
 
 extern kfio_info_node_t *g_fusion_info_root;
 extern kfio_info_node_t *g_fusion_info_fio;
+extern kfio_info_node_t *gv_fusion_info_fio;
 extern kfio_info_node_t *g_fusion_info_iodrive;
 
 extern int  kfio_info_create_dir(kfio_info_node_t *parent, const char *name, kfio_info_node_t **newdir);
