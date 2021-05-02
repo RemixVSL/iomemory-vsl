@@ -531,11 +531,30 @@ void kfio_disk_stat_read_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t d
 
 int kfio_get_gd_in_flight(kfio_disk_t *fgd, int rw)
 {
-   return 0;
+    if (use_workqueue != USE_QUEUE_RQ)
+    {
+        struct gendisk *gd = fgd->gd;
+        int dir = 0;
+        if (rw == BIO_DIR_WRITE)
+            dir = 1;
+        return local_read(GD_PART0.dkstats->in_flight[dir]);
+    }
+    return 0;
 }
 
 void kfio_set_gd_in_flight(kfio_disk_t *fgd, int rw, int in_flight)
 {
+    if (use_workqueue != USE_QUEUE_RQ)
+    {
+        // struct gendisk *gd = fgd->gd;
+        int dir = 0;
+        if (rw == BIO_DIR_WRITE)
+            dir = 1;
+        part_stat_lock();
+        // This RIPs
+        // local_add(in_flight, GD_PART0.dkstats->in_flight[dir]);
+        part_stat_unlock();
+    }
 }
 
 /**
