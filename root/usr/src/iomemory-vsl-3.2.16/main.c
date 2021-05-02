@@ -34,6 +34,7 @@
 #include <fio/port/fio-port.h>
 #include <linux/module.h>
 #include <fio/port/port_config.h>
+#include <fio/port/openkfio.h>
 #if (FUSION_INTERNAL==1)
 #include <fio/internal/config.h>
 #endif
@@ -212,7 +213,7 @@ void __exit exit_fio_driver(void)
     dbgs_delete_flags_dir(&_dbgset);
     kfio_iodrive_unreg_sysrq_keys();
 
-    cleanup_fio_blk();
+    of_cleanup_fio_blk();
     cleanup_fio_obj();
 
     kfio_teardown_storage_interface();

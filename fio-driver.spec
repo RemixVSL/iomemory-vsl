@@ -247,6 +247,7 @@ Source to build driver for SanDisk Fusion ioMemory devices
 /usr/src/iomemory-vsl-3.2.16/kscatter.c
 /usr/src/iomemory-vsl-3.2.16/ktime.c
 /usr/src/iomemory-vsl-3.2.16/license.c
+/usr/src/iomemory-vsl-3.2.16/openkfio.c
 /usr/src/iomemory-vsl-3.2.16/main.c
 /usr/src/iomemory-vsl-3.2.16/module_param.c
 %ghost /usr/src/iomemory-vsl-3.2.16/modules.order
@@ -304,6 +305,7 @@ Source to build driver for SanDisk Fusion ioMemory devices
 /usr/src/iomemory-vsl-3.2.16/include/fio/port/ktypes_64.h
 /usr/src/iomemory-vsl-3.2.16/include/fio/port/libgen.h
 /usr/src/iomemory-vsl-3.2.16/include/fio/port/list.h
+/usr/src/iomemory-vsl-3.2.16/include/fio/port/openkfio.h
 /usr/src/iomemory-vsl-3.2.16/include/fio/port/pci.h
 /usr/src/iomemory-vsl-3.2.16/include/fio/port/sched.h
 /usr/src/iomemory-vsl-3.2.16/include/fio/port/state.h
