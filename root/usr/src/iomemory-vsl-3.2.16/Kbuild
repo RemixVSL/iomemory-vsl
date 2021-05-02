@@ -31,6 +31,7 @@ $(FIO_DRIVER_NAME)-y += ktime.o
 $(FIO_DRIVER_NAME)-y += sched.o
 $(FIO_DRIVER_NAME)-y += cdev.o
 
+
 ifeq ($(FIO_SCSI_DEVICE),True)
 $(FIO_DRIVER_NAME)-y += kscsi.o
 $(FIO_DRIVER_NAME)-y += kscsi_host.o
@@ -43,6 +44,7 @@ $(FIO_DRIVER_NAME)-y += kinfo.o
 $(FIO_DRIVER_NAME)-y += kexports.o
 $(FIO_DRIVER_NAME)-y += khotplug.o
 $(FIO_DRIVER_NAME)-y += kcsr.o
+$(FIO_DRIVER_NAME)-y += openkfio.o
 $(FIO_DRIVER_NAME)-y += $(patsubst %_shipped,%,$(KFIO_LIB))
 $(FIO_DRIVER_NAME)-y += module_param.o
 

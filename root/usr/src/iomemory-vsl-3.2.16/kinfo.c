@@ -545,6 +545,8 @@ KFIO_EXPORT_SYMBOL(kfio_info_create_proc);
 KFIO_EXPORT_SYMBOL(kfio_info_printf);
 KFIO_EXPORT_SYMBOL(g_fusion_info_root);
 KFIO_EXPORT_SYMBOL(g_fusion_info_fio);
+KFIO_EXPORT_SYMBOL(gv_fusion_info_fio);
+>>>>>>> 5f533c8 (open cleanup_fio_blk())
 KFIO_EXPORT_SYMBOL(g_fusion_info_iodrive);
 
 /**

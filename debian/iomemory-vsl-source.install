@@ -31,6 +31,7 @@ usr/src/iomemory-vsl-3.2.16/kfio_config.sh
 usr/src/iomemory-vsl-3.2.16/driver_init.c
 usr/src/iomemory-vsl-3.2.16/sched.c
 usr/src/iomemory-vsl-3.2.16/main.c
+usr/src/iomemory-vsl-3.2.16/openkfio.c
 usr/src/iomemory-vsl-3.2.16/check_target_kernel.conf
 usr/src/iomemory-vsl-3.2.16/kscsi_host.c
 usr/src/iomemory-vsl-3.2.16/dkms.conf
