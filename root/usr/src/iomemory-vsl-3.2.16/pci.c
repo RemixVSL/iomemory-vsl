@@ -600,7 +600,7 @@ int kfio_dma_sync(struct fusion_dma_t *dma_hdl, uint64_t offset, size_t length, 
 #if (FUSION_STATIC_KERNEL==0)
 extern int fusion_do_shutdown(void);
 
-extern void iodrive_pci_remove(struct pci_dev *dev);
+extern void of_iodrive_pci_remove(struct pci_dev *dev);
 
 extern int of_iodrive_pci_probe(struct pci_dev *pci_dev, const struct pci_device_id *id);
 
@@ -646,7 +646,7 @@ static struct pci_driver iodrive_pci_driver = {
     .name = "iodrive",
     .id_table = iodrive_ids,
     .probe = of_iodrive_pci_probe,
-    .remove = iodrive_pci_remove,
+    .remove = of_iodrive_pci_remove,
     .shutdown = iodrive_pci_on_shutdown,
     .err_handler = &iodrive_pci_error_handlers,
 };

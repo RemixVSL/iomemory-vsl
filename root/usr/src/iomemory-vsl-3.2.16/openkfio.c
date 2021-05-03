@@ -40,7 +40,6 @@ void of_cleanup_fio_blk(void)
 }
 
 int of_iodrive_pci_probe(kfio_pci_dev_t *pci_dev, void *id)
-
 {
   int32_t rc;
   const char *name;
@@ -94,5 +93,12 @@ int of_iodrive_pci_probe(kfio_pci_dev_t *pci_dev, void *id)
   }
   kfio_pci_disable_device(pci_dev);
   return rc;
+}
+
+void of_iodrive_pci_remove(kfio_pci_dev_t *pci_dev)
+{
+  iodrive_pci_detach(pci_dev);
+  kfio_pci_release_regions(pci_dev);
+  kfio_pci_disable_device(pci_dev);
 }
 

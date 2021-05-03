@@ -30,6 +30,8 @@ extern int kfio_pci_request_regions(kfio_pci_dev_t *pdev, const char *res_name);
 
 void of_cleanup_fio_blk(void);
 void of_kfio_info_remove_node_fio(void);
+int of_iodrive_pci_probe(kfio_pci_dev_t *pci_dev, void *id);
+void of_iodrive_pci_remove(kfio_pci_dev_t *pci_dev);
 
 C_ASSERT(sizeof(fio_device) == 4768);
 
