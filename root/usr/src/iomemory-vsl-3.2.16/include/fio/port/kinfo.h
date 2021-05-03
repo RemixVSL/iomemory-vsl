@@ -30,6 +30,7 @@
 #define FIO_PORT_KINFO_H
 
 # include <fio/port/common-linux/stdint.h>
+# include <fio/port/ktypes.h>
 
 typedef struct kfio_info_val     kfio_info_val_t;
 typedef struct kfio_info_data    kfio_info_data_t;

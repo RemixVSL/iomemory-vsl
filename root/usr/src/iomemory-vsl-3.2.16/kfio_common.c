@@ -122,6 +122,12 @@ char *kfio_strncpy(char *dst, const char *src, fio_size_t n)
 }
 KFIO_EXPORT_SYMBOL(kfio_strncpy);
 
+char *kfio_strnstr(const char *s1, const char *s2, fio_size_t n)
+{
+    return strnstr(s1, s2, n);
+}
+KFIO_EXPORT_SYMBOL(kfio_strnstr);
+
 char *kfio_strcat(char *dst, const char *src)
 {
     return strcat(dst, src);

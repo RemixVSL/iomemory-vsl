@@ -44,7 +44,7 @@ typedef signed char        int8_t;
 typedef short int        int16_t;
 typedef int            int32_t;
 # if defined(__x86_64__) || defined(__PPC64__) || defined(__mips64)
-typedef long int        int64_t;
+// typedef long int        int64_t;
 
 # else
 __extension__
@@ -61,7 +61,7 @@ typedef unsigned int        uint32_t;
 #endif
 
 #if defined(__x86_64__) || defined(__PPC64__) || defined(__mips64)
-typedef unsigned long int    uint64_t;
+//typedef unsigned long int    uint64_t;
 
 #else
 __extension__
