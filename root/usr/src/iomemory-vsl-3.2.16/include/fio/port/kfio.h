@@ -95,6 +95,7 @@ extern int kfio_strcmp(const char *s1, const char *s2);
 extern char *kfio_strncpy(char *dst, const char *src, fio_size_t n);
 extern char *kfio_strcat(char *dst, const char *src);
 extern char *kfio_strncat(char *dst, const char *src, int size);
+extern char *kfio_strnstr(const char *s1, const char *s2, fio_size_t n);
 extern fio_size_t kfio_strlen(const char *s);
 extern void *kfio_memset(void *dst, int c, fio_size_t n);
 extern int kfio_memcmp(const void *m1, const void *m2, fio_size_t n);
