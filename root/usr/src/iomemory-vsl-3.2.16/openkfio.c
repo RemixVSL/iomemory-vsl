@@ -39,3 +39,60 @@ void of_cleanup_fio_blk(void)
   of_kfio_info_remove_node_fio();
 }
 
+int of_iodrive_pci_probe(kfio_pci_dev_t *pci_dev, void *id)
+
+{
+  int32_t rc;
+  const char *name;
+  char s1[255];
+  char s2[255];
+  bool include, exclude;
+
+  exclude = true;
+  include = false;
+
+  name = kfio_pci_name(pci_dev);
+  if (name != (char *)0x0) {
+    kfio_snprintf(s2, 255, ",%s,", name);  
+    if (kfio_strlen(exclude_devices) != 0) {
+      kfio_snprintf(s1, 255, ",%s,", exclude_devices);
+      exclude = kfio_strnstr(s1, s2, 255) != (char *)0x0;
+    } else {
+      exclude = false;
+    }
+    if (kfio_strlen(include_devices) != 0) {
+      kfio_snprintf(s1, 255, ",%s,", include_devices);
+      include = kfio_strnstr(s1, s2, 255) != (char *)0x0;
+    } else {
+      include = true;
+    }
+  }
+  
+  if (exclude || !include) {
+    kfio_print("<6>fioinf ignoring device %s\n",name);
+    return -0x13;  
+  }  
+      
+  kfio_snprintf(s1, 255, "%s %s", "ioDrive", name);
+
+  rc = kfio_pci_enable_device(pci_dev);
+  if (rc < 0) {
+    kfio_print("<3>fioerr %s: failed to enable pci device\n",s1);
+    return rc;
+  }
+  kfio_pci_set_master(pci_dev);
+  rc = kfio_pci_request_regions(pci_dev, "iodrive");
+  if (rc < 0) {
+    kfio_print("<3>fioerr %s: failed to get memory regions\n", s1);
+  } else {
+    kfio_pci_set_dma_mask(pci_dev,0xffffffffffffffff);
+    rc = iodrive_pci_attach(pci_dev,++gv_init_pci_counter);
+    if (rc > -1) {
+      return 0;
+    }
+    kfio_pci_release_regions(pci_dev);
+  }
+  kfio_pci_disable_device(pci_dev);
+  return rc;
+}
+

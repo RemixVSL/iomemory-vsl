@@ -591,7 +591,7 @@ extern int fusion_do_shutdown(void);
 
 extern void iodrive_pci_remove(struct pci_dev *dev);
 
-extern int iodrive_pci_probe(struct pci_dev *pci_dev, const struct pci_device_id *id);
+extern int of_iodrive_pci_probe(struct pci_dev *pci_dev, const struct pci_device_id *id);
 
 static void iodrive_pci_on_shutdown(struct pci_dev *linux_pci_dev)
 {
@@ -634,7 +634,7 @@ static struct pci_error_handlers iodrive_pci_error_handlers = {
 static struct pci_driver iodrive_pci_driver = {
     .name = "iodrive",
     .id_table = iodrive_ids,
-    .probe = iodrive_pci_probe,
+    .probe = of_iodrive_pci_probe,
     .remove = iodrive_pci_remove,
     .shutdown = iodrive_pci_on_shutdown,
     .err_handler = &iodrive_pci_error_handlers,
