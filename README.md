@@ -27,14 +27,14 @@ For the iomemory-vsl4 driver please go to the [iomemory-vsl4](https://github.com
 Driver support for FusionIO cards has been lagging behind kernel releases, effectively making these cards an expensive paperweight when running a distribution like Ubuntu / Arch / Fedora / ProxMox which all supply newer kernels than supported by the original drivers.
 
 ## Releases
-Releases are tagged, and should be checked out by their tag. The release tags follow Linux Kernel versions. E.g. **v5.12.0 (A Fine Boi)** will work on all 5.x kernels that are 5.12 and lower, but is not guaranteed to work on 5.13. **v4.20.0 - Grey Dawn** supports most kernels that pre-date 5.0.
+Releases are tagged, and should be checked out by their tag. The release tags follow Linux Kernel versions. E.g. **v5.12.0 (A Fine Boi)** will work on all 5.x kernels that are 5.12 and lower, but is not guaranteed to work on 5.13. **v4.20.2 - Grey Dawn** supports most kernels that pre-date 5.0.
 
 | Tag | Codename |
 | --- | --- |
 | v5.12.0 | [A Fine Boi](https://i.imgur.com/SrtYVIr.jpeg) |
 | v5.10.0 | [Fatto Catto](https://www.youtube.com/watch?v=1S69FTdTS8g) |
 | v5.6.0 | [MEGACHONKER](https://www.reddit.com/r/Chonkers/) |
-| v4.20.1 | [Grey Dawn](https://southpark.cc.com/clips/154175/crazy-old-drivers) |
+| v4.20.2 | [Grey Dawn](https://southpark.cc.com/clips/154175/crazy-old-drivers) |
 
 ## Versions
 The driver is derived from the original iomemory-vsl-3.2.16, but has several fixes and gone through rigorous cleaning of redundant unused and old code. Active development is done on master, while *tags* are used for releases. The new releases are all tagged from master, whereas the v4.20 releases are tagged from fio-3.2.16.1732, which is a modified version of the original codebase.
