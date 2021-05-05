@@ -2977,7 +2977,6 @@ update_timeout()
 open_log()
 {
     FIFO_DIR=$CONFIGDIR
-    FIFO_DIR=/tmp
     # The tee processes will die when this process exits.
     rm -f "$FIFO_DIR/kfio_config.stdout" "$FIFO_DIR/kfio_config.stderr" "$FIFO_DIR/kfio_config.log"
     exec 3>&1 4>&2
