@@ -3,7 +3,7 @@
 #-----------------------------------------------------------------------------
 # Copyright (c) 2006-2014, Fusion-io, Inc.(acquired by SanDisk Corp. 2014)
 # Copyright (c) 2014-2018 SanDisk Corp. and/or all its affiliates. (acquired by Western Digital Corp. 2016)
-# Copyright (c) 2016-2017 Western Digital Technologies, Inc. All rights reserved.
+# Copyright (c) 2016-2019 Western Digital Technologies, Inc. All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
 #  modification, are permitted provided that the following conditions are met:
@@ -192,391 +192,380 @@ KFIOC_HAS_BLK_RQ_IS_PASSTHROUGH
 KFIOC_HAS_BLK_QUEUE_BOUNCE
 KFIOC_HAS_BLK_QUEUE_SPLIT2
 KFIOC_HAS_ELEVATOR_INIT
+KFIOC_X_REQUEST_QUEUE_HAS_QUEUE_LOCK_POINTER
+KFIOC_X_PART_STAT_REQUIRES_CPU
+KFIOC_X_REQUEST_QUEUE_HAS_REQUEST_FN
+KFIOC_X_TASK_HAS_CPUS_ALLOWED
+KFIOC_X_BIO_HAS_BIO_SEGMENTS
+KFIOC_X_BIO_HAS_BI_PHYS_SEGMENTS
+KFIOC_X_HAS_BLK_QUEUE_FLAG_OPS
+KFIOC_X_BIO_HAS_ERROR
+KFIOC_X_REQ_HAS_ERRORS
+KFIOC_X_REQ_HAS_ERROR_COUNT
+KFIOC_X_BOUNCE_H
+KFIOC_X_HAS_TIMER_SETUP
+KFIOC_X_HAS_DISK_STATS_NSECS
+KFIOC_X_HAS_COARSE_REAL_TS
+KFIOC_X_HAS_ELEVATOR_INIT
+KFIOC_X_PART0_HAS_IN_FLIGHT
+KFIOC_X_PROC_CREATE_DATA_WANTS_PROC_OPS
 "
 
 
 #
-# General functions
+# Experimenting with the removal of tests, hard code the exit to 0....
 #
-
-# Pass an argument as a delta from "now" time for the timeout.  If an
-# argument is not passed then default to adding TIMEOUT_DELTA to "now".
-update_timeout()
-{
-    TIMEOUT_TIME=$(($(date "+%s")+${1:-$TIMEOUT_DELTA}))
-}
-
-
-# This is a way to log the output of this script in a merged stdout+stderr log file
-# while still having stdout and stderr sent to . . . stdout and stderr!
-open_log()
-{
-    # The tee processes will die when this process exits.
-    rm -f "$CONFIGDIR/kfio_config.stdout" "$CONFIGDIR/kfio_config.stderr" "$CONFIGDIR/kfio_config.log"
-    exec 3>&1 4>&2
-    touch "$CONFIGDIR/kfio_config.log"
-    mkfifo "$CONFIGDIR/kfio_config.stdout"
-    tee -a "$CONFIGDIR/kfio_config.log" <"$CONFIGDIR/kfio_config.stdout" >&3 &
-    mkfifo "$CONFIGDIR/kfio_config.stderr"
-    tee -a "$CONFIGDIR/kfio_config.log" <"$CONFIGDIR/kfio_config.stderr" >&4 &
-    exec >"$CONFIGDIR/kfio_config.stdout"  2>"$CONFIGDIR/kfio_config.stderr"
-    # Don't need these now that everything is connected
-    rm -f "$CONFIGDIR/kfio_config.stdout" "$CONFIGDIR/kfio_config.stderr"
-}
-
-
-kfioc_open_config()
-{
-    cat <<EOF > "${TMP_OUTPUTFILE}"
-//-----------------------------------------------------------------------------
-// Copyright (c) 2011-2014, Fusion-io, Inc. (acquired by SanDisk Corp. 2014)
-// Copyright (c) 2014-2015, SanDisk Corp. and/or all its affiliates.
-// All rights reserved.
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-// * Redistributions of source code must retain the above copyright notice,
-//   this list of conditions and the following disclaimer.
-// * Redistributions in binary form must reproduce the above copyright notice,
-//   this list of conditions and the following disclaimer in the documentation
-//   and/or other materials provided with the distribution.
-// * Neither the name of the SanDisk Corp. nor the names of its contributors
-//   may be used to endorse or promote products derived from this software
-//   without specific prior written permission.
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-// THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED.
-// IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
-// OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
-// OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-// WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//-----------------------------------------------------------------------------
-
-#ifndef _FIO_PORT_LINUX_KFIO_CONFIG_H_
-#define _FIO_PORT_LINUX_KFIO_CONFIG_H_
-
-EOF
-
-}
-
-
-kfioc_close_config()
-{
-    cat <<EOF >> "${TMP_OUTPUTFILE}"
-#include <linux/slab.h>
-#include <linux/gfp.h>
-
-#ifndef GFP_NOWAIT
-#define GFP_NOWAIT  (GFP_ATOMIC & ~__GFP_HIGH)
-#endif
-
-#endif /* _FIO_PORT_LINUX_KFIO_CONFIG_H_ */
-EOF
-
-}
-
-
-collect_kfioc_results()
-{
-    local flag=
-    local pid=
-    local status=
-    local result=
-    local test_fail=
-    local rc=0
-
-    for flag in $KFIOC_PROCS; do
-        pid=${flag##*:}
-        flag=${flag%%:*}
-        test_fail=
-        status=$(get_kfioc_status $flag exit)
-        result=$(get_kfioc_status $flag result)
-
-        if [ -z "$status" ]; then
-            printf "ERROR: missing test exit status $flag\n" >&2
-            test_fail=1
-        elif [ "$status" -ge 128 ]; then
-            printf "ERROR: test exited by signal $flag $status\n" >&2
-            test_fail=1
-        elif [ "$status" -gt 2 ]; then
-            printf "ERROR: unexpected test exit status $flag $status\n" >&2
-            test_fail=1
-        fi
-
-        if [ -z "$result" ]; then
-            printf "ERROR: missing test result $flag\n" >&2
-            test_fail=1
-        elif [ "$result" -gt 1 ]; then
-            printf "ERROR: unexpected test value $flag $result\n" >&2
-            test_fail=1
-        fi
-
-        if [ -n "$test_fail" ]; then
-            FAILED_TESTS="$FAILED_TESTS $flag"
-            rc=1
-        else
-            printf "  %.14s  $flag=$result\n" $(date "+%s.%N")
-            generate_kfioc_define $flag >>"$TMP_OUTPUTFILE"
-        fi
-    done
-
-    return $rc
-}
-
-
-fio_create_makefile()
-{
-    local kfioc_flag="$1"
-    local extra_cflags="${2:-}"
-
-    cat <<EOF >"${CONFIGDIR}/${kfioc_flag}/Makefile"
-KERNEL_SRC := ${KERNELDIR}
-
-ifneq (\$(KERNELRELEASE),)
-
-obj-m := kfioc_test.o
-
-else
-
-all: modules
-
-modules clean:
-	\$(MAKE) -C \$(KERNEL_SRC) M=\$(CURDIR) EXTRA_CFLAGS='-Wall ${extra_cflags}' \$@
-
-endif
-
-EOF
-}
-
-
-sig_exit()
-{
-    printf "%.14s  Exiting\n" $(date "+%s.%N")
-    # Keep the output files if "PRESERVE" is used or if there are failures.
-    if [ -d "$CONFIGDIR" -a 0 -eq "$PRESERVE" -a -z "$FAILED_TESTS" ]; then
-        printf "Deleting temporary files (use '-p' to preserve temporary files)\n"
-        if [ 1 -eq "$CREATED_CONFIGDIR" ]; then
-            rm -rf "${CONFIGDIR}"
-        else
-            rm -rf "$TMP_OUTPUTFILE" "${CONFIGDIR}/kfio"*
-        fi
-    elif [ -n "$FAILED_TESTS" ]; then
-        printf "Preserving configdir for failure analysis: $CONFIGDIR\n" >&2
-        tar \
-            --exclude="*kfio_config.tar.gz" \
-            -C "$(dirname $CONFIGDIR)" \
-            -c -z \
-            -f "$CONFIGDIR/kfio_config.tar.gz" \
-            "$(basename $CONFIGDIR)"
-        printf "Submit tar file to support for analysis: '$CONFIGDIR/kfio_config.tar.gz'\n" >&2
-    else
-        printf "Preserving configdir due to '-p' option: $CONFIGDIR\n"
-    fi
-}
-
-
-# start_test() wraps each test so that script debug can be recorded
-start_test()
-{
-    local test_name="$1"
-
-    mkdir -p "$CONFIGDIR/$test_name"
-    exec >"$CONFIGDIR/$test_name/kfio_config.log" 2>&1
-    set -x
-    $test_name $test_name
-}
-
-
-start_tests()
-{
-    local kfioc_test=
-
-    # Clean out any old cruft in case building in a previously used directory
-    (
-        cd "$CONFIGDIR"
-        rm -rf KFIOC_* kfio_config.h kfio_config.tar.gz
-    )
-
-    printf "Starting tests:\n"
-    for kfioc_test in $KFIOC_TEST_LIST; do
-        printf "  %.14s  $kfioc_test...\n" $(date "+%s.%N")
-
-        # Each test has an absolute time deadline for completion from when it is started.
-        # A test can depend on another test so it needs a timeout to decide that the other
-        # test may have failed.
-        start_test $kfioc_test &
-        KFIOC_PROCS="$KFIOC_PROCS $kfioc_test:$!"
-        KFIOC_COUNT=$( pgrep -fc "kfio_config.sh -a" )
-        while [ $KFIOC_COUNT -gt $TEST_RATE ]
-        do
-            sleep .1
-            KFIOC_COUNT=$( pgrep -fc "kfio_config.sh -a" )
-        done
-    done
-
-    printf "Started tests, waiting for completions...\n"
-
-    # We want more time for ourselves than the child tests
-    TIMEOUT_DELTA=$(($TIMEOUT_DELTA+$TIMEOUT_DELTA/2))
-    update_timeout
-}
-
-
-finished()
-{
-    local rc=0
-
-    kfioc_open_config || rc=1
-
-    collect_kfioc_results || rc=1
-
-    kfioc_close_config || rc=1
-
-    if [ -z "$FAILED_TESTS" -a 0 = "$rc" ]; then
-        cp "${TMP_OUTPUTFILE}" "$OUTPUTFILE"
-        printf "Finished\n"
-    else
-        printf "ERROR: Failures detected\n" >&2
-        if [ -n "$FAILED_TESTS" ]; then
-            printf "Failed tests: $FAILED_TESTS\n" >&2
-            rc=1
-        fi
-    fi
-
-    return $rc
-}
-
-
-set_kfioc_status()
-{
-    local kfioc_flag="$1"
-    local value="$2"
-    local file="$3"
-    shift 3
-
-    mkdir -p "$CONFIGDIR/$kfioc_flag"
-    # It appears there's a nice race condition where a file is created by
-    # the test and the parent reads the data from the file before the write
-    # is flushed - resulting in an empty read.  Creating the ".tmp" file
-    # and then moving it into place should guarantee that the contents are
-    # flushed prior to the file existing.
-    printf "%s\n" "$value" >"$CONFIGDIR/$kfioc_flag/$file.tmp"
-    mv "$CONFIGDIR/$kfioc_flag/$file.tmp" "$CONFIGDIR/$kfioc_flag/$file"
-}
-
-
-get_kfioc_status()
-{
-    local kfioc_flag="$1"
-    local file="$2"
-    local last_status_count="$(ls "$CONFIGDIR/"*/* 2>/dev/null | wc -l)"
-    local this_status_count=0
-
-    while [ ! -s "$CONFIGDIR/$kfioc_flag/$file" -a $(date "+%s") -lt "$TIMEOUT_TIME" ]; do
-        this_status_count="$(ls "$CONFIGDIR/"*/* 2>/dev/null | wc -l)"
-        if [ "$this_status_count" -gt "$last_status_count" ]; then
-            last_status_count="$this_status_count"
-            update_timeout
-        fi
-        sleep 1
-    done
-
-    if [ -s "$CONFIGDIR/$kfioc_flag/$file" ]; then
-        local result="$(cat "$CONFIGDIR/$kfioc_flag/$file")"
-        if [ -z "$result" ]; then
-            printf "ERROR: empty result in $CONFIGDIR/$kfioc_flag/$file\n" >&2
-            exit $EX_SOFTWARE
-        fi
-        printf "$result"
-        update_timeout
-    else
-        printf "%.14s  ERROR: timed out waiting for $kfioc_flag/$file $$ $last_status_count:$this_status_count $TIMEOUT_TIME\n" $(date "+%s.%N") >&2
-        exit $EX_SOFTWARE
-    fi
-}
-
-
-generate_kfioc_define()
-{
-    local kfioc_flag="$1"
-    local result=$(get_kfioc_status $kfioc_flag result)
-
-    if [ -n "$result" ]; then
-        printf "#define $kfioc_flag ($result)\n"
-    fi
-}
-
-
-kfioc_test()
-{
-    local code="
-#include <linux/module.h>
-$1
-"
-    local kfioc_flag="$2"
-    # POSITIVE_RESULT is what should be returned when a test compiles successfully.
-    # This value is inverted when the compile test fails
-    local positive_result="$3"
-    local cflags="${4:-}"
-    local test_dir="${CONFIGDIR}/${kfioc_flag}"
-    local result=0
-    local license="
-MODULE_LICENSE(\"GPL\");
-"
-
-    mkdir -p "$test_dir"
-    fio_create_makefile "$kfioc_flag" "$cflags"
-
-    echo "$code" > "$test_dir/kfioc_test.c"
-
-    if [ 1 -eq "$FUSION_DEBUG" ]; then
-        license="
-MODULE_LICENSE(\"GPL\");
-"
-    fi
-    echo "$license" >> "$test_dir/kfioc_test.c"
-
-    if [ 1 -eq "$VERBOSE" ]; then
-        env -i PATH="${PATH}" make -C "$test_dir" V=1 2>&1 | tee "$test_dir/kfioc_test.log" || result=$?
-    else
-        env -i PATH="${PATH}" make -C "$test_dir" V=1 >"$test_dir/kfioc_test.log" 2>&1 || result=$?
-    fi
-
-    # Save the exit status
-    set_kfioc_status $kfioc_flag $result exit
-
-    # Interpret the result
-    local myflag=$positive_result
-    # Return code of 0 indicates success
-    if [ $result != 0 ]; then
-        myflag=$((! $positive_result))
-    fi
-
-    # Save the interpreted result
-    set_kfioc_status $kfioc_flag $myflag result
-}
-
-
-kfioc_has_include()
-{
-    local include_file="$1"
-    local kfioc_flag="$2"
-
-    local test_code="
-#include <$include_file>
-"
-
-    kfioc_test "$test_code" "$kfioc_flag" 1
-}
-
+KFIOC_REMOVE_TESTS=""
+
+for remove in $KFIOC_REMOVE_TESTS; do
+    echo "Hardcode $remove result to 0"
+    eval "${remove}() {
+      set_kfioc_status $remove 0 exit
+      set_kfioc_status $remove 0 result
+    }"
+done
 
 #
 # Actual test procedures for determining Kernel capabilities
 #
+##
+## Newly added tests HAVE to contain the kernel version it appeared in and an
+## LWN reference where the change in the kernel is and some form of reference
+## to documentation describing the change in the kernel.
+##
+####
+# flag:           KFIOC_X_REQUEST_QUEUE_HAS_QUEUE_LOCK_POINTER
+# values:
+#                 0     starting 5.0 the request_queue has a spinlock_t for queue_lock
+#                 1     pre 5.0 kernels have a spinlock_t *queue_lock in request_queue.
+# git commit:     NA
+# comments:
+KFIOC_X_REQUEST_QUEUE_HAS_QUEUE_LOCK_POINTER()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/blkdev.h>
+
+void kfioc_test_request_queue_has_queue_lock_pointer(void) {
+    spinlock_t *l;
+    struct request_queue *q;
+    q->queue_lock = l;
+}
+'
+
+    kfioc_test "$test_code" "$test_flag" 1
+}
+
+# flag:           KFIOC_X_PROC_CREATE_DATA_WANTS_PROC_OPS
+# usage:          undef for automatic selection by kernel version
+#                 0     if the kernel does not have the proc_create_data function
+#                 1     if the kernel has the function
+# description:    Between 5.3 and 5.6 the 4th option for proc_create_data changes.
+#                 It went from a "const struct file_operations *" to a
+#                 const struct proc_ops *.
+#                 https://elixir.bootlin.com/linux/v5.3/source/include/linux/proc_fs.h#L44
+#                 https://elixir.bootlin.com/linux/v5.6.3/source/include/linux/proc_fs.h#L59
+KFIOC_X_PROC_CREATE_DATA_WANTS_PROC_OPS()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/proc_fs.h>
+
+void *kfioc_has_proc_create_data(struct inode *inode)
+{
+    const struct proc_ops ops;
+    const struct proc_ops *pops;
+    return proc_create_data(NULL, 0, NULL, pops, NULL);
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1 -Werror-implicit-function-declaration
+}
+
+# flag:           KFIOC_X_PART_STAT_REQUIRES_CPU
+# values:
+#                 0     newer kernels don't need the cpu for stats
+#                 1     older kernels need the cpu for stats
+# git commit:
+# comments:       in newer
+KFIOC_X_PART_STAT_REQUIRES_CPU()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/genhd.h>
+struct gendisk *gd;
+void kfioc_test_part_stat_requires_cpu(void) {
+  part_stat_inc(1, &gd->part0, ios[0]);
+}
+'
+
+    kfioc_test "$test_code" "$test_flag" 1
+}
+# flag:           KFIOC_REQUEST_QUEUE_HAS_REQUEST_FN
+# values:
+#                 0     for newer kernels that don't have request_fn member in struct request_queue.
+#                 1     for older kernels that have request_fn member in struct request_queue.
+# git commit:     NA
+# comments:
+KFIOC_X_REQUEST_QUEUE_HAS_REQUEST_FN()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/blkdev.h>
+
+void kfioc_test_request_queue_request_fn(void) {
+    struct request_queue q = { .request_fn = NULL };
+    (void)q;
+}
+'
+
+    kfioc_test "$test_code" "$test_flag" 1
+}
+
+# flag:          KFIOC_TASK_HAS_CPUS_ALLOWED
+# usage:         1   Task struct has CPUs allowed as mask
+#                0   It does not
+KFIOC_X_TASK_HAS_CPUS_ALLOWED()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/sched.h>
+void kfioc_check_task_has_cpus_allowed(void)
+{
+    cpumask_t *cpu_mask = NULL;
+    struct task_struct *tsk = NULL;
+    tsk->cpus_allowed = *cpu_mask;
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1 -Werror
+}
+
+# flag:           KFIOC_X_BIO_HAS_BIO_SEGMENTS
+# usage:          0     if kernel has no bio_segments
+#                 1     if kernel has bio_segments
+KFIOC_X_BIO_HAS_BIO_SEGMENTS()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/bio.h>
+
+void kfioc_test_bio_has_bio_segments(void) {
+    struct bio *bio = NULL;
+    unsigned segs;
+    segs = bio_segments(bio);
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1 -Werror-implicit-function-declaration
+}
+
+# flag:           KFIOC_BIO_HAS_BI_PHYS_SEGMENTS
+# usage:          0     if bio has no bi_phys_segments
+#                 1     if bio has bi_phys_segments
+KFIOC_X_BIO_HAS_BI_PHYS_SEGMENTS()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/bio.h>
+
+void kfioc_test_bio_has_bi_phys_segments(void) {
+	struct bio bio;
+	void *test = &(bio.bi_phys_segments);
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1 -Werror-implicit-function-declaration
+}
+
+# flag:          KFIOC_X_HAS_BLK_QUEUE_FLAG_OPS
+# usage:         1   request queue limits structure has 'queue_flag_clear_unlocked' function.
+#                0   It does not
+KFIOC_X_HAS_BLK_QUEUE_FLAG_OPS()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/blkdev.h>
+void has_queue_blk_queue_flag_ops(void)
+{
+     struct request_queue q;
+     blk_queue_flag_clear(0, &q);
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1 "-Werror -Wframe-larger-than=4096"
+}
+
+# flag:           KFIOC_X_BIO_HAS_ERROR
+# usage:          1 if bio.bi_error does not exist, 0 if instead
+# git commit:
+# kernel version: v4.14-rc4
+KFIOC_X_BIO_HAS_ERROR()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/bio.h>
+
+void kfioc_bio_has_error(void) {
+    struct bio test_bio;
+    (void) test_bio.error;
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1
+}
+
+# flag:           KFIOC_X_REQ_HAS_ERRORS
+# usage:          1 if req.errors does not exist, 0 if instead
+# git commit:
+# kernel version: v4.10
+KFIOC_X_REQ_HAS_ERRORS()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/blkdev.h>
+
+void kfioc_req_has_errors(void) {
+    struct request *req;
+    req->errors = 1;
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1
+}
+
+# flag:           KFIOC_X_REQ_HAS_ERROR_COUNT
+# usage:          1 if req.error_count does not exist, 0 if instead
+# git commit:
+# kernel version: v4.14-rc4
+KFIOC_X_REQ_HAS_ERROR_COUNT()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/blkdev.h>
+
+void kfioc_req_has_error_count(void) {
+    struct request *req;
+    req->error_count = 1;
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1
+}
+
+# flag:           KFIOC_X_BOUNCE_H
+# usage:          1 if no bounce.h, 0 has bounce.h
+#                 bounce was seperated out from highmem
+# git commit:
+# kernel version: v4.14-rc4
+KFIOC_X_BOUNCE_H()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/bounce.h>
+
+void kfioc_bio_has_error(void) {
+    struct bio test_bio;
+    (void) test_bio.error;
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1
+}
+
+# flag:           KFIOC_X_HAS_TIMER_SETUP
+# usage:          1   linux/time.h has `timer_setup((struct timer_list *)  timer, fusion_timer_callback, 0)
+#                 0   not timer_setup, use function and data of timer instead
+# git commit:
+# kernel version: v4.15
+# iomemory-vsl:   3
+KFIOC_X_HAS_TIMER_SETUP() {
+    local test_flag="$1"
+    local test_code='
+#include <linux/time.h>
+
+static void timer_callback(struct timer_list *t) {
+}
+
+void kfioc_has_timer_setup(void) {
+    struct timer_list *timer;
+    timer_setup((struct timer_list *)  timer, timer_callback, 0);
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1
+
+}
+
+# flag:            KFIOC_X_HAS_DISK_STATS_NSECS
+# usage:           1 struct disk_stats has nsecs member
+#                  0 struct is still uses ticks member
+# kernel version:  Added in 4.19 to log disk stats with nanoseconds
+#                  commit "block: use nanosecond resolution for iostat"
+KFIOC_X_HAS_DISK_STATS_NSECS()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/genhd.h>
+
+void test_has_disk_stats_nsecs(void)
+{
+    struct disk_stats stat = { .nsecs = 0 };
+    (void)stat;
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1
+}
+
+# flag:            KFIOC_X_HAS_COARSE_REAL_TS
+# usage:           1 kernel exports ktime_get_coarse_real_ts64()
+#                  0 old kernel with current_kernel_time()
+# kernel version:  Added in 4.18 to provide a 64 bit time interface
+#                  commit: "timekeeping: Standardize on ktime_get_*() naming"
+KFIOC_X_HAS_COARSE_REAL_TS()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/timekeeping.h>
+
+void test_has_coarse_real_ts(void)
+{
+    struct timespec64 ts;
+    ktime_get_coarse_real_ts64(&ts);
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1
+}
+
+# flag:            KFIOC_X_HAS_ELEVATOR_INIT
+# usage:           1 kernel has 2 parameter elevator_init()
+#                  0 newer kernel without that function
+# kernel version:  Symbol export removed in 4.18. Since then only internal
+#                  commit: "block: unexport elevator_init/exit"
+KFIOC_X_HAS_ELEVATOR_INIT()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/elevator.h>
+
+test_has_elevator_init(void)
+{
+    struct request_queue *q;
+    elevator_init(q, "noop");
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1
+}
+
+# flag:           KFIOC_X_PART0_HAS_IN_FLIGHT
+# values:
+#                 0     beyond 5 the struct has no in_flight
+#                 1     older kernels do have in_flight
+# git commit:
+# comments:       yada
+KFIOC_X_PART0_HAS_IN_FLIGHT()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/genhd.h>
+struct gendisk *gd;
+void kfioc_test_part0_has_in_flight(void) {
+  return gd->part0.in_flight;
+}
+'
+
+    kfioc_test "$test_code" "$test_flag" 1
+}
 
 # flag:            KFIOC_HAS_ELEVATOR_INIT
 # usage:           1 kernel has 2 parameter elevator_init()
@@ -2971,6 +2960,383 @@ void test_has_blk_queue_split2(struct request_queue *rq, struct bio **bio)
     kfioc_test "$test_code" "$test_flag" 1 -Werror
 }
 
+#
+# General functions
+#
+
+# Pass an argument as a delta from "now" time for the timeout.  If an
+# argument is not passed then default to adding TIMEOUT_DELTA to "now".
+update_timeout()
+{
+    TIMEOUT_TIME=$(($(date "+%s")+${1:-$TIMEOUT_DELTA}))
+}
+
+
+# This is a way to log the output of this script in a merged stdout+stderr log file
+# while still having stdout and stderr sent to . . . stdout and stderr!
+open_log()
+{
+    FIFO_DIR=$CONFIGDIR
+    FIFO_DIR=/tmp
+    # The tee processes will die when this process exits.
+    rm -f "$FIFO_DIR/kfio_config.stdout" "$FIFO_DIR/kfio_config.stderr" "$FIFO_DIR/kfio_config.log"
+    exec 3>&1 4>&2
+    touch "$FIFO_DIR/kfio_config.log"
+    mkfifo "$FIFO_DIR/kfio_config.stdout"
+    tee -a "$FIFO_DIR/kfio_config.log" <"$FIFO_DIR/kfio_config.stdout" >&3 &
+    mkfifo "$FIFO_DIR/kfio_config.stderr"
+    tee -a "$FIFO_DIR/kfio_config.log" <"$FIFO_DIR/kfio_config.stderr" >&4 &
+    exec >"$FIFO_DIR/kfio_config.stdout"  2>"$FIFO_DIR/kfio_config.stderr"
+    # Don't need these now that everything is connected
+    rm -f "$FIFO_DIR/kfio_config.stdout" "$FIFO_DIR/kfio_config.stderr"
+}
+
+
+kfioc_open_config()
+{
+    cat <<EOF > "${TMP_OUTPUTFILE}"
+//-----------------------------------------------------------------------------
+// Copyright (c) 2011-2014, Fusion-io, Inc. (acquired by SanDisk Corp. 2014)
+// Copyright (c) 2014-2015, SanDisk Corp. and/or all its affiliates.
+// All rights reserved.
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+// * Redistributions of source code must retain the above copyright notice,
+//   this list of conditions and the following disclaimer.
+// * Redistributions in binary form must reproduce the above copyright notice,
+//   this list of conditions and the following disclaimer in the documentation
+//   and/or other materials provided with the distribution.
+// * Neither the name of the SanDisk Corp. nor the names of its contributors
+//   may be used to endorse or promote products derived from this software
+//   without specific prior written permission.
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+// THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED.
+// IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
+// OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+// OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+// WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//-----------------------------------------------------------------------------
+
+#ifndef _FIO_PORT_LINUX_KFIO_CONFIG_H_
+#define _FIO_PORT_LINUX_KFIO_CONFIG_H_
+
+EOF
+
+}
+
+
+kfioc_close_config()
+{
+    cat <<EOF >> "${TMP_OUTPUTFILE}"
+#include <linux/slab.h>
+#include <linux/gfp.h>
+
+#ifndef GFP_NOWAIT
+#define GFP_NOWAIT  (GFP_ATOMIC & ~__GFP_HIGH)
+#endif
+
+#endif /* _FIO_PORT_LINUX_KFIO_CONFIG_H_ */
+EOF
+
+}
+
+
+collect_kfioc_results()
+{
+    local flag=
+    local pid=
+    local status=
+    local result=
+    local test_fail=
+    local rc=0
+
+    for flag in $KFIOC_PROCS; do
+        pid=${flag##*:}
+        flag=${flag%%:*}
+        test_fail=
+        status=$(get_kfioc_status $flag exit)
+        result=$(get_kfioc_status $flag result)
+
+        if [ -z "$status" ]; then
+            printf "ERROR: missing test exit status $flag\n" >&2
+            test_fail=1
+        elif [ "$status" -ge 128 ]; then
+            printf "ERROR: test exited by signal $flag $status\n" >&2
+            test_fail=1
+        elif [ "$status" -gt 2 ]; then
+            printf "ERROR: unexpected test exit status $flag $status\n" >&2
+            test_fail=1
+        fi
+
+        if [ -z "$result" ]; then
+            printf "ERROR: missing test result $flag\n" >&2
+            test_fail=1
+        elif [ "$result" -gt 1 ]; then
+            printf "ERROR: unexpected test value $flag $result\n" >&2
+            test_fail=1
+        fi
+
+        if [ -n "$test_fail" ]; then
+            FAILED_TESTS="$FAILED_TESTS $flag"
+            rc=1
+        else
+            printf "  %.14s  $flag=$result\n" $(date "+%s.%N")
+            generate_kfioc_define $flag >>"$TMP_OUTPUTFILE"
+        fi
+    done
+
+    return $rc
+}
+
+
+fio_create_makefile()
+{
+    local kfioc_flag="$1"
+    local extra_cflags="${2:-}"
+
+    cat <<EOF >"${CONFIGDIR}/${kfioc_flag}/Makefile"
+KERNEL_SRC := ${KERNELDIR}
+
+ifneq (\$(KERNELRELEASE),)
+
+obj-m := kfioc_test.o
+
+else
+
+all: modules
+
+modules clean:
+	\$(MAKE) -C \$(KERNEL_SRC) M=\$(CURDIR) EXTRA_CFLAGS='-Wall ${extra_cflags}' \$@
+
+endif
+
+EOF
+}
+
+
+sig_exit()
+{
+    printf "%.14s  Exiting\n" $(date "+%s.%N")
+    # Keep the output files if "PRESERVE" is used or if there are failures.
+    if [ -d "$CONFIGDIR" -a 0 -eq "$PRESERVE" -a -z "$FAILED_TESTS" ]; then
+        printf "Deleting temporary files (use '-p' to preserve temporary files)\n"
+        if [ 1 -eq "$CREATED_CONFIGDIR" ]; then
+            rm -rf "${CONFIGDIR}"
+        else
+            rm -rf "$TMP_OUTPUTFILE" "${CONFIGDIR}/kfio"*
+        fi
+    elif [ -n "$FAILED_TESTS" ]; then
+        printf "Preserving configdir for failure analysis: $CONFIGDIR\n" >&2
+        tar \
+            --exclude="*kfio_config.tar.gz" \
+            -C "$(dirname $CONFIGDIR)" \
+            -c -z \
+            -f "$CONFIGDIR/kfio_config.tar.gz" \
+            "$(basename $CONFIGDIR)"
+        printf "Submit tar file to support for analysis: '$CONFIGDIR/kfio_config.tar.gz'\n" >&2
+    else
+        printf "Preserving configdir due to '-p' option: $CONFIGDIR\n"
+    fi
+}
+
+
+# start_test() wraps each test so that script debug can be recorded
+start_test()
+{
+    local test_name="$1"
+
+    mkdir -p "$CONFIGDIR/$test_name"
+    exec >"$CONFIGDIR/$test_name/kfio_config.log" 2>&1
+    set -x
+    $test_name $test_name
+}
+
+start_tests()
+{
+    local kfioc_test=
+
+    # Clean out any old cruft in case building in a previously used directory
+    (
+        cd "$CONFIGDIR"
+        rm -rf KFIOC_* kfio_config.h kfio_config.tar.gz
+    )
+
+    printf "Starting tests:\n"
+    for kfioc_test in $KFIOC_TEST_LIST; do
+        printf "  %.14s  $kfioc_test...\n" $(date "+%s.%N")
+
+        # Each test has an absolute time deadline for completion from when it is started.
+        # A test can depend on another test so it needs a timeout to decide that the other
+        # test may have failed.
+        start_test $kfioc_test &
+        KFIOC_PROCS="$KFIOC_PROCS $kfioc_test:$!"
+        KFIOC_COUNT=$( pgrep -fc "kfio_config.sh -a" )
+        while [ $KFIOC_COUNT -gt $TEST_RATE ]
+        do
+            sleep .01
+            KFIOC_COUNT=$( pgrep -fc "kfio_config.sh -a" )
+        done
+    done
+
+    printf "Started tests, waiting for completions...\n"
+
+    # We want more time for ourselves than the child tests
+    TIMEOUT_DELTA=$(($TIMEOUT_DELTA+$TIMEOUT_DELTA/2))
+    update_timeout
+}
+
+finished()
+{
+    local rc=0
+
+    kfioc_open_config || rc=1
+
+    collect_kfioc_results || rc=1
+
+    kfioc_close_config || rc=1
+
+    if [ -z "$FAILED_TESTS" -a 0 = "$rc" ]; then
+        cp "${TMP_OUTPUTFILE}" "$OUTPUTFILE"
+        printf "Finished\n"
+    else
+        printf "ERROR: Failures detected\n" >&2
+        if [ -n "$FAILED_TESTS" ]; then
+            printf "Failed tests: $FAILED_TESTS\n" >&2
+            rc=1
+        fi
+    fi
+
+    return $rc
+}
+
+
+set_kfioc_status()
+{
+    local kfioc_flag="$1"
+    local value="$2"
+    local file="$3"
+    shift 3
+
+    mkdir -p "$CONFIGDIR/$kfioc_flag"
+    # It appears there's a nice race condition where a file is created by
+    # the test and the parent reads the data from the file before the write
+    # is flushed - resulting in an empty read.  Creating the ".tmp" file
+    # and then moving it into place should guarantee that the contents are
+    # flushed prior to the file existing.
+    printf "%s\n" "$value" >"$CONFIGDIR/$kfioc_flag/$file.tmp"
+    mv "$CONFIGDIR/$kfioc_flag/$file.tmp" "$CONFIGDIR/$kfioc_flag/$file"
+}
+
+
+get_kfioc_status()
+{
+    local kfioc_flag="$1"
+    local file="$2"
+    local last_status_count="$(ls "$CONFIGDIR/"*/* 2>/dev/null | wc -l)"
+    local this_status_count=0
+
+    while [ ! -s "$CONFIGDIR/$kfioc_flag/$file" -a $(date "+%s") -lt "$TIMEOUT_TIME" ]; do
+        this_status_count="$(ls "$CONFIGDIR/"*/* 2>/dev/null | wc -l)"
+        if [ "$this_status_count" -gt "$last_status_count" ]; then
+            last_status_count="$this_status_count"
+            update_timeout
+        fi
+        sleep 1
+    done
+
+    if [ -s "$CONFIGDIR/$kfioc_flag/$file" ]; then
+        local result="$(cat "$CONFIGDIR/$kfioc_flag/$file")"
+        if [ -z "$result" ]; then
+            printf "ERROR: empty result in $CONFIGDIR/$kfioc_flag/$file\n" >&2
+            exit $EX_SOFTWARE
+        fi
+        printf "$result"
+        update_timeout
+    else
+        printf "%.14s  ERROR: timed out waiting for $kfioc_flag/$file $$ $last_status_count:$this_status_count $TIMEOUT_TIME\n" $(date "+%s.%N") >&2
+        exit $EX_SOFTWARE
+    fi
+}
+
+
+generate_kfioc_define()
+{
+    local kfioc_flag="$1"
+    local result=$(get_kfioc_status $kfioc_flag result)
+
+    if [ -n "$result" ]; then
+        printf "#define $kfioc_flag ($result)\n"
+    fi
+}
+
+
+kfioc_test()
+{
+    local code="
+#include <linux/module.h>
+$1
+"
+    local kfioc_flag="$2"
+    # POSITIVE_RESULT is what should be returned when a test compiles successfully.
+    # This value is inverted when the compile test fails
+    local positive_result="$3"
+    local cflags="${4:-}"
+    local test_dir="${CONFIGDIR}/${kfioc_flag}"
+    local result=0
+    local license="
+MODULE_LICENSE(\"Proprietary\");
+"
+
+    mkdir -p "$test_dir"
+    fio_create_makefile "$kfioc_flag" "$cflags"
+
+    echo "$code" > "$test_dir/kfioc_test.c"
+
+    if [ 1 -eq "$FUSION_DEBUG" ]; then
+        license="
+MODULE_LICENSE(\"GPL\");
+"
+    fi
+    echo "$license" >> "$test_dir/kfioc_test.c"
+
+    if [ 1 -eq "$VERBOSE" ]; then
+        env -i PATH="${PATH}" make -C "$test_dir" V=1 2>&1 | tee "$test_dir/kfioc_test.log" || result=$?
+    else
+        env -i PATH="${PATH}" make -C "$test_dir" V=1 >"$test_dir/kfioc_test.log" 2>&1 || result=$?
+    fi
+
+    # Save the exit status
+    set_kfioc_status $kfioc_flag $result exit
+
+    # Interpret the result
+    local myflag=$positive_result
+    # Return code of 0 indicates success
+    if [ $result != 0 ]; then
+        myflag=$((! $positive_result))
+    fi
+
+    # Save the interpreted result
+    set_kfioc_status $kfioc_flag $myflag result
+}
+
+
+kfioc_has_include()
+{
+    local include_file="$1"
+    local kfioc_flag="$2"
+
+    local test_code="
+#include <$include_file>
+"
+
+    kfioc_test "$test_code" "$kfioc_flag" 1
+}
 
 ###############################################################################
 
@@ -3060,7 +3426,6 @@ Detecting Kernel Flags
 Config dir         : ${CONFIGDIR}
 Output file        : ${OUTPUTFILE}
 Kernel output dir  : ${KERNELDIR}
-Kernel source dir  : ${KERNELSOURCEDIR}
 EOF
 
     # Check to make sure the kernel build directory exists
@@ -3070,14 +3435,25 @@ EOF
         exit $EX_OSFILE;
     fi
 
-    # Check to make sure the kernel build directory exists
-    if [ ! -d "${KERNELSOURCEDIR:=${KERNELDIR}}" ]; then
-        echo "Unable to locate the kernel source dir '$KERNELSOURCEDIR'"
+    # For some reason we used to unilaterally set KERNELSOURCEDIR to KERNELDIR. Maybe because they were the same in many
+    #  cases and it didn't seem to matter, the way we used them.
+    # With CRT-1114 however, we had to change the way we detect the API changes to get_user_pages(), which requires
+    #  that the KERNELDIR point to the kernel build directory and the KERNELSOURCEDIR point to...well, the kernel source.
+    # Attempt to correctly set the KERNELSOURCEDIR by checking for the existence of a file. (mm.h because, why not?).
+    INCLUDEFILEPATH="include/linux/mm.h"
+    if [ ! -f "$KERNELSOURCEDIR/$INCLUDEFILEPATH" ]; then
+        KERNELSOURCEDIR=${KERNELDIR}
+    fi
+
+    cat <<EOF
+Kernel source dir  : ${KERNELSOURCEDIR}
+EOF
+    # Check again to make sure the kernel souce directory and a file exists
+    if [ ! -f "$KERNELSOURCEDIR/$INCLUDEFILEPATH" ]; then
+        echo "Unable to locate the kernel source in '$KERNELSOURCEDIR'"
         echo "Please make sure your kernel development package is installed."
         exit $EX_OSFILE;
     fi
-
-    . ./kfio_config_add.sh
 
     start_tests
 

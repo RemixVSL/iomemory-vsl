@@ -72,11 +72,11 @@ fake_license:
 
 .PHONY: check_n_fix_kfio_ccver
 check_n_fix_kfio_ccver:
-	if [ "${CCVER}" -gt "${LAST_CCVER}" ];then \
+	# if [ "${CCVER}" -gt "${LAST_CCVER}" ];then \
 		if [ ! -f "${KFIO_LIB}" ];then \
 			cp kfio/${LAST_KFIO_LIB} ${KFIO_LIB}; \
 		fi \
-	fi
+	# fi
 	$(shell touch ${KFIO_LIB_CMD})
 
 clean modules_clean:
