@@ -41,7 +41,7 @@ void of_cleanup_fio_blk(void)
 
 int32_t of_iodrive_pci_probe(kfio_pci_dev_t *pci_dev, void *id)
 {
-  int32_t rc;
+  int32_t rc, dev_num;
   const char *name;
   char s1[255];
   char s2[255];
@@ -90,8 +90,8 @@ int32_t of_iodrive_pci_probe(kfio_pci_dev_t *pci_dev, void *id)
     kfio_print("<3>fioerr %s: failed to get memory regions\n", s1);
   } else {
     kfio_pci_set_dma_mask(pci_dev, 0xffffffffffffffff);
-    gv_init_pci_counter++;
-    rc = of_iodrive_pci_attach(pci_dev, gv_init_pci_counter);
+    dev_num = gv_init_pci_counter++;
+    rc = of_iodrive_pci_attach(pci_dev, dev_num);
     if (rc > -1) {
       return 0;
     }
@@ -146,7 +146,7 @@ int32_t of_iodrive_pci_attach_nand(iodrive_dev_t *iodrive_dev, int32_t dev_num, 
     kfio_print("<3>fioerr %s: failed to get memory for device control structure\n",iodrive_dev->dev_name);
     return -1;
   }
-  kfio_memset(nand_dev,0,sizeof(nand_dev));
+  kfio_memset(nand_dev,0,sizeof(fusion_nand_device));
 
   rc = 0;
   if (iodrive_dev->nr_vecs == 0) {
@@ -165,7 +165,7 @@ int32_t of_iodrive_pci_attach_nand(iodrive_dev_t *iodrive_dev, int32_t dev_num, 
 
   loop = 0;
   do {
-    kfio_memset(nand_dev,0,sizeof(nand_dev));
+    kfio_memset(nand_dev,0,sizeof(fusion_nand_device));
     kfio_strncpy(nand_dev->dev_name,nand_name,0x1f);
     kfio_snprintf(nand_dev->bus_name,0x100,"ioDrive %s.%d",kfio_pci_name(iodrive_dev->pci_dev),0);
 
@@ -199,7 +199,9 @@ int32_t of_iodrive_pci_attach_nand(iodrive_dev_t *iodrive_dev, int32_t dev_num, 
     }
     nand_dev->major = kfio_register_blkdev_pre_init(iodrive_dev->pci_dev);
 
-    if (0 > iodrive_pci_attach_setup(nand_dev, dev_num, nr, iodrive_dev->nand_dev[0])) break;
+    errnum = iodrive_pci_attach_setup(nand_dev, dev_num, nr, iodrive_dev->nand_dev[0]);
+    if (errnum < 0) break;
+
     if (   kfio_pci_get_subsystem_vendor(iodrive_dev->pci_dev) == 0x103c
         && kfio_pci_get_subsystem_device(iodrive_dev->pci_dev) == 0x340d
         && nand_dev->pci_slot != 0)
@@ -233,13 +235,13 @@ int32_t of_iodrive_pci_attach_nand(iodrive_dev_t *iodrive_dev, int32_t dev_num, 
   if (iodrive_dev->nr_vecs != 0) {
     kfio_free_msix(&iodrive_dev->msix,0,nand_dev);
   }
-  kfio_free(nand_dev,sizeof(nand_dev));
+  kfio_free(nand_dev,sizeof(fusion_nand_device));
   kfio_print("<3>fioerr %s: Driver probe on pipeline %d failed with error %d: %s\n",
     iodrive_dev->dev_name,nr,errnum,ifio_strerror(errnum));
   return -5;
 }
 
-int32_t of_iodrive_pci_attach(kfio_pci_dev_t *pci_dev,int32_t dev_num)
+int32_t of_iodrive_pci_attach(kfio_pci_dev_t *pci_dev, int32_t dev_num)
 {
   iodrive_dev_t *iodrive_dev;
   char fct_name[33];
@@ -253,12 +255,12 @@ int32_t of_iodrive_pci_attach(kfio_pci_dev_t *pci_dev,int32_t dev_num)
   if (kfio_get_numa_node_override(pci_dev,fct_name,&numa_node))
     numa_node = kfio_pci_get_node(pci_dev);
 
-  iodrive_dev = (iodrive_dev_t *)kfio_malloc_node(sizeof(iodrive_dev), numa_node);
+  iodrive_dev = (iodrive_dev_t *)kfio_malloc_node(sizeof(iodrive_dev_t), numa_node);
   if (iodrive_dev == (iodrive_dev_t *)0x0) {
     kfio_print("<3>fioerr ioDrive %s: failed to get memory for control structure\n", kfio_pci_name(pci_dev));
     return -0xc;
   }
-  kfio_memset(iodrive_dev, 0, sizeof(iodrive_dev));
+  kfio_memset(iodrive_dev, 0, sizeof(iodrive_dev_t));
 
   kfio_snprintf(iodrive_dev->dev_name, 0xff, "ioDrive %s", kfio_pci_name(pci_dev));
   iodrive_dev->pci_dev = pci_dev;
@@ -328,8 +330,7 @@ int32_t of_iodrive_pci_attach(kfio_pci_dev_t *pci_dev,int32_t dev_num)
 
   nr = 1;
   while (nr < maxnr) {
-    gv_init_pci_counter++;
-    of_iodrive_pci_attach_nand(iodrive_dev,gv_init_pci_counter,nr,numa_node);
+    of_iodrive_pci_attach_nand(iodrive_dev, gv_init_pci_counter++, nr, numa_node);
     nr = nr + 1;
   }
   return 0;
