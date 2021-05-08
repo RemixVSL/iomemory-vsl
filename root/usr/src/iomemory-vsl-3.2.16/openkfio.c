@@ -126,7 +126,7 @@ uint32_t of_kfio_csr_read(csr_addr_t *csr,uint64_t index,bool indirect)
 void of_iodrive_pci_init(fusion_nand_device *nand_dev, char *name)
 {
   kfio_memset(nand_dev, 0, sizeof(fusion_nand_device));
-  kfio_strncpy(nand_dev->dev_name, name, sizeof(nand_dev->dev_name));
+  kfio_strncpy(nand_dev->dev_name, name, 0x20);
 }
 
 int32_t of_iodrive_pci_attach_failed(kfio_pci_dev_t *pci_dev)
