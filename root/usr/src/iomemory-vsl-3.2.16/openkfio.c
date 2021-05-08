@@ -123,6 +123,12 @@ uint32_t of_kfio_csr_read(csr_addr_t *csr,uint64_t index,bool indirect)
   return val;
 }
 
+void of_iodrive_pci_init(fusion_nand_device *nand_dev, char *name)
+{
+  kfio_memset(nand_dev, 0, sizeof(fusion_nand_device));
+  kfio_strncpy(nand_dev->dev_name, name, sizeof(nand_dev->dev_name));
+}
+
 int32_t of_iodrive_pci_attach_failed(kfio_pci_dev_t *pci_dev)
 {
   iodrive_dev_t *iodrive_dev;
@@ -146,13 +152,13 @@ int32_t of_iodrive_pci_attach_nand(iodrive_dev_t *iodrive_dev, int32_t dev_num, 
     kfio_print("<3>fioerr %s: failed to get memory for device control structure\n", iodrive_dev->dev_name);
     return -1;
   }
-  kfio_memset(nand_dev, 0, sizeof(fusion_nand_device));
+  of_iodrive_pci_init(nand_dev, nand_name);
 
   rc = 0;
   if (iodrive_dev->nr_vecs == 0) {
-    if (!nr) rc = kfio_request_irq(iodrive_dev->pci_dev, nand_name, iodrive_dev, iodrive_dev->msi);
+    if (!nr) rc = kfio_request_irq(iodrive_dev->pci_dev, nand_dev->dev_name, iodrive_dev, iodrive_dev->msi);
   } else {
-    rc = kfio_request_msix(iodrive_dev->pci_dev, nand_name, nand_dev, &iodrive_dev->msix, nr);
+    rc = kfio_request_msix(iodrive_dev->pci_dev, nand_dev->dev_name, nand_dev, &iodrive_dev->msix, nr);
   }
   if (rc < 0) {
     kfio_print("<3>fioerr %s: IRQ request failed\n", iodrive_dev->dev_name);
@@ -165,8 +171,7 @@ int32_t of_iodrive_pci_attach_nand(iodrive_dev_t *iodrive_dev, int32_t dev_num, 
 
   loop = 0;
   do {
-    kfio_memset(nand_dev,0,sizeof(fusion_nand_device));
-    kfio_strncpy(nand_dev->dev_name, nand_name, 0x1f);
+    of_iodrive_pci_init(nand_dev, nand_name);
     kfio_snprintf(nand_dev->bus_name, 0x100, "ioDrive %s.%d", kfio_pci_name(iodrive_dev->pci_dev), 0);
 
     nand_dev->dev_nr = nr;
