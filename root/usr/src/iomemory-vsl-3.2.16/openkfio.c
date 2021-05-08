@@ -154,7 +154,7 @@ int32_t of_iodrive_pci_attach_nand(iodrive_dev_t *iodrive_dev, int32_t dev_num, 
   } else {
     rc = kfio_request_msix(iodrive_dev->pci_dev, nand_name, nand_dev, &iodrive_dev->msix, nr);
   }
-  if (rc<0) {
+  if (rc < 0) {
     kfio_print("<3>fioerr %s: IRQ request failed\n", iodrive_dev->dev_name);
     kfio_free(nand_dev, sizeof(fusion_nand_device));
     return -2;
@@ -166,9 +166,10 @@ int32_t of_iodrive_pci_attach_nand(iodrive_dev_t *iodrive_dev, int32_t dev_num, 
   loop = 0;
   do {
     kfio_memset(nand_dev,0,sizeof(fusion_nand_device));
-    kfio_strncpy(nand_dev->dev_name,nand_name, 0x1f);
-    kfio_snprintf(nand_dev->bus_name,0x100,"ioDrive %s.%d", kfio_pci_name(iodrive_dev->pci_dev), 0);
+    kfio_strncpy(nand_dev->dev_name, nand_name, 0x1f);
+    kfio_snprintf(nand_dev->bus_name, 0x100, "ioDrive %s.%d", kfio_pci_name(iodrive_dev->pci_dev), 0);
 
+    nand_dev->dev_nr = nr;
     nand_dev->pci_dev = iodrive_dev->pci_dev;
     nand_dev->pci_slot = kfio_pci_get_slot(iodrive_dev->pci_dev);
     nand_dev->numa_node = numa_node;
@@ -188,10 +189,8 @@ int32_t of_iodrive_pci_attach_nand(iodrive_dev_t *iodrive_dev, int32_t dev_num, 
     }
 
     kfio_csr_write(0xffc, iodrive_dev->vaddr + 0x8ffc, iodrive_dev->vhdl);
-    rc = of_kfio_csr_read(&nand_dev->csr, 0x1208, nand_dev->indirect_read);
-    if (rc == 0xcafecafe) nand_dev->indirect_read = true;
-    rc = of_kfio_csr_read(&nand_dev->csr, 0x120c, nand_dev->indirect_read);
-    if (rc == 0) {
+    nand_dev->indirect_read = (0xcafecafe == of_kfio_csr_read(&nand_dev->csr, 0x1208, nand_dev->indirect_read));
+    if (0 == of_kfio_csr_read(&nand_dev->csr, 0x120c, nand_dev->indirect_read)){
       errnum = -21;
       kfio_print("<3>fioerr %s: Failed to communicate with the card. This may be due to incompatible firmware or a hardware failure. Please contact Customer Support.\n",
         nand_dev->dev_name);
@@ -210,7 +209,7 @@ int32_t of_iodrive_pci_attach_nand(iodrive_dev_t *iodrive_dev, int32_t dev_num, 
     } else {
       kfio_snprintf(nand_dev->bus_name,0x100,"%s %s",nand_dev->str_17376, kfio_pci_name(iodrive_dev->pci_dev));
     }
-    kfio_print("<6>fioinf %s: Found device %s (%s) on pipeline %d\n",iodrive_dev->dev_name,nand_dev->fct_name,nand_dev->bus_name,nr);
+    kfio_print("<6>fioinf %s: Found device %s (%s) on pipeline %d\n", iodrive_dev->dev_name, nand_dev->fct_name, nand_dev->bus_name, nr);
 
     errnum = iodrive_pci_attach_post(nand_dev);
     if (errnum != -10) {
@@ -219,7 +218,7 @@ int32_t of_iodrive_pci_attach_nand(iodrive_dev_t *iodrive_dev, int32_t dev_num, 
       kfio_print("<6>fioinf %s: probed %s\n", nand_dev->bus_name, nand_dev->fct_name);
       if (nr == 0) {
         rc = of_kfio_csr_read(&iodrive_dev->csr, 0x1200, iodrive_dev->indirect_read);
-        if ((rc & 0x7f) != 3) return -3;
+        if ((rc & 0x7f) != 3) return 0;
         rc = of_kfio_csr_read(&iodrive_dev->csr, 0x1240, iodrive_dev->indirect_read);
         if ((rc == 0xcafecafe) || (rc < 2)) return 0;
         return rc;
@@ -251,8 +250,7 @@ int32_t of_iodrive_pci_attach(kfio_pci_dev_t *pci_dev, int32_t dev_num)
   kfio_numa_node_t numa_node;
   uint16_t bar;
   uint64_t offset;
-  bool ok;
-  int32_t nr, maxnr;
+  int32_t nr, maxnr, legacy;
 
   kfio_snprintf(fct_name, 33, "fct%d", dev_num);
   if (kfio_get_numa_node_override(pci_dev, fct_name, &numa_node))
@@ -286,35 +284,30 @@ int32_t of_iodrive_pci_attach(kfio_pci_dev_t *pci_dev, int32_t dev_num)
     return of_iodrive_pci_attach_failed(pci_dev);
   }
 
-  ok = false;
+  legacy = 1;
   if (disable_msix == 0) {
     iodrive_dev->nr_vecs = kfio_pci_enable_msix(pci_dev, &iodrive_dev->msix, 2);
     if (iodrive_dev->nr_vecs != 0) {
-      ok = true;
+      legacy = 0;
       iodrive_dev->msi = false;
       kfio_print("<6>fioinf %s: MSI-X enabled (%u vectors)\n", iodrive_dev->dev_name, iodrive_dev->nr_vecs);
-      kfio_iodrive_intx(pci_dev, 0);
       kfio_print("<6>fioinf %s: using MSI-X interrupts\n", iodrive_dev->dev_name);
     }
   }
-
-  if (!ok && !disable_msi && !kfio_pci_enable_msi(pci_dev)) {
-    ok = true;
+  if (legacy && !disable_msi && !kfio_pci_enable_msi(pci_dev)) {
+    legacy = 0;
     iodrive_dev->msi = true;
     kfio_print("<6>fioinf %s: MSI enabled\n", iodrive_dev->dev_name);
-    kfio_iodrive_intx(pci_dev, 0);
     kfio_print("<6>fioinf %s: using MSI interrupts\n", iodrive_dev->dev_name);
   }
+  if (legacy) kfio_print("<6>fioinf %s: using legacy interrupts\n", iodrive_dev->dev_name);
 
-  if (!ok) {
-    kfio_iodrive_intx(pci_dev, 1);
-    kfio_print("<6>fioinf %s: using legacy interrupts\n", iodrive_dev->dev_name);
-  }
+  kfio_iodrive_intx(pci_dev, legacy);
 
   (iodrive_dev->csr).unknown0 = iodrive_dev->vaddr;
   (iodrive_dev->csr).unknown16 = iodrive_dev->vaddr;
   (iodrive_dev->csr).hdl = iodrive_dev->vhdl;
-  (iodrive_dev->csr).unknown24 =  iodrive_dev->vaddr + 0x2000;
+  (iodrive_dev->csr).unknown24 = iodrive_dev->vaddr + 0x2000;
   (iodrive_dev->csr).addr1 = iodrive_dev->vaddr + 0x4000;
   (iodrive_dev->csr).addr0 = iodrive_dev->vaddr + 0x8000;
 
@@ -337,6 +330,8 @@ int32_t of_iodrive_pci_attach(kfio_pci_dev_t *pci_dev, int32_t dev_num)
     of_iodrive_pci_attach_nand(iodrive_dev, gv_init_pci_counter++, nr, numa_node);
     nr = nr + 1;
   }
-  return 0;
+
+  if (iodrive_dev->fct_cnt) return 0;
+  return of_iodrive_pci_attach_failed(pci_dev);
 }
 
