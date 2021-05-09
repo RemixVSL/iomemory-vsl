@@ -133,6 +133,7 @@ extern fio_device *gv_fio_device_list;
 extern int32_t gv_init_pci_counter;
 extern fusion_spinlock_t gv_lock_indirect_read;
 
+// original functions
 extern int kfio_print(const char *format, ...);
 extern void kfio_info_remove_node (kfio_info_node_t **dirp);
 extern void fio_detach_devices (void);
@@ -146,8 +147,11 @@ extern void kfio_pci_disable_device(kfio_pci_dev_t *pdev);
 extern int kfio_pci_request_regions(kfio_pci_dev_t *pdev, const char *res_name);
 extern void iodrive_reset_and_wait(iodrive_dev_t * iodrive_dev);
 extern int32_t iodrive_pci_attach_setup(fusion_nand_device * nand_dev, int32_t dev_num, uint32_t vector, fusion_nand_device * master_nand_dev);
-extern int32_t iodrive_pci_attach_post (fusion_nand_device * nand_dev);
+extern int32_t iodrive_pci_attach_post(fusion_nand_device * nand_dev);
+extern void iodrive_clear_all_pci_errors(kfio_pci_dev_t * pci_dev);
+extern void iodrive_clear_pci_errors(kfio_pci_dev_t *pci_dev);
 
+// open substitutes
 void of_cleanup_fio_blk(void);
 void of_kfio_info_remove_node_fio(void);
 int32_t of_iodrive_pci_probe(kfio_pci_dev_t *pci_dev, void *id);
@@ -156,6 +160,8 @@ uint32_t kfio_csr_read(csr_addr_t *csr,uint64_t index,bool indirect);
 int32_t of_iodrive_pci_attach_failed(kfio_pci_dev_t *pci_dev);
 int32_t of_iodrive_pci_attach_nand(iodrive_dev_t *iodrive_dev, int32_t dev_num, int32_t nr, kfio_numa_node_t numa_node);
 int32_t of_iodrive_pci_attach(kfio_pci_dev_t *pci_dev,int32_t dev_num);
-
+void of_iodrive_reset_and_wait(iodrive_dev_t *iodrive_dev);
+void of_iodrive_clear_all_pci_errors(kfio_pci_dev_t *pci_dev);
+void of_iodrive_clear_pci_errors(kfio_pci_dev_t *pci_dev);
 #endif
 

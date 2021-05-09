@@ -123,13 +123,107 @@ uint32_t of_kfio_csr_read(csr_addr_t *csr,uint64_t index,bool indirect)
   return val;
 }
 
-void of_iodrive_pci_init(fusion_nand_device *nand_dev, char *name)
+void of_iodrive_clear_pci_errors(kfio_pci_dev_t *pci_dev)
 {
-  kfio_memset(nand_dev, 0, sizeof(fusion_nand_device));
-  kfio_strncpy(nand_dev->dev_name, name, 0x20);
+  uint8_t fun, num, bus;
+  uint32_t loop;
+  uint8_t b1, b2;
+  uint16_t w;
+  int32_t where;
+
+  loop = 0x800;
+  fun = kfio_pci_get_function(pci_dev);
+  num = kfio_pci_get_devicenum(pci_dev);
+  bus = kfio_pci_get_bus(pci_dev);
+
+  b1 = 0;
+  kfio_pci_read_config_byte(pci_dev, 0x34, &b1);
+  while ((b1 - 1 < 0xfe) && loop) {
+    where = (int32_t)b1;
+    kfio_pci_read_config_byte(pci_dev, where, &b2);
+    if (b2 == 0x10) {
+      kfio_pci_read_config_word(pci_dev, where + 10, &w);
+      if ((w & 0xf) == 0) return;
+      if ((w & 6) != 0)
+        kfio_print("<6>fioinf %02x:%02x.%02x: Clearing PCIe errors (0x%x)\n", bus, num, fun, w & 0xf);
+      kfio_pci_write_config_word(pci_dev, where + 10, w);
+      return;
+    }
+    kfio_pci_read_config_byte(pci_dev, where + 1, &b1);
+  }
+  kfio_print("<3>fioerr %02x:%02x.%02x: Cannot read PCIe capabilities for device, off 0x%02X, cnt %u\n", bus, num, fun, b1, loop);
 }
 
-int32_t of_iodrive_pci_attach_failed(kfio_pci_dev_t *pci_dev)
+void of_iodrive_clear_all_pci_errors(kfio_pci_dev_t *pci_dev)
+{
+  short vendor;
+  kfio_pci_bus_t *bus;
+  kfio_pci_dev_t *pci_dev1;
+
+  of_iodrive_clear_pci_errors(pci_dev);
+  bus = kfio_bus_from_pci_dev(pci_dev);
+  while (bus && !kfio_pci_bus_istop(bus)) {
+    pci_dev1 = kfio_pci_bus_self(bus);
+    of_iodrive_clear_pci_errors(pci_dev1);
+    vendor = kfio_pci_get_vendor(pci_dev1);
+    if ((vendor != 0x1aed) && (vendor != 0x10b5)) return;
+    bus = kfio_pci_bus_parent(bus);
+  }
+}
+
+void of_iodrive_reset_and_wait(iodrive_dev_t *iodrive_dev)
+{
+  bool waited;
+
+  of_iodrive_clear_all_pci_errors(iodrive_dev->pci_dev);
+
+  if (of_kfio_csr_read(&iodrive_dev->csr, 0x1264, iodrive_dev->indirect_read) != 0xcafecafe) {
+    waited = false;
+    while( true ) {
+      if (!of_kfio_csr_read(&iodrive_dev->csr, 0x1264, iodrive_dev->indirect_read)) break;
+      if (!waited) kfio_print("<6>fioinf %s: waiting for userspace tool(s)\n", iodrive_dev->dev_name);
+      waited = true;
+      fusion_schedule_yield();
+    }
+    if (waited) kfio_print("<6>fioinf %s: done waiting for userspace tool(s)\n", iodrive_dev->dev_name);
+  }
+
+  if (of_kfio_csr_read(&iodrive_dev->csr, 0xc88, iodrive_dev->indirect_read) & 1) {
+    kfio_print("<6>fioinf %s: incomplete reset detected - flushing.\n", iodrive_dev->dev_name);
+    kfio_csr_write(1,(iodrive_dev->csr).addr0 + 0xc84,(iodrive_dev->csr).hdl);
+    kfio_udelay(10000);
+    kfio_csr_write(0,(iodrive_dev->csr).addr0 + 0xc84,(iodrive_dev->csr).hdl);
+  }
+
+  kfio_csr_write(0xffffffff, (iodrive_dev->csr).addr0 + 0x84, (iodrive_dev->csr).hdl);
+  kfio_udelay(10000);
+  kfio_csr_write(0, (iodrive_dev->csr).addr0 + 0x84, (iodrive_dev->csr).hdl);
+  kfio_udelay(10000);
+  kfio_csr_write(0, (iodrive_dev->csr).addr0 + 0xc10, (iodrive_dev->csr).hdl);
+  kfio_csr_write(1, (iodrive_dev->csr).addr0 + 0x84, (iodrive_dev->csr).hdl);
+
+  kfio_csr_write(0x80000000, (iodrive_dev->csr).addr1 + 8, (iodrive_dev->csr).hdl);
+  kfio_csr_write(0, (iodrive_dev->csr).addr1 + 8, (iodrive_dev->csr).hdl);
+  if (!use_large_pcie_rx_buffer)
+    kfio_csr_write(0x800000, (iodrive_dev->csr).addr1 + 4, (iodrive_dev->csr).hdl);
+  else
+    kfio_csr_write(0, (iodrive_dev->csr).addr1 + 4, (iodrive_dev->csr).hdl);
+  kfio_csr_write(3, (iodrive_dev->csr).addr1, (iodrive_dev->csr).hdl);
+
+  kfio_csr_write(0, (iodrive_dev->csr).addr0 + 0x84, (iodrive_dev->csr).hdl);
+  kfio_udelay(10000);
+  if (!iodrive_dev->msi && !iodrive_dev->nr_vecs)
+    kfio_csr_write(0, (iodrive_dev->csr).addr0 + 0xfc, (iodrive_dev->csr).hdl);
+}
+
+void if_iodrive_pci_attach_nand_clear(fusion_nand_device *nand_dev, iodrive_dev_t *iodrive_dev, int32_t nr)
+{
+  kfio_memset(nand_dev, 0, sizeof(fusion_nand_device));
+  kfio_snprintf(nand_dev->dev_name, 0x20, "iodrive-%s-%u", kfio_pci_name(iodrive_dev->pci_dev), nr);
+  kfio_snprintf(nand_dev->bus_name, 0x100, "ioDrive %s.%d", kfio_pci_name(iodrive_dev->pci_dev), nr);
+}
+
+int32_t if_iodrive_pci_attach_failed(kfio_pci_dev_t *pci_dev)
 {
   iodrive_dev_t *iodrive_dev;
   iodrive_dev = kfio_pci_get_drvdata(pci_dev);
@@ -138,21 +232,18 @@ int32_t of_iodrive_pci_attach_failed(kfio_pci_dev_t *pci_dev)
   return -0x16;
 }
 
-int32_t of_iodrive_pci_attach_nand(iodrive_dev_t *iodrive_dev, int32_t dev_num, int32_t nr, kfio_numa_node_t numa_node)
+int32_t if_iodrive_pci_attach_nand(iodrive_dev_t *iodrive_dev, int32_t dev_num, int32_t nr, kfio_numa_node_t numa_node)
 {
   int32_t rc;
   fusion_nand_device * nand_dev;
-  char nand_name[80];
   int32_t loop, errnum;
-
-  kfio_snprintf(nand_name, 0x1f, "iodrive-%s-%u", kfio_pci_name(iodrive_dev->pci_dev), nr);
 
   nand_dev = (fusion_nand_device *)kfio_malloc_node(sizeof(fusion_nand_device), numa_node);
   if (nand_dev == (fusion_nand_device *)0x0) {
     kfio_print("<3>fioerr %s: failed to get memory for device control structure\n", iodrive_dev->dev_name);
     return -1;
   }
-  of_iodrive_pci_init(nand_dev, nand_name);
+  if_iodrive_pci_attach_nand_clear(nand_dev, iodrive_dev, nr);
 
   rc = 0;
   if (iodrive_dev->nr_vecs == 0) {
@@ -171,8 +262,7 @@ int32_t of_iodrive_pci_attach_nand(iodrive_dev_t *iodrive_dev, int32_t dev_num, 
 
   loop = 0;
   do {
-    of_iodrive_pci_init(nand_dev, nand_name);
-    kfio_snprintf(nand_dev->bus_name, 0x100, "ioDrive %s.%d", kfio_pci_name(iodrive_dev->pci_dev), 0);
+    if_iodrive_pci_attach_nand_clear(nand_dev, iodrive_dev, nr);
 
     nand_dev->dev_nr = nr;
     nand_dev->pci_dev = iodrive_dev->pci_dev;
@@ -286,7 +376,7 @@ int32_t of_iodrive_pci_attach(kfio_pci_dev_t *pci_dev, int32_t dev_num)
   if (iodrive_dev->vaddr == (char *)0x0) {
     kfio_print("<3>fioerr %s: failed to map PCI BAR\n", iodrive_dev->dev_name);
     kfio_print("<3>fioerr %s: failed to get memory regions\n", iodrive_dev->dev_name);
-    return of_iodrive_pci_attach_failed(pci_dev);
+    return if_iodrive_pci_attach_failed(pci_dev);
   }
 
   legacy = 1;
@@ -322,21 +412,21 @@ int32_t of_iodrive_pci_attach(kfio_pci_dev_t *pci_dev, int32_t dev_num)
     (0xcafecafe == kfio_csr_read_direct((iodrive_dev->csr).addr0 + 0x1208, (iodrive_dev->csr).hdl));
 
   iodrive_dev->initialized = true;
-  iodrive_reset_and_wait(iodrive_dev);
+  of_iodrive_reset_and_wait(iodrive_dev);
 
-  maxnr = of_iodrive_pci_attach_nand(iodrive_dev, dev_num, 0, numa_node);
+  maxnr = if_iodrive_pci_attach_nand(iodrive_dev, dev_num, 0, numa_node);
   if (maxnr < 0) {
     kfio_print("<3>fioerr %s: Master pipeline failed\n", iodrive_dev->dev_name);
-    return of_iodrive_pci_attach_failed(pci_dev);
+    return if_iodrive_pci_attach_failed(pci_dev);
   }
 
   nr = 1;
   while (nr < maxnr) {
-    of_iodrive_pci_attach_nand(iodrive_dev, gv_init_pci_counter++, nr, numa_node);
+    if_iodrive_pci_attach_nand(iodrive_dev, gv_init_pci_counter++, nr, numa_node);
     nr = nr + 1;
   }
 
   if (iodrive_dev->fct_cnt) return 0;
-  return of_iodrive_pci_attach_failed(pci_dev);
+  return if_iodrive_pci_attach_failed(pci_dev);
 }
 
