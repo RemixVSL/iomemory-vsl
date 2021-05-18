@@ -532,16 +532,46 @@ void kfio_disk_stat_read_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t d
 
 int kfio_get_gd_in_flight(kfio_disk_t *fgd, int rw)
 {
+    struct gendisk* gd = fgd->gd;
     if (use_workqueue != USE_QUEUE_RQ)
     {
+        switch (rw) {
+        case BIO_DIR_WRITE:
+        {
+            return (unsigned)local_read(&GD_PART0->bd_stats->in_flight[WRITE]);
+            break;
+        }
+        case BIO_DIR_READ:
+        {
+            return (unsigned)local_read(&GD_PART0->bd_stats->in_flight[READ]);
+            break;
+        }
+        default:
+            break;
+        }
     }
     return 0;
 }
 
 void kfio_set_gd_in_flight(kfio_disk_t *fgd, int rw, int in_flight)
 {
+    struct gendisk* gd = fgd->gd;
     if (use_workqueue != USE_QUEUE_RQ)
     {
+        switch (rw) {
+        case BIO_DIR_WRITE:
+        {
+            local_set(&GD_PART0->bd_stats->in_flight[WRITE], in_flight);
+            break;
+        }
+        case BIO_DIR_READ:
+        {
+            local_set(&GD_PART0->bd_stats->in_flight[READ], in_flight);
+            break;
+        }
+        default:
+            break;
+        }
     }
 }
 
@@ -550,6 +580,15 @@ void kfio_set_gd_in_flight(kfio_disk_t *fgd, int rw, int in_flight)
  */
 static int kfio_bio_is_discard(struct bio *bio)
 {
+    /* if (use_workqueue != USE_QUEUE_RQ)
+    {
+        struct gendisk *gd = bio->bi_bdev->bd_disk;
+        part_stat_lock();
+        part_stat_inc(GD_PART0, ios[2]);
+        part_stat_add(GD_PART0, sectors[2], totalsize >> 9);
+        part_stat_add(GD_PART0, nsecs[2],   duration * 1000);
+        part_stat_unlock();
+    } */
     return bio_op(bio) == REQ_OP_DISCARD;
 }
 
