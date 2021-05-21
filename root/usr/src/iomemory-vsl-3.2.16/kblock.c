@@ -512,9 +512,6 @@ void kfio_disk_stat_write_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t 
         part_stat_add(GD_PART0, nsecs[STAT_WRITE],   duration * 1000);
         part_stat_add(GD_PART0, sectors[STAT_WRITE], totalsize >> 9);
         part_stat_inc(GD_PART0, ios[STAT_WRITE]);
-        // merges
-        // ioticks
-        // in flight?
         part_stat_unlock();
     }
 }
@@ -528,9 +525,6 @@ void kfio_disk_stat_read_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t d
         part_stat_add(GD_PART0, nsecs[STAT_READ],   duration * 1000);
         part_stat_add(GD_PART0, sectors[STAT_READ], totalsize >> 9);
         part_stat_inc(GD_PART0, ios[STAT_READ]);
-        // merges
-        // ioticks
-        // in flight?
         part_stat_unlock();
     }
 }
@@ -556,7 +550,7 @@ void kfio_set_gd_in_flight(kfio_disk_t *fgd, int rw, int in_flight)
     // struct gendisk* gd = fgd->gd;
     if (use_workqueue != USE_QUEUE_RQ)
     {
-      infprint("set_in_flight: sector: %i: %i", rw, in_flight);
+      // infprint("set_in_flight: sector: %i: %i", rw, in_flight);
       // atomic_set()
     }
 }
@@ -572,12 +566,10 @@ void kfio_disk_stat_discard_update(kfio_bio_t * fbio)
       uint64_t duration = fusion_getmicrotime() - fbio->fbio_start_time;
 
       part_stat_lock();
-      infprint("discard: size: %u, sector: %llu", BI_SIZE(bio), BI_SECTOR(bio));
+      // infprint("discard: size: %u, sector: %llu", BI_SIZE(bio), BI_SECTOR(bio));
       part_stat_inc(GD_PART0, ios[STAT_DISCARD]);
       part_stat_add(GD_PART0, sectors[STAT_DISCARD], BI_SIZE(bio) >> 9);
-      part_stat_add(GD_PART0, nsecs[2], duration * 1000);
-      // totalsize >> 9
-      // part_stat_add(GD_PART0, sectors[STAT_DISCARD], bio->bio_vec->bv_len);
+      part_stat_add(GD_PART0, nsecs[STAT_DISCARD], duration * 1000);
       part_stat_unlock();
     }
   }
