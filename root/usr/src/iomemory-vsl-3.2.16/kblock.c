@@ -214,33 +214,30 @@ static void kfio_invalidate_bdev(struct block_device *bdev);
 kfio_bio_t *kfio_fetch_next_bio(struct kfio_disk *disk)
 {
     struct request_queue *q;
+    struct bio *bio;
 
     q = disk->rq;
 
-    if (use_workqueue != USE_QUEUE_RQ)
-    {
-        struct bio *bio;
 #define Q_LOCK &q->queue_lock
-        spin_lock_irq(Q_LOCK);
-        if ((bio = disk->bio_head) != NULL)
-        {
-            disk->bio_head = bio->bi_next;
-            if (disk->bio_head == NULL)
-                disk->bio_tail = NULL;
-        }
-        spin_unlock_irq(Q_LOCK);
+    spin_lock_irq(Q_LOCK);
+    if ((bio = disk->bio_head) != NULL)
+    {
+        disk->bio_head = bio->bi_next;
+        if (disk->bio_head == NULL)
+            disk->bio_tail = NULL;
+    }
+    spin_unlock_irq(Q_LOCK);
 
-        if (bio != NULL)
-        {
-            kfio_bio_t *fbio;
+    if (bio != NULL)
+    {
+        kfio_bio_t *fbio;
 
-            fbio = kfio_convert_bio(q, bio);
-            if (fbio == NULL)
-            {
-                __kfio_bio_complete(bio,  0, -EIO);
-            }
-            return fbio;
+        fbio = kfio_convert_bio(q, bio);
+        if (fbio == NULL)
+        {
+            __kfio_bio_complete(bio,  0, -EIO);
         }
+        return fbio;
     }
     return NULL;
 }
@@ -310,10 +307,8 @@ int kfio_create_disk(struct fio_device *dev, kfio_pci_dev_t *pdev, uint32_t sect
     atomic_set(&dp->lock_pending, 0);
     INIT_LIST_HEAD(&dp->retry_list);
 
-    if (use_workqueue != USE_QUEUE_RQ)
-    {
-        dp->rq = kfio_alloc_queue(dp, node);
-    }
+
+    dp->rq = kfio_alloc_queue(dp, node);
 
     if (dp->rq == NULL)
     {
@@ -410,15 +405,12 @@ int kfio_expose_disk(kfio_disk_t *dp, char *name, int major, int disk_index,
     return 0;
 }
 
-static void kfio_kill_requests(struct request_queue *q)
-{
-}
-
 void kfio_destroy_disk(kfio_disk_t *disk, destroy_type_t dt)
 {
     if (disk->gd != NULL)
     {
         struct block_device *bdev;
+        struct bio *bio;
 
         bdev = GET_BDEV;
 
@@ -447,22 +439,14 @@ void kfio_destroy_disk(kfio_disk_t *disk, destroy_type_t dt)
          * coming to it anymore. Fetch remaining already queued requests
          * and fail them,
          */
-        if (use_workqueue == USE_QUEUE_RQ)
-        {
-            kfio_kill_requests(disk->rq);
-        }
-        if (use_workqueue != USE_QUEUE_RQ)
-        {
-            /* Fail all bio's already on internal bio queue. */
-            struct bio *bio;
+        /* Fail all bio's already on internal bio queue. */
 
-            while ((bio = disk->bio_head) != NULL)
-            {
-                disk->bio_head = bio->bi_next;
-                __kfio_bio_complete(bio,  0, -EIO);
-            }
-            disk->bio_tail = NULL;
+        while ((bio = disk->bio_head) != NULL)
+        {
+            disk->bio_head = bio->bi_next;
+            __kfio_bio_complete(bio,  0, -EIO);
         }
+        disk->bio_tail = NULL;
 
         if (disk->queue_lock != NULL) {
             fusion_spin_unlock_irqrestore(disk->queue_lock);
@@ -505,74 +489,58 @@ static void kfio_bdput(struct block_device *bdev)
  */
 void kfio_disk_stat_write_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t duration)
 {
-    if (use_workqueue != USE_QUEUE_RQ)
-    {
-        struct gendisk *gd = fgd->gd;
-        part_stat_lock();
-        part_stat_add(GD_PART0, nsecs[STAT_WRITE],   duration * 1000);
-        part_stat_add(GD_PART0, sectors[STAT_WRITE], totalsize >> 9);
-        part_stat_inc(GD_PART0, ios[STAT_WRITE]);
-        part_stat_unlock();
-    }
+    struct gendisk *gd = fgd->gd;
+    part_stat_lock();
+    part_stat_add(GD_PART0, nsecs[STAT_WRITE],   duration * 1000);
+    part_stat_add(GD_PART0, sectors[STAT_WRITE], totalsize >> 9);
+    part_stat_inc(GD_PART0, ios[STAT_WRITE]);
+    part_stat_unlock();
 }
 
 void kfio_disk_stat_read_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t duration)
 {
-    if (use_workqueue != USE_QUEUE_RQ)
-    {
-        struct gendisk *gd = fgd->gd;
-        part_stat_lock();
-        part_stat_add(GD_PART0, nsecs[STAT_READ],   duration * 1000);
-        part_stat_add(GD_PART0, sectors[STAT_READ], totalsize >> 9);
-        part_stat_inc(GD_PART0, ios[STAT_READ]);
-        part_stat_unlock();
-    }
+    struct gendisk *gd = fgd->gd;
+    part_stat_lock();
+    part_stat_add(GD_PART0, nsecs[STAT_READ],   duration * 1000);
+    part_stat_add(GD_PART0, sectors[STAT_READ], totalsize >> 9);
+    part_stat_inc(GD_PART0, ios[STAT_READ]);
+    part_stat_unlock();
 }
 
 
 int kfio_get_gd_in_flight(kfio_disk_t *fgd, int rw)
 {
     struct gendisk* gd = fgd->gd;
-    if (use_workqueue != USE_QUEUE_RQ)
-    {
-      int cpu;
-      long sum = 0;
-      for_each_possible_cpu(cpu) {
-            sum += part_stat_local_read_cpu(GD_PART0, in_flight[rw], cpu);
-      }
-      return sum;
+    int cpu;
+    long sum = 0;
+    for_each_possible_cpu(cpu) {
+          sum += part_stat_local_read_cpu(GD_PART0, in_flight[rw], cpu);
     }
-    return 0;
+    return sum;
 }
 
 void kfio_set_gd_in_flight(kfio_disk_t *fgd, int rw, int in_flight)
 {
     // struct gendisk* gd = fgd->gd;
-    if (use_workqueue != USE_QUEUE_RQ)
-    {
-      // infprint("set_in_flight: sector: %i: %i", rw, in_flight);
-      // atomic_set()
-    }
+    // infprint("set_in_flight: sector: %i: %i", rw, in_flight);
+    // atomic_set()
 }
 
 void kfio_disk_stat_discard_update(kfio_bio_t * fbio)
 {
-  if (use_workqueue != USE_QUEUE_RQ)
-  {
     struct bio *bio = (struct bio *)fbio->fbio_parameter;
     if (bio_op(bio) == REQ_OP_DISCARD)
     {
-      struct gendisk *gd = bio->BIO_DISK;
-      uint64_t duration = fusion_getmicrotime() - fbio->fbio_start_time;
+        struct gendisk *gd = bio->BIO_DISK;
+        uint64_t duration = fusion_getmicrotime() - fbio->fbio_start_time;
 
-      part_stat_lock();
-      // infprint("discard: size: %u, sector: %llu", BI_SIZE(bio), BI_SECTOR(bio));
-      part_stat_inc(GD_PART0, ios[STAT_DISCARD]);
-      part_stat_add(GD_PART0, sectors[STAT_DISCARD], BI_SIZE(bio) >> 9);
-      part_stat_add(GD_PART0, nsecs[STAT_DISCARD], duration * 1000);
-      part_stat_unlock();
+        part_stat_lock();
+        // infprint("discard: size: %u, sector: %llu", BI_SIZE(bio), BI_SECTOR(bio));
+        part_stat_inc(GD_PART0, ios[STAT_DISCARD]);
+        part_stat_add(GD_PART0, sectors[STAT_DISCARD], BI_SIZE(bio) >> 9);
+        part_stat_add(GD_PART0, nsecs[STAT_DISCARD], duration * 1000);
+        part_stat_unlock();
     }
-  }
 }
 
 /**

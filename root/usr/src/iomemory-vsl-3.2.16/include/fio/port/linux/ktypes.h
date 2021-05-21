@@ -38,10 +38,6 @@
 #include <fio/port/stdint.h>
 #else
 #include <linux/types.h>
-#if defined(__VMKLNX__)
-#include <linux/string.h>
-#include <linux/mutex.h>
-#endif
 #endif
 #include <fio/port/align.h>
 #include <fio/port/bitops.h>
@@ -156,9 +152,9 @@ typedef int kfio_numa_node_t;
 
 // Valid values for use_workqueue.
 #define USE_QUEUE_NONE   0 ///< directly submit requests.
+/* should these two go? */
 #define USE_QUEUE_WQ     1 ///< use kernel work queue.
 #define USE_QUEUE_SINGLE 2 ///< use single kernel thread.
-#define USE_QUEUE_RQ     3 ///< use single kernel thread and blk_init_queue style queueing.
 
 struct __fusion_sema {
 // This is horribly ugly, but this needs to be large enough
@@ -245,12 +241,6 @@ typedef int (*fusion_kthread_func_t)(void *);
 //nand_device can be NULL in the following fxn call
 void fusion_create_kthread(fusion_kthread_func_t func, void *data, void *fusion_nand_device,
                            const char *fmt, ...);
-#if defined(__VMKLNX__)
-struct task_struct *fusion_esx_create_kthread(fusion_kthread_func_t func, void *data,
-                                              void *fusion_nand_device, const char *fmt, ...);
-void fusion_esx_wakeup_thread(struct task_struct *ts);
-#endif
-
 ////#define kfio_page_address(pg)          page_address(pg)
 
 #if defined(__x86_64__)
@@ -286,12 +276,7 @@ typedef struct work_struct fusion_delayed_dpc_t;
 
 #endif
 
-// Returns true if we're running on what is considered a server OS
-#if defined(__VMKLNX__)
-#define fusion_is_server_os()     1
-#else
 #define fusion_is_server_os()     0
-#endif
 
 #define fusion_divmod(quotient, remainder, dividend, divisor)  do { quotient = dividend / divisor;  remainder = dividend % divisor; } while(0)
 
@@ -337,17 +322,9 @@ static inline unsigned long long kfio_rdtsc(void)
 
 #endif
 
-#if defined(__VMKLNX__)
-/* FH-11140: ESX can crash under certain proc operations, using sysctl kinfo
- *           backend.  Thus, we use the agnostic backend instead.
- */
-#define KFIO_INFO_USE_OS_BACKEND 0
-#define KFIO_SUPPORTS_DUAL_PIPE 0
-#else
 /* Linux port implements kinfo backend using sysctl. */
 #define KFIO_INFO_USE_OS_BACKEND 1
 #define KFIO_SUPPORTS_DUAL_PIPE 1
-#endif
 
 /**
  * @}

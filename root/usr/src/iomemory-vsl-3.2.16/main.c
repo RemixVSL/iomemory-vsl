@@ -176,11 +176,6 @@ static int __init init_fio_driver(void)
     auto_attach = 0;
 #endif
 
-    if(use_workqueue == USE_QUEUE_RQ)
-    {
-        infprint("Using Linux I/O Scheduler\n");
-    }
-
     /* If the LEB map isn't loaded then don't bother trying to auto attach */
     if (!iodrive_load_eb_map)
     {
