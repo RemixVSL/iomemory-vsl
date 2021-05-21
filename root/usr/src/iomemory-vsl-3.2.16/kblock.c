@@ -569,7 +569,7 @@ void kfio_disk_stat_discard_update(kfio_bio_t * fbio)
     if (bio_op(bio) == REQ_OP_DISCARD)
     {
       struct gendisk *gd = bio->BIO_DISK;
-      uint64_t duration = fusion_getmicrotime() - bio->fbio_start_time;
+      uint64_t duration = fusion_getmicrotime() - fbio->fbio_start_time;
 
       part_stat_lock();
       infprint("discard: size: %u, sector: %llu", BI_SIZE(bio), BI_SECTOR(bio));
