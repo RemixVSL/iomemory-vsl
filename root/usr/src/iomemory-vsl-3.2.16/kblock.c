@@ -91,7 +91,7 @@ enum {
     KFIO_DISK_HOLDOFF_BIT   = 0,
     KFIO_DISK_COMPLETION    = 1,
 };
-
+int _kfio_bio_submit(kfio_bio_t * fbio);
 int iodrive_barrier_sync = 0;
 
 extern int enable_discard;
@@ -509,9 +509,12 @@ void kfio_disk_stat_write_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t 
     {
         struct gendisk *gd = fgd->gd;
         part_stat_lock();
-        part_stat_inc(GD_PART0, ios[1]);
-        part_stat_add(GD_PART0, sectors[1], totalsize >> 9);
-        part_stat_add(GD_PART0, nsecs[1],   duration * 1000);
+        part_stat_add(GD_PART0, nsecs[STAT_WRITE],   duration * 1000);
+        part_stat_add(GD_PART0, sectors[STAT_WRITE], totalsize >> 9);
+        part_stat_inc(GD_PART0, ios[STAT_WRITE]);
+        // merges
+        // ioticks
+        // in flight?
         part_stat_unlock();
     }
 }
@@ -522,9 +525,12 @@ void kfio_disk_stat_read_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t d
     {
         struct gendisk *gd = fgd->gd;
         part_stat_lock();
-        part_stat_inc(GD_PART0, ios[0]);
-        part_stat_add(GD_PART0, sectors[0], totalsize >> 9);
-        part_stat_add(GD_PART0, nsecs[0],   duration * 1000);
+        part_stat_add(GD_PART0, nsecs[STAT_READ],   duration * 1000);
+        part_stat_add(GD_PART0, sectors[STAT_READ], totalsize >> 9);
+        part_stat_inc(GD_PART0, ios[STAT_READ]);
+        // merges
+        // ioticks
+        // in flight?
         part_stat_unlock();
     }
 }
@@ -535,44 +541,44 @@ int kfio_get_gd_in_flight(kfio_disk_t *fgd, int rw)
     struct gendisk* gd = fgd->gd;
     if (use_workqueue != USE_QUEUE_RQ)
     {
-        switch (rw) {
-        case BIO_DIR_WRITE:
-        {
-            return (unsigned)local_read(&GD_PART0->bd_stats->in_flight[WRITE]);
-            break;
-        }
-        case BIO_DIR_READ:
-        {
-            return (unsigned)local_read(&GD_PART0->bd_stats->in_flight[READ]);
-            break;
-        }
-        default:
-            break;
-        }
+      int cpu;
+      long sum = 0;
+      for_each_possible_cpu(cpu) {
+            sum += part_stat_local_read_cpu(GD_PART0, in_flight[rw], cpu);
+      }
+      return sum;
     }
     return 0;
 }
 
 void kfio_set_gd_in_flight(kfio_disk_t *fgd, int rw, int in_flight)
 {
-    struct gendisk* gd = fgd->gd;
+    // struct gendisk* gd = fgd->gd;
     if (use_workqueue != USE_QUEUE_RQ)
     {
-        switch (rw) {
-        case BIO_DIR_WRITE:
-        {
-            local_set(&GD_PART0->bd_stats->in_flight[WRITE], in_flight);
-            break;
-        }
-        case BIO_DIR_READ:
-        {
-            local_set(&GD_PART0->bd_stats->in_flight[READ], in_flight);
-            break;
-        }
-        default:
-            break;
-        }
+      infprint("set_in_flight: sector: %i: %i", rw, in_flight);
+      // atomic_set()
     }
+}
+
+void kfio_disk_stat_discard_update(kfio_bio_t * fbio)
+{
+  if (use_workqueue != USE_QUEUE_RQ)
+  {
+    struct bio *bio = (struct bio *)fbio->fbio_parameter;
+    if (bio_op(bio) == REQ_OP_DISCARD)
+    {
+      struct gendisk *gd = bio->BIO_DISK;
+      part_stat_lock();
+      infprint("discard: size: %u, sector: %llu", BI_SIZE(bio), BI_SECTOR(bio));
+      part_stat_inc(GD_PART0, ios[STAT_DISCARD]);
+      part_stat_add(GD_PART0, sectors[STAT_DISCARD], BI_SIZE(bio) >> 9);
+      // part_stat_add(GD_PART0, nsecs[2],   duration * 1000);
+      // totalsize >> 9
+      // part_stat_add(GD_PART0, sectors[STAT_DISCARD], bio->bio_vec->bv_len);
+      part_stat_unlock();
+    }
+  }
 }
 
 /**
@@ -580,15 +586,6 @@ void kfio_set_gd_in_flight(kfio_disk_t *fgd, int rw, int in_flight)
  */
 static int kfio_bio_is_discard(struct bio *bio)
 {
-    /* if (use_workqueue != USE_QUEUE_RQ)
-    {
-        struct gendisk *gd = bio->bi_bdev->bd_disk;
-        part_stat_lock();
-        part_stat_inc(GD_PART0, ios[2]);
-        part_stat_add(GD_PART0, sectors[2], totalsize >> 9);
-        part_stat_add(GD_PART0, nsecs[2],   duration * 1000);
-        part_stat_unlock();
-    } */
     return bio_op(bio) == REQ_OP_DISCARD;
 }
 
@@ -827,7 +824,7 @@ static void kfio_fbio_map_submit(kfio_bio_t *fbio)
         }
     }
 
-    kfio_bio_submit(fbio);
+    _kfio_bio_submit(fbio);
 }
 
 static void kfio_kickoff_plugged_io(struct request_queue *q, struct bio *bio, uint32_t maxiosize)
@@ -1185,7 +1182,7 @@ blk_qc_t kfio_submit_bio(struct bio *bio)
         fbio = kfio_convert_bio(queue, bio);
         if (fbio)
         {
-            kfio_bio_submit(fbio);
+            _kfio_bio_submit(fbio);
         }
         else
         {
@@ -1218,6 +1215,17 @@ blk_qc_t kfio_submit_bio(struct bio *bio)
     return FIO_MFN_RET;
 }
 
+int _kfio_bio_submit(kfio_bio_t *fbio)
+{
+    // int rc;
+    switch (fbio->fbio_cmd)
+    {
+      case KBIO_CMD_DISCARD:
+        kfio_disk_stat_discard_update(fbio);
+        break;
+    }
+    return kfio_bio_submit(fbio);
+}
 /******************************************************************************
  *   Kernel Atomic Write API
  *
