@@ -23,7 +23,7 @@ cards. It comes with no warranty, it may cause DATA LOSS or CORRUPTION.
 # IOMemory-VSL4
 For the iomemory-vsl4 driver please go to the [iomemory-vsl4](https://github.com/snuf/iomemory-vsl4) repo.
 
- # How to Identify your Fusion-io Card (including VSL version)
+# How to Identify your Fusion-io Card (including VSL version)
  Please refer to the [Fusion-io and OEM Part Numbers Matrix](https://docs.google.com/spreadsheets/d/e/2PACX-1vQMd40liekOCeftUYQx6GeofHgjU5SSDT-jHWid03JCfswQxHAhVee3rW-04baqKg1qN2fp7wEzuFm6/pubhtml).
 
 ## Background
@@ -38,6 +38,19 @@ Releases are tagged, and should be checked out by their tag. The release tags fo
 | v5.10.0 | [Fatto Catto](https://www.youtube.com/watch?v=1S69FTdTS8g) |
 | v5.6.0 | [MEGACHONKER](https://www.reddit.com/r/Chonkers/) |
 | v4.20.2 | [Grey Dawn](https://southpark.cc.com/clips/154175/crazy-old-drivers) |
+
+## Important Note for newer Linux Kernels
+Starting with Linux kernel 5.4.0, significant changes to the kernel were made that require additional boot time kernel flags for this driver to work. These affect AMD CPUs starting with 5.4.0, and Intel CPUs after about kernel 5.8.0. 
+
+Add the following to your /etc/default/grub:
+For AMD systems:
+```
+amd_iommu=on iommu=pt
+```
+For Intel system:
+```
+iommu=pt
+```
 
 ## Versions
 The driver is derived from the original iomemory-vsl-3.2.16, but has several fixes and gone through rigorous cleaning of redundant unused and old code. Active development is done on master, while *tags* are used for releases. The new releases are all tagged from master, whereas the v4.20 releases are tagged from fio-3.2.16.1732, which is a modified version of the original codebase.
