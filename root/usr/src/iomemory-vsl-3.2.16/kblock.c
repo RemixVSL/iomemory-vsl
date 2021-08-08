@@ -923,7 +923,7 @@ void kfio_disk_stat_write_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t 
 #endif
 # if KFIOC_PARTITION_STATS
 #  if !KFIOC_CONFIG_PREEMPT_RT && !KFIOC_CONFIG_TREE_PREEMPT_RCU
-#   if KFIOC_X_PART_STAT_REQUIRES_CPU$
+#   if KFIOC_X_PART_STAT_REQUIRES_CPU
         int cpu;
 
        /*
