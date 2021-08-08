@@ -174,10 +174,11 @@ extern int enable_discard;
 
 extern int kfio_sgl_map_bio(kfio_sg_list_t *sgl, struct bio *bio);
 
-
+#if defined(__VMKLNX__)
 static void kfio_blk_complete_request(struct request *req, int error);
 static kfio_bio_t *kfio_request_to_bio(kfio_disk_t *disk, struct request *req,
                                        bool can_block);
+#endif
 
 static int kfio_bio_cnt(const struct bio * const bio)
 {
@@ -425,11 +426,12 @@ static void kfio_do_request(struct request_queue *queue);
 static struct request *kfio_blk_fetch_request(struct request_queue *q);
 static void kfio_restart_queue(struct request_queue *q);
 static void kfio_end_request(struct request *req, int error);
-#else
+#endif /* KFIOC_USE_IO_SCHED */
+#if defined(__VMKLNX__)
 static void kfio_restart_queue(struct request_queue *q)
 {
 }
-#endif
+#endif /*defined(__VMKLNX__) */
 
 #if KFIOC_BARRIER == 1
 static void kfio_prepare_flush(struct request_queue *q, struct request *rq);
@@ -921,6 +923,7 @@ void kfio_disk_stat_write_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t 
 #endif
 # if KFIOC_PARTITION_STATS
 #  if !KFIOC_CONFIG_PREEMPT_RT && !KFIOC_CONFIG_TREE_PREEMPT_RCU
+#   if KFIOC_X_PART_STAT_REQUIRES_CPU$
         int cpu;
 
        /*
@@ -928,10 +931,10 @@ void kfio_disk_stat_write_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t 
         * rcu_read_update which is GPL in the RT patch set.
         */
         cpu = part_stat_lock();
-#   if KFIOC_X_PART_STAT_REQUIRES_CPU
         part_stat_inc(cpu, &gd->part0, ios[1]);
         part_stat_add(cpu, &gd->part0, sectors[1], totalsize >> 9);
 #   else
+        part_stat_lock();
         part_stat_inc(&gd->part0, ios[1]);
         part_stat_add(&gd->part0, sectors[1], totalsize >> 9);
 #   endif
@@ -982,15 +985,16 @@ void kfio_disk_stat_read_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t d
 #endif
 # if KFIOC_PARTITION_STATS
 #  if !KFIOC_CONFIG_PREEMPT_RT && !KFIOC_CONFIG_TREE_PREEMPT_RCU
+#   if KFIOC_X_PART_STAT_REQUIRES_CPU
         int cpu;
 
     /* part_stat_lock() with CONFIG_PREEMPT_RT can't be used!
        It ends up calling rcu_read_update which is GPL in the RT patch set */
         cpu = part_stat_lock();
-#   if KFIOC_X_PART_STAT_REQUIRES_CPU
         part_stat_inc(cpu, &gd->part0, ios[0]);
         part_stat_add(cpu, &gd->part0, sectors[0], totalsize >> 9);
 #   else
+        part_stat_lock();
         part_stat_inc(&gd->part0, ios[0]);
         part_stat_add(&gd->part0, sectors[0], totalsize >> 9);
 #   endif
