@@ -53,7 +53,7 @@ iommu=pt
 ```
 
 ## Versions
-The driver is derived from the original iomemory-vsl-3.2.16, but has several fixes and gone through rigorous cleaning of redundant unused and old code. Active development is done on master, while *tags* are used for releases. The new releases are all tagged from master, whereas the v4.20 releases are tagged from fio-3.2.16.1732, which is a modified version of the original codebase.
+The driver is derived from the original iomemory-vsl-3.2.16, but has several fixes and gone through rigorous cleaning of redundant unused and old code. Active development is done on `main` (formerly master), while *tags* are used for releases. The new releases are all tagged from `main` (formerly master), whereas the v4.20 releases are tagged from fio-3.2.16.1732, which is a modified version of the original codebase.
 
 The modified source fixes several known bugs in the driver:
 - silent IO drops
@@ -62,7 +62,7 @@ The modified source fixes several known bugs in the driver:
 - BIO status handling
 
 ## Important note!!!
-Commits to master are not "always" write tested, just compile tested. Releases have gone through testing with Flexible I/O Tester. Testing for page_cache errors, and generic FIO checksumming on read and write and different block sizes. Non released branches are often in process of verification and under active development.
+Commits to `main` (formerly master) are not "always" write tested, just compile tested. Releases have gone through testing with Flexible I/O Tester. Testing for page_cache errors, and generic FIO checksumming on read and write and different block sizes. Non released branches are often in process of verification and under active development.
 
 ## Building
 ### Source
