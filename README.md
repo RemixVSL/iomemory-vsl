@@ -159,6 +159,10 @@ vagrant@fio:~/iomemory-vsl/root/usr/src/iomemory-vsl-3.2.16$ dmesg | grep "ioDri
 [    3.122269] <6>fioinf ioDrive driver 5.11.10-b29020f-3.2.16.1731        loading...
 ```
 
+# How to Get Help
+- Open an issue in this Github repo
+- Join our Discord server at https://discord.gg/EAcujJkt
+
 # Acknowledgements
 The support and maintenance of this driver is made possible by the people that actively contribute or contributed to its code base or by supporting the project in other ways.
 
@@ -181,9 +185,6 @@ Tools and resources often used to figure out what changed, and why things are no
 | [The Nvidia Forum](https://forums.developer.nvidia.com/c/gpu-unix-graphics/linux/148) | Because they are hot to trot they encounter problems before we do, so we get to ride on their coat tails.... sometimes....though  often not | 
 | [Ghidra](https://ghidra-sre.org/) | The Ghidra project from the NSA that allows a look under the covers to figure out things inside non-sourcy libs|
 
-
-# Support
-Join us on the Discord Server in the Wiki, or create a bug report.
 
 ## Notes
 Installing the fio-util, fio-common, fio-preinstall and fio-sysvinit are recommended.
