@@ -37,7 +37,7 @@ Releases are tagged, and should be checked out by their tag. The release tags fo
 | v5.12.1 | [A Fine Boi](https://i.imgur.com/SrtYVIr.jpeg) |
 | v5.10.0 | [Fatto Catto](https://www.youtube.com/watch?v=1S69FTdTS8g) |
 | v5.6.0 | [MEGACHONKER](https://www.reddit.com/r/Chonkers/) |
-| v4.20.2 | [Grey Dawn](https://southpark.cc.com/clips/154175/crazy-old-drivers) |
+| v4.20.3 | [Grey Dawn](https://southpark.cc.com/clips/154175/crazy-old-drivers) |
 
 ## Important Note for newer Linux Kernels
 Starting with Linux kernel 5.4.0, significant changes to the kernel were made that require additional boot time kernel flags for this driver to work. These affect AMD CPUs starting with 5.4.0, and Intel CPUs after about kernel 5.8.0. 
