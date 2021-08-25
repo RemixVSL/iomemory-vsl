@@ -222,7 +222,7 @@ void kfioc_check_blk_alloc_disk(void)
   struct request_queue *rq;
   int node = 1;
 
-  rq = __block_alloc_disk(node)->queue;
+  rq = __blk_alloc_disk(node)->queue;
 }
 '
     kfioc_test "$test_code" "$test_flag" 1 -Werror
