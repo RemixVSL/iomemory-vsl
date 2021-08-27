@@ -99,6 +99,7 @@ build-arch-stamp: configure-stamp
 
 	# Add here commands to compile the arch part of the package.
 	rsync -a --delete ./root/$(fio_sourcedir)/$(fio_driver_name)-$(fio_short_version)/ driver_source/
+
 	if ! $(MAKE) \
 		-C driver_source \
 		KERNELVER=$(deb_kernel_version) \
@@ -108,6 +109,7 @@ build-arch-stamp: configure-stamp
 		printf "ERROR:\n"; \
 		exit 1; \
 	fi
+	$(CURDIR)/driver_source/module_operations.sh -n ${fio_driver_name}
 	touch $@
 
 clean:
