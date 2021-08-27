@@ -29,7 +29,6 @@
 #ifndef _FIO_PORT_KFIO_CONFIG_H_
 #define _FIO_PORT_KFIO_CONFIG_H_
 
-
 #include <fio/port/port_config.h>
 
 #if defined(USERSPACE_KERNEL)
