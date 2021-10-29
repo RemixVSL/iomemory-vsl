@@ -305,7 +305,7 @@ update_timeout()
 # while still having stdout and stderr sent to . . . stdout and stderr!
 open_log()
 {
-    FIFO_DIR=$CONFIGDIR
+    FIFO_DIR=${FIFO_DIR:=$CONFIGDIR}
     # FIFO_DIR=/tmp
     # The tee processes will die when this process exits.
     rm -f "$FIFO_DIR/kfio_config.stdout" "$FIFO_DIR/kfio_config.stderr" "$FIFO_DIR/kfio_config.log"
