@@ -23,6 +23,8 @@
 
   #if KFIOC_X_BLK_ALLOC_QUEUE_NODE_EXISTS
     #define BLK_ALLOC_QUEUE blk_alloc_queue_node(GFP_NOIO, node);
+  #elif KFIOC_X_BLK_ALLOC_QUEUE_EXISTS
+    #define BLK_ALLOC_QUEUE blk_alloc_queue(GFP_NOIO);
   #else /* KFIOC_X_BLK_ALLOC_QUEUE_NODE_EXISTS */
     #define BLK_ALLOC_QUEUE blk_alloc_queue(kfio_make_request, node);
   #endif /* KFIOC_X_BLK_ALLOC_QUEUE_NODE_EXISTS */
