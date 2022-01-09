@@ -25,4 +25,14 @@ KERNEL=="fio[a-z][0-9]*", ENV{DEVTYPE}=="partition", PROGRAM="/usr/bin/fio-statu
 KERNEL=="fio[a-z]", PROGRAM="/usr/bin/fio-status --field iom.pci_addr /dev/%k", SYMLINK+="disk/by-path/pci-0000:%c-%k"
 KERNEL=="fio[a-z][0-9]*", ENV{DEVTYPE}=="partition", PROGRAM="/usr/bin/fio-status --field iom.pci_addr /dev/%P", SYMLINK+="disk/by-path/pci-0000:%c-%P-part%n"
 
+# by-uuid
+# snuf@scipio:~/$ blkid /dev/fioa1
+# /dev/fioa1: LABEL="Marvin" UUID="cda7751a-6cc1-4c5e-ba93-b08b843a7788" TYPE="ext4" PARTLABEL="marvin" PARTUUID="55574487-7748-4a44-ae71-02dc16e68a9a"
+#
+KERNEL!="fio[a-z][0-9]*", ENV{DEVTYPE}=="partition", IMPORT{program}="/sbin/blkid -o udev -p /dev/%k%n"
+KERNEL=="fio[a-z][0-9]*", ENV{DEVTYPE}=="partition", PROGRAM="/sbin/blkid -s PARTLABEL -o value /dev/%P%n", SYMLINK+="disk/by-partlabel/%c"
+KERNEL=="fio[a-z][0-9]*", ENV{DEVTYPE}=="partition", PROGRAM="/sbin/blkid -s LABEL -o value /dev/%P%n", SYMLINK+="disk/by-label/%c"
+KERNEL=="fio[a-z][0-9]*", ENV{DEVTYPE}=="partition", PROGRAM="/sbin/blkid -s UUID -o value /dev/%P%n", SYMLINK+="disk/by-uuid/%c"
+KERNEL=="fio[a-z][0-9]*", ENV{DEVTYPE}=="partition", PROGRAM="/sbin/blkid -s PARTUUID -o value /dev/%P%n", SYMLINK+="disk/by-partuuid/%c"
+
 LABEL="persistent_fio_end"
