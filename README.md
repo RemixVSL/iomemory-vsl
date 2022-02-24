@@ -161,7 +161,7 @@ vagrant@fio:~/iomemory-vsl/root/usr/src/iomemory-vsl-3.2.16$ dmesg | grep "ioDri
 
 # How to Get Help
 - Open an issue in this Github repo
-- Join our Discord server at https://discord.gg/EAcujJkt
+- Join our Discord server at https://discord.gg/VxDvVy3EdS
 
 # Acknowledgements
 The support and maintenance of this driver is made possible by the people that actively contribute or contributed to its code base or by supporting the project in other ways.
