@@ -65,6 +65,9 @@ The modified source fixes several known bugs in the driver:
 Commits to `main` (formerly master) are not "always" write tested, just compile tested. Releases have gone through testing with Flexible I/O Tester. Testing for page_cache errors, and generic FIO checksumming on read and write and different block sizes. Non released branches are often in process of verification and under active development.
 
 ## Building
+
+Note! For many systems, the best option is to use DKMS, using the [instructions below](https://github.com/RemixVSL/iomemory-vsl/edit/main/README.md#dkms). If you prefer to build the module directly, or to create a `dpkg` or `rpm` package, you can proceed with these options:
+
 ### Source
 ```
 git clone https://github.com/snuf/iomemory-vsl
@@ -94,6 +97,15 @@ DKMS is recommended, but installation can also be done with the created packages
 
 ## DKMS
 Dynamic Kernel Module Support automates away the requirement of having to repackage the kernel module with every kernel and headers update that takes place on the system. This mechanism also makes sure that the driver for the new kernel actually works, or if the source needs refreshing.
+
+Try building from `main` first as it works with most modern kernels up to about 5.14:
+```
+git clone https://github.com/snuf/iomemory-vsl
+cd iomemory-vsl/
+make dkms
+```
+
+If you know you need to build a specific branch based on a specific recommendation, use:
 ```
 git clone https://github.com/snuf/iomemory-vsl
 cd iomemory-vsl/
