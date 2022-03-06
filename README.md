@@ -66,7 +66,7 @@ Commits to `main` (formerly master) are not "always" write tested, just compile 
 
 ## Building
 
-Note! For many systems, the best option is to use DKMS, using the [instructions below](https://github.com/RemixVSL/iomemory-vsl/edit/main/README.md#dkms). If you prefer to build the module directly, or to create a `dpkg` or `rpm` package, you can proceed with these options:
+Note! For many systems, the best option is to use DKMS, using the [instructions below](https://github.com/RemixVSL/iomemory-vsl/blob/main/README.md#dkms). If you prefer to build the module directly, or to create a `dpkg` or `rpm` package, you can proceed with these options:
 
 ### Source
 ```
