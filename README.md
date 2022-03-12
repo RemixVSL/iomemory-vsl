@@ -16,6 +16,8 @@
   </p>
 </p>
 
+# &#x1F534;  WARNING: Significant Linux kernel changes in 5.15 have broken this driver for now. We suggest using kernel 5.14 or newer if you can.
+
 # IOMemory-VSL
 This is an unsupported update of the original driver source for FusionIO
 cards. It comes with no warranty, it may cause DATA LOSS or CORRUPTION.
