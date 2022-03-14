@@ -353,7 +353,7 @@ int kfio_expose_disk(kfio_disk_t *dp, char *name, int major, int disk_index,
     struct kfio_blk_add_disk_param param;
     struct gendisk *gd;
 
-    dp->gd = gd = alloc_disk(FIO_NUM_MINORS);
+    dp->gd = gd = blk_alloc_disk(FIO_NUM_MINORS);
 
     if (dp->gd == NULL)
     {
@@ -365,7 +365,7 @@ int kfio_expose_disk(kfio_disk_t *dp, char *name, int major, int disk_index,
     gd->first_minor = FIO_NUM_MINORS * disk_index;
     gd->minors = FIO_NUM_MINORS;
     gd->fops = &fio_bdev_ops;
-    gd->queue = dp->rq;
+    // gd->queue = dp->rq;
     gd->private_data = dp->dev;
     gd->flags = GENHD_FL_EXT_DEVT;
 
@@ -420,7 +420,8 @@ void kfio_destroy_disk(kfio_disk_t *disk, destroy_type_t dt)
     {
         struct block_device *bdev;
 
-        bdev = GET_BDEV;
+        // bdev = GET_BDEV;
+        bdev = disk->gd->part0;
 
         if (bdev != NULL)
         {
@@ -497,7 +498,11 @@ static void kfio_invalidate_bdev(struct block_device *bdev)
 
 static void kfio_bdput(struct block_device *bdev)
 {
-    bdput(bdev);
+    // #define dev_to_disk(device)
+	// (dev_to_bdev(device)->bd_disk)
+    iput(bdev->bd_inode);
+    // put_disk(bdev->disk) ???
+    // put_device(bdev->bd_inode);
 }
 
 /**
@@ -956,8 +961,8 @@ static struct request_queue *kfio_alloc_queue(struct kfio_disk *dp,
     struct request_queue *rq;
 
     test_safe_plugging();
-
-    rq = BLK_ALLOC_QUEUE;
+    rq = dp->gd->queue;
+    // rq = BLK_ALLOC_QUEUE;
     if (rq != NULL)
     {
         rq->queuedata = dp;

@@ -42,9 +42,9 @@
 #endif /* KFIOC_X_HAS_MAKE_REQUEST_FN */
 #if KFIOC_X_GENHD_PART0_IS_A_POINTER
   #define GD_PART0 gd->part0
-  #define GET_BDEV bdgrab(disk->gd->part0)
+  #define GET_BDEV bdgrab(disk->gd->part0);
 #else /* KFIOC_X_GENHD_PART0_IS_A_POINTER */
   #define GD_PART0 &gd->part0
-  #define GET_BDEV bdget_disk(disk->gd, 0)
+  #define GET_BDEV bdget_disk(disk->gd, 0);
 #endif /* KFIOC_X_GENHD_PART0_IS_A_POINTER */
 #endif /* __FIO_KBLOCK_META_H__ */
