@@ -422,18 +422,6 @@ void kfio_destroy_disk(kfio_disk_t *disk, destroy_type_t dt)
 {
     if (disk->gd != NULL)
     {
-        /*
-        struct block_device *bdev;
-
-        bdev = I_BDEV(disk->gd->part0->bd_inode);
-
-        if (bdev != NULL)
-        {
-            infprint("BDEV is not null");
-            kfio_invalidate_bdev(bdev);
-            kfio_bdput(bdev);
-        }
-        */
         set_capacity(disk->gd, 0);
 
         if (disk->queue_lock != NULL) {
@@ -494,16 +482,6 @@ void kfio_destroy_disk(kfio_disk_t *disk, destroy_type_t dt)
     {
         kfio_free(disk, sizeof(*disk));
     }
-}
-
-static void kfio_invalidate_bdev(struct block_device *bdev)
-{
-    invalidate_bdev(bdev);
-}
-
-static void kfio_bdput(struct block_device *bdev)
-{
-    iput(bdev->bd_inode);
 }
 
 /**
