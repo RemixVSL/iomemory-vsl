@@ -11,6 +11,16 @@
 #include <linux/part_stat.h>
 #endif /* KFIOC_X_LINUX_HAS_PART_STAT_H */
 
+#if KFIOC_X_BLK_ALLOC_DISK_EXISTS
+  #define BLK_ALLOC_QUEUE dp->gd->queue;
+  #define BLK_ALLOC_DISK blk_alloc_disk
+#else /* KFIOC_X_BLK_ALLOC_DISK_EXISTS */
+  #if KFIOC_X_HAS_MAKE_REQUEST_FN != 1
+    #define BLK_ALLOC_QUEUE blk_alloc_queue(node);
+  #endif
+  #define BLK_ALLOC_DISK alloc_disk
+#endif
+
 #if KFIOC_X_BIO_HAS_BI_BDEV
   #define BIO_DISK bi_bdev->bd_disk
 #else /* KFIOC_X_BIO_HAS_BI_BDEV */
@@ -19,8 +29,9 @@
 
 #if KFIOC_X_HAS_MAKE_REQUEST_FN
   static unsigned int kfio_make_request(struct request_queue *queue, struct bio *bio);
-  #define BLK_QUEUE_SPLIT blk_queue_split(queue, &bio);
+  #define KFIO_SUBMIT_BIO_RC return FIO_MFN_RET;
 
+  #define BLK_QUEUE_SPLIT blk_queue_split(queue, &bio);
   #if KFIOC_X_BLK_ALLOC_QUEUE_NODE_EXISTS
     #define BLK_ALLOC_QUEUE blk_alloc_queue_node(GFP_NOIO, node);
   #elif KFIOC_X_BLK_ALLOC_QUEUE_EXISTS
@@ -38,14 +49,6 @@
     #define KFIO_SUBMIT_BIO_RC
   #endif
   KFIO_SUBMIT_BIO;
-
-  #if KFIOC_X_BLK_ALLOC_DISK_EXISTS
-    #define BLK_ALLOC_QUEUE dp->gd->queue;
-    #define BLK_ALLOC_DISK blk_alloc_disk
-  #else /* KFIOC_X_BLK_ALLOC_DISK_EXISTS */
-    #define BLK_ALLOC_QUEUE blk_alloc_queue(node);
-    #define BLK_ALLOC_DISK alloc_disk
-  #endif
 
   #define BLK_QUEUE_SPLIT blk_queue_split(&bio);
 #endif /* KFIOC_X_HAS_MAKE_REQUEST_FN */
