@@ -16,10 +16,10 @@
   </p>
 </p>
 
-# IOMemory-VSL
-This is an unsupported update of the original driver source for FusionIO cards. It comes with no warranty, it may cause DATA LOSS or CORRUPTION.
+# IOMemory-VSL (Driver version 3.x)
+This is an unsupported update of the original driver source for FusionIO cards. It comes with no warranty, it may cause DATA LOSS or CORRUPTION. It is designed for "VSL3" i.e. the first few generations of cards. Newer cards would require VSL4 (see below). You cannot use VSL4 on the older cards, and vice versa.
 
-# IOMemory-VSL4
+# IOMemory-VSL4 (Driver version 4.x)
 For the iomemory-vsl4 driver please go to the [iomemory-vsl4](https://github.com/snuf/iomemory-vsl4) repo.
 
 # How to Identify your Fusion-io Card (including VSL version)
