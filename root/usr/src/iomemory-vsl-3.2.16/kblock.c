@@ -209,7 +209,6 @@ static struct block_device_operations fio_bdev_ops =
 static struct request_queue *kfio_alloc_queue(struct kfio_disk *dp, kfio_numa_node_t node);
 
 static void __kfio_bio_complete(struct bio *bio, uint32_t bytes_complete, int error);
-static void kfio_invalidate_bdev(struct block_device *bdev);
 
 kfio_bio_t *kfio_fetch_next_bio(struct kfio_disk *disk)
 {
@@ -244,8 +243,6 @@ kfio_bio_t *kfio_fetch_next_bio(struct kfio_disk *disk)
     }
     return NULL;
 }
-
-static void kfio_bdput(struct block_device *bdev);
 
 /* @brief Parameter to the work queue call. */
 struct kfio_blk_add_disk_param
