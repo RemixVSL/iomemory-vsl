@@ -16,7 +16,7 @@ else
 FIOCC=$(CC)
 endif
 
-FIO_DRIVER_NAME ?= iomemory-vsl
+FIO_DRIVER_NAME ?= $(shell echo `basename ${PWD} | awk -F- '{ print $$1"-"$$2 }'`)
 FIO_DRIVER_SUBDIR ?= extra/fio
 FUSION_DEBUG ?= 0
 FIO_SCSI_DEVICE ?= 0
@@ -35,7 +35,9 @@ KERNEL_SRC = /lib/modules/$(KERNELVER)/source
 
 # Set PORT_NO_WERROR=0 to compile without -Werror compilation flag
 ifneq ($(PORT_NO_WERROR),1)
-    CFLAGS += -Werror
+    ifeq ($(FIO_DRIVER_NAME), iomemory-vsl)
+        CFLAGS += -Werror
+    endif
 endif
 
 # Set FUSION_DEBUG=0 to compile without debugging symbols

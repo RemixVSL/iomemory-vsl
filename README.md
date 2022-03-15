@@ -16,11 +16,8 @@
   </p>
 </p>
 
-# &#x1F534;  WARNING: Significant Linux kernel changes in 5.15 have broken this driver for now. We suggest using kernel 5.14 or older if you can.
-
 # IOMemory-VSL
-This is an unsupported update of the original driver source for FusionIO
-cards. It comes with no warranty, it may cause DATA LOSS or CORRUPTION.
+This is an unsupported update of the original driver source for FusionIO cards. It comes with no warranty, it may cause DATA LOSS or CORRUPTION.
 
 # IOMemory-VSL4
 For the iomemory-vsl4 driver please go to the [iomemory-vsl4](https://github.com/snuf/iomemory-vsl4) repo.
@@ -32,7 +29,9 @@ For the iomemory-vsl4 driver please go to the [iomemory-vsl4](https://github.com
 Driver support for FusionIO cards has been lagging behind kernel releases, effectively making these cards an expensive paperweight when running a distribution like Ubuntu / Arch / Fedora / ProxMox which all supply newer kernels than supported by the original drivers.
 
 ## Releases
-Releases are tagged, and should be checked out by their tag. The release tags follow Linux Kernel versions. E.g. **v5.12.1 (A Fine Boi)** will work on all 5.x kernels that are 5.12 and lower, but is not guaranteed to work on 5.13. **v4.20.2 - Grey Dawn** supports most kernels that pre-date 5.0.
+We've abandoned the notion of releases, Generally `main` should be checked out. `main` is completely backwards compatible for all **5**. The latest working tested kernel is **5.16.14**.
+
+Historically releases were tagged, and were be checked out by their tag. The release tags follow Linux Kernel versions. E.g. **v5.12.1 (A Fine Boi)** will work on all 5.x kernels that are 5.12 and lower, but is not guaranteed to work on 5.13. **v4.20.2 - Grey Dawn** supports most kernels that pre-date 5.0. Again this way of following kernel releases has been abandoned. Please follow **main**.
 
 | Tag | Codename |
 | --- | --- |
@@ -55,7 +54,7 @@ iommu=pt
 ```
 
 ## Versions
-The driver is derived from the original iomemory-vsl-3.2.16, but has several fixes and gone through rigorous cleaning of redundant unused and old code. Active development is done on `main` (formerly master), while *tags* are used for releases. The new releases are all tagged from `main` (formerly master), whereas the v4.20 releases are tagged from fio-3.2.16.1732, which is a modified version of the original codebase.
+The driver is derived from the original `iomemory-vsl-3.2.16.1732`, but has several fixes and gone through rigorous cleaning of redundant unused and old code. Active development is done on branches and merged back to `main` (formerly master) when stable.
 
 The modified source fixes several known bugs in the driver:
 - silent IO drops
@@ -64,7 +63,7 @@ The modified source fixes several known bugs in the driver:
 - BIO status handling
 
 ## Important note!!!
-Commits to `main` (formerly master) are not "always" write tested, just compile tested. Releases have gone through testing with Flexible I/O Tester. Testing for page_cache errors, and generic FIO checksumming on read and write and different block sizes. Non released branches are often in process of verification and under active development.
+PRs and commits to `main` have gone through testing with Flexible I/O Tester. Testing for page_cache errors, and generic FIO checksumming on read and write and different block sizes. Non `main` branches are often in process of verification and under active development, and guaranteed not stable.
 
 ## Building
 

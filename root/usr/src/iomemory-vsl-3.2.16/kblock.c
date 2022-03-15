@@ -209,7 +209,6 @@ static struct block_device_operations fio_bdev_ops =
 static struct request_queue *kfio_alloc_queue(struct kfio_disk *dp, kfio_numa_node_t node);
 
 static void __kfio_bio_complete(struct bio *bio, uint32_t bytes_complete, int error);
-static void kfio_invalidate_bdev(struct block_device *bdev);
 
 kfio_bio_t *kfio_fetch_next_bio(struct kfio_disk *disk)
 {
@@ -245,8 +244,6 @@ kfio_bio_t *kfio_fetch_next_bio(struct kfio_disk *disk)
     return NULL;
 }
 
-static void kfio_bdput(struct block_device *bdev);
-
 /* @brief Parameter to the work queue call. */
 struct kfio_blk_add_disk_param
 {
@@ -263,7 +260,7 @@ static void kfio_blk_add_disk(fusion_work_struct_t *work)
     struct kfio_blk_add_disk_param *param = container_of(work, struct kfio_blk_add_disk_param, work);
     struct kfio_disk *disk = param->disk;
 
-    add_disk(disk->gd);
+    ADD_DISK
 
     /* Tell waiter we are done. */
     fusion_cv_lock_irq(&disk->state_lk);
@@ -279,7 +276,6 @@ int kfio_create_disk(struct fio_device *dev, kfio_pci_dev_t *pdev, uint32_t sect
 {
     struct kfio_disk     *dp;
     struct request_queue *rq;
-
     /*
      * We are not prepared to expose device kernel block layer cannot handle.
      */
@@ -309,6 +305,11 @@ int kfio_create_disk(struct fio_device *dev, kfio_pci_dev_t *pdev, uint32_t sect
 
     atomic_set(&dp->lock_pending, 0);
     INIT_LIST_HEAD(&dp->retry_list);
+
+    if (!dp->gd) {
+        /* this is a somewhat strange condition, or is it */
+        dp->gd = BLK_ALLOC_DISK(FIO_NUM_MINORS);
+    }
 
     if (use_workqueue != USE_QUEUE_RQ)
     {
@@ -353,14 +354,13 @@ int kfio_expose_disk(kfio_disk_t *dp, char *name, int major, int disk_index,
     struct kfio_blk_add_disk_param param;
     struct gendisk *gd;
 
-    dp->gd = gd = alloc_disk(FIO_NUM_MINORS);
+    gd = dp->gd;
 
     if (dp->gd == NULL)
     {
         kfio_destroy_disk(dp, destroy_type_normal);
         return -ENOMEM;
     }
-
     gd->major = major;
     gd->first_minor = FIO_NUM_MINORS * disk_index;
     gd->minors = FIO_NUM_MINORS;
@@ -388,6 +388,7 @@ int kfio_expose_disk(kfio_disk_t *dp, char *name, int major, int disk_index,
 
     param.disk = dp;
     param.done = false;
+
     fusion_schedule_work(&param.work);
 
     /* Wait for work thread to expose our disk. */
@@ -418,16 +419,6 @@ void kfio_destroy_disk(kfio_disk_t *disk, destroy_type_t dt)
 {
     if (disk->gd != NULL)
     {
-        struct block_device *bdev;
-
-        bdev = GET_BDEV;
-
-        if (bdev != NULL)
-        {
-            kfio_invalidate_bdev(bdev);
-            kfio_bdput(bdev);
-        }
-
         set_capacity(disk->gd, 0);
 
         if (disk->queue_lock != NULL) {
@@ -488,16 +479,6 @@ void kfio_destroy_disk(kfio_disk_t *disk, destroy_type_t dt)
     {
         kfio_free(disk, sizeof(*disk));
     }
-}
-
-static void kfio_invalidate_bdev(struct block_device *bdev)
-{
-    invalidate_bdev(bdev);
-}
-
-static void kfio_bdput(struct block_device *bdev)
-{
-    bdput(bdev);
 }
 
 /**
@@ -956,12 +937,11 @@ static struct request_queue *kfio_alloc_queue(struct kfio_disk *dp,
     struct request_queue *rq;
 
     test_safe_plugging();
-
     rq = BLK_ALLOC_QUEUE;
     if (rq != NULL)
     {
         rq->queuedata = dp;
-#if (KFIOC_X_BLK_ALLOC_QUEUE_EXISTS || KFIOC_X_BLK_ALLOC_QUEUE_NODE_EXISTS) && KFIOC_X_HAS_MAKE_REQUEST_FN
+#if (KFIOC_X_BLK_ALLOC_QUEUE_NODE_EXISTS) && KFIOC_X_HAS_MAKE_REQUEST_FN
         blk_queue_make_request(rq, kfio_make_request);
 #endif
         // TODO:
@@ -1113,7 +1093,7 @@ static struct bio *kfio_add_bio_to_plugged_list(void *data, struct bio *bio)
 #if KFIOC_X_HAS_MAKE_REQUEST_FN
 static unsigned int kfio_make_request(struct request_queue *queue, struct bio *bio)
 #else
-blk_qc_t kfio_submit_bio(struct bio *bio)
+KFIO_SUBMIT_BIO
 #endif
 #define FIO_MFN_RET 0
 {
@@ -1127,7 +1107,7 @@ blk_qc_t kfio_submit_bio(struct bio *bio)
     {
         kassert_once(!"timed out waiting for queue to unstall.");
         __kfio_bio_complete(bio, 0, -EIO);
-        return FIO_MFN_RET;
+	KFIO_SUBMIT_BIO_RC
     }
 
     if (bio_segments(bio) >= queue_max_segments(queue))
@@ -1176,7 +1156,7 @@ blk_qc_t kfio_submit_bio(struct bio *bio)
         }
     }
 
-    return FIO_MFN_RET;
+    KFIO_SUBMIT_BIO_RC
 }
 
 /******************************************************************************

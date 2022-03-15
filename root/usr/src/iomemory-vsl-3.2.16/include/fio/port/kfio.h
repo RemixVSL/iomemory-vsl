@@ -30,6 +30,7 @@
 #define __FIO_PORT_KFIO_H__
 
 #include <fio/port/port_config.h>
+#include <fio/port/vararg.h>
 #include <fio/port/align.h>
 #if (FUSION_INTERNAL==1)
 #include <fio/internal/config.h>
