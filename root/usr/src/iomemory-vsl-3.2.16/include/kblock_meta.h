@@ -30,7 +30,14 @@
   #endif /* KFIOC_X_BLK_ALLOC_QUEUE_NODE_EXISTS */
 
 #else /* KFIOC_X_HAS_MAKE_REQUEST_FN */
-  blk_qc_t kfio_submit_bio(struct bio *bio);
+  #if KFIOC_X_SUBMIT_BIO_RETURNS_BLK_QC_T
+    #define KFIO_SUBMIT_BIO blk_qc_t kfio_submit_bio(struct bio *bio)
+    #define KFIO_SUBMIT_BIO_RC return FIO_MFN_RET;
+  #else
+    #define KFIO_SUBMIT_BIO void kfio_submit_bio(struct bio *bio)
+    #define KFIO_SUBMIT_BIO_RC
+  #endif
+  KFIO_SUBMIT_BIO;
 
   #if KFIOC_X_BLK_ALLOC_DISK_EXISTS
     #define BLK_ALLOC_QUEUE dp->gd->queue;
@@ -49,5 +56,12 @@
   #define GD_PART0 &gd->part0
   #define GET_BDEV bdget_disk(disk->gd, 0);
 #endif /* KFIOC_X_GENHD_PART0_IS_A_POINTER */
+
+#if KFIOC_X_VOID_ADD_DISK
+#define ADD_DISK add_disk(disk->gd);
+#else
+#define ADD_DISK if (add_disk(disk->gd)) { infprint("Error while adding disk!"); }
+#endif
+
 
 #endif /* __FIO_KBLOCK_META_H__ */

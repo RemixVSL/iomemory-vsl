@@ -260,7 +260,7 @@ static void kfio_blk_add_disk(fusion_work_struct_t *work)
     struct kfio_blk_add_disk_param *param = container_of(work, struct kfio_blk_add_disk_param, work);
     struct kfio_disk *disk = param->disk;
 
-    add_disk(disk->gd);
+    ADD_DISK
 
     /* Tell waiter we are done. */
     fusion_cv_lock_irq(&disk->state_lk);
@@ -1093,7 +1093,7 @@ static struct bio *kfio_add_bio_to_plugged_list(void *data, struct bio *bio)
 #if KFIOC_X_HAS_MAKE_REQUEST_FN
 static unsigned int kfio_make_request(struct request_queue *queue, struct bio *bio)
 #else
-blk_qc_t kfio_submit_bio(struct bio *bio)
+KFIO_SUBMIT_BIO
 #endif
 #define FIO_MFN_RET 0
 {
@@ -1107,7 +1107,7 @@ blk_qc_t kfio_submit_bio(struct bio *bio)
     {
         kassert_once(!"timed out waiting for queue to unstall.");
         __kfio_bio_complete(bio, 0, -EIO);
-        return FIO_MFN_RET;
+	KFIO_SUBMIT_BIO_RC
     }
 
     if (bio_segments(bio) >= queue_max_segments(queue))
@@ -1156,7 +1156,7 @@ blk_qc_t kfio_submit_bio(struct bio *bio)
         }
     }
 
-    return FIO_MFN_RET;
+    KFIO_SUBMIT_BIO_RC
 }
 
 /******************************************************************************

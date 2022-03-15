@@ -70,7 +70,6 @@
 #include <linux/spinlock.h>
 #include <linux/timer.h>
 #include <linux/workqueue.h>
-#include <stdbool.h>
 
 #include <fio/port/ktypes.h>
 #include <fio/port/kfio.h>

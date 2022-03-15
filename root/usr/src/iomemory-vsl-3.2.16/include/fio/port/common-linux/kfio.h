@@ -47,10 +47,6 @@
 
 #endif
 
-
-// this include comes from gcc, not from linux kernel
-#include <stdarg.h>
-
 #ifndef KERN_EMERG
 #define KERN_EMERG       "<0>"       // System is unusable
 #define KERN_ALERT       "<1>"       // Action must be taken immediately

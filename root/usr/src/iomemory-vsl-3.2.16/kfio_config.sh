@@ -80,6 +80,8 @@ KFIOC_X_BLK_ALLOC_DISK_EXISTS
 KFIOC_X_HAS_MAKE_REQUEST_FN
 KFIOC_X_GENHD_PART0_IS_A_POINTER
 KFIOC_X_BIO_HAS_BI_BDEV
+KFIOC_X_SUBMIT_BIO_RETURNS_BLK_QC_T
+KFIOC_X_VOID_ADD_DISK
 "
 
 
@@ -105,6 +107,46 @@ done
 ## to documentation describing the change in the kernel.
 ##
 ####
+# flag:            KFIOC_X_SUBMIT_BIO_RETURNS_BLK_QC_T
+# usage:           1   Kernels that return blk_qc_t
+#                  0   Kernels that return nothing:w
+
+# kernel_version:  In 5.16 moves to bio_submit without a return
+KFIOC_X_SUBMIT_BIO_RETURNS_BLK_QC_T()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/bio.h>
+void kfioc_check_submit_bio_returns_blk_qc_t(void)
+{
+  struct bio *bio = NULL;
+  blk_qc_t rc;
+  rc = submit_bio(bio);
+}
+
+'
+    kfioc_test "$test_code" "$test_flag" 1 -Werror
+}
+
+# flag:            KFIOC_X_VOID_ADD_DISK
+# usage:           1   Kernels that return void
+#                  0   Kernels that require checkig the rc
+# kernel_version:  In 5.16 wants add_disk to be checked
+KFIOC_X_VOID_ADD_DISK()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/blkdev.h>
+void kfioc_check_void_add_disk(void)
+{
+  struct gendisk *gd = NULL;
+  add_disk(gd);
+}
+
+'
+    kfioc_test "$test_code" "$test_flag" 1 -Werror
+}
+
 # flag:            KFIOC_X_BLK_ALLOC_DISK_EXISTS
 # usage:           1   Kernels that do have blk_alloc_disk
 #                  0   Kernels that don't have blk_alloc_disk
