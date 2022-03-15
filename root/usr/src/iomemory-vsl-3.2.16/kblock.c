@@ -279,7 +279,6 @@ int kfio_create_disk(struct fio_device *dev, kfio_pci_dev_t *pdev, uint32_t sect
 {
     struct kfio_disk     *dp;
     struct request_queue *rq;
-
     /*
      * We are not prepared to expose device kernel block layer cannot handle.
      */
@@ -309,6 +308,11 @@ int kfio_create_disk(struct fio_device *dev, kfio_pci_dev_t *pdev, uint32_t sect
 
     atomic_set(&dp->lock_pending, 0);
     INIT_LIST_HEAD(&dp->retry_list);
+
+    if (!dp->gd) {
+        /* this is a somewhat strange condition, or is it */
+        dp->gd = BLK_ALLOC_DISK(FIO_NUM_MINORS);
+    }
 
     if (use_workqueue != USE_QUEUE_RQ)
     {
@@ -353,19 +357,18 @@ int kfio_expose_disk(kfio_disk_t *dp, char *name, int major, int disk_index,
     struct kfio_blk_add_disk_param param;
     struct gendisk *gd;
 
-    dp->gd = gd = blk_alloc_disk(FIO_NUM_MINORS);
+    gd = dp->gd;
 
     if (dp->gd == NULL)
     {
         kfio_destroy_disk(dp, destroy_type_normal);
         return -ENOMEM;
     }
-
     gd->major = major;
     gd->first_minor = FIO_NUM_MINORS * disk_index;
     gd->minors = FIO_NUM_MINORS;
     gd->fops = &fio_bdev_ops;
-    // gd->queue = dp->rq;
+    gd->queue = dp->rq;
     gd->private_data = dp->dev;
     gd->flags = GENHD_FL_EXT_DEVT;
 
@@ -388,6 +391,7 @@ int kfio_expose_disk(kfio_disk_t *dp, char *name, int major, int disk_index,
 
     param.disk = dp;
     param.done = false;
+
     fusion_schedule_work(&param.work);
 
     /* Wait for work thread to expose our disk. */
@@ -418,17 +422,18 @@ void kfio_destroy_disk(kfio_disk_t *disk, destroy_type_t dt)
 {
     if (disk->gd != NULL)
     {
+        /*
         struct block_device *bdev;
 
-        // bdev = GET_BDEV;
-        bdev = disk->gd->part0;
+        bdev = I_BDEV(disk->gd->part0->bd_inode);
 
         if (bdev != NULL)
         {
+            infprint("BDEV is not null");
             kfio_invalidate_bdev(bdev);
             kfio_bdput(bdev);
         }
-
+        */
         set_capacity(disk->gd, 0);
 
         if (disk->queue_lock != NULL) {
@@ -498,11 +503,7 @@ static void kfio_invalidate_bdev(struct block_device *bdev)
 
 static void kfio_bdput(struct block_device *bdev)
 {
-    // #define dev_to_disk(device)
-	// (dev_to_bdev(device)->bd_disk)
     iput(bdev->bd_inode);
-    // put_disk(bdev->disk) ???
-    // put_device(bdev->bd_inode);
 }
 
 /**
@@ -961,12 +962,11 @@ static struct request_queue *kfio_alloc_queue(struct kfio_disk *dp,
     struct request_queue *rq;
 
     test_safe_plugging();
-    rq = dp->gd->queue;
-    // rq = BLK_ALLOC_QUEUE;
+    rq = BLK_ALLOC_QUEUE;
     if (rq != NULL)
     {
         rq->queuedata = dp;
-#if (KFIOC_X_BLK_ALLOC_QUEUE_EXISTS || KFIOC_X_BLK_ALLOC_QUEUE_NODE_EXISTS) && KFIOC_X_HAS_MAKE_REQUEST_FN
+#if (KFIOC_X_BLK_ALLOC_QUEUE_NODE_EXISTS) && KFIOC_X_HAS_MAKE_REQUEST_FN
         blk_queue_make_request(rq, kfio_make_request);
 #endif
         // TODO:

@@ -33,9 +33,11 @@
   blk_qc_t kfio_submit_bio(struct bio *bio);
 
   #if KFIOC_X_BLK_ALLOC_DISK_EXISTS
-    #define BLK_ALLOC_QUEUE __blk_alloc_disk(node)->queue;
-  #else
+    #define BLK_ALLOC_QUEUE dp->gd->queue;
+    #define BLK_ALLOC_DISK blk_alloc_disk
+  #else /* KFIOC_X_BLK_ALLOC_DISK_EXISTS */
     #define BLK_ALLOC_QUEUE blk_alloc_queue(node);
+    #define BLK_ALLOC_DISK alloc_disk
   #endif
 
   #define BLK_QUEUE_SPLIT blk_queue_split(&bio);
@@ -47,4 +49,5 @@
   #define GD_PART0 &gd->part0
   #define GET_BDEV bdget_disk(disk->gd, 0);
 #endif /* KFIOC_X_GENHD_PART0_IS_A_POINTER */
+
 #endif /* __FIO_KBLOCK_META_H__ */

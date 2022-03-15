@@ -34,7 +34,7 @@
 #ifndef __FUSION_LINUX_COMMONTYPES_H__
 #define __FUSION_LINUX_COMMONTYPES_H__
 
-#include <stddef.h>
+#include <linux/stddef.h>
 
 #define ATTRIBUTE_ALIGNED(x)                    \
     __attribute__((aligned(x)))

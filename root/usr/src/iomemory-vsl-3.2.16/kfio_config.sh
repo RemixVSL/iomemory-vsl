@@ -75,7 +75,6 @@ KFIOC_TEST_LIST="
 KFIOC_X_PROC_CREATE_DATA_WANTS_PROC_OPS
 KFIOC_X_TASK_HAS_CPUS_MASK
 KFIOC_X_LINUX_HAS_PART_STAT_H
-KFIOC_X_BLK_ALLOC_QUEUE_EXISTS
 KFIOC_X_BLK_ALLOC_QUEUE_NODE_EXISTS
 KFIOC_X_BLK_ALLOC_DISK_EXISTS
 KFIOC_X_HAS_MAKE_REQUEST_FN
@@ -106,6 +105,27 @@ done
 ## to documentation describing the change in the kernel.
 ##
 ####
+# flag:            KFIOC_X_BLK_ALLOC_DISK_EXISTS
+# usage:           1   Kernels that do have blk_alloc_disk
+#                  0   Kernels that don't have blk_alloc_disk
+# kernel_version:  In 5.14 blk_alloc_queue got removed and introduced blk_alloc_disk
+#                  which replaces alloc_disk and adds the blk_alloq_queue implicit
+KFIOC_X_BLK_ALLOC_DISK_EXISTS()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/blkdev.h>
+void kfioc_check_blk_alloc_disk(void)
+{
+  struct gendisk *gd;
+  int node = 1;
+
+  gd = blk_alloc_disk(node);
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1 -Werror
+}
+
 # flag:            KFIOC_X_BIO_HAS_BI_BDEV
 # usage:           1   bio->bi_bdev exists
 #                  0   it doesn't and we assume bio->bi_disk is a thing
@@ -149,8 +169,8 @@ void kfioc_genhd_part0_is_a_pointer(void)
 }
 
 # flag:            KFIOC_X_HAS_MAKE_REQUEST_FN
-# usage:           1   Kernels that do have blk_alloc_queue_node
-#                  0   Kernels that don't have blk_alloc_queue_node
+# usage:           1   Kernels that do have make_request_fn
+#                  0   Kernels that don't have make_request_fn
 # kernel_version:  In 5.9 make_request_fn got removed and we move to bio_submit
 KFIOC_X_HAS_MAKE_REQUEST_FN()
 {
@@ -171,7 +191,8 @@ void kfioc_has_make_request_fn(void)
 # flag:            KFIOC_X_BLK_ALLOC_QUEUE_NODE_EXISTS
 # usage:           1   Kernels that do have blk_alloc_queue_node
 #                  0   Kernels that don't have blk_alloc_queue_node
-# kernel_version:  In 5.7 blk_alloc_queue node got removed and introduced block_alloc_queue, which simplifies things
+# kernel_version:  In 5.7 blk_alloc_queue_node got removed and introduced block_alloc_queue,
+ #                  which simplifies things
 KFIOC_X_BLK_ALLOC_QUEUE_NODE_EXISTS()
 {
     local test_flag="$1"
@@ -188,45 +209,6 @@ void kfioc_check_blk_alloc_queue_node(void)
     kfioc_test "$test_code" "$test_flag" 1 -Werror
 }
 
-# flag:            KFIOC_X_BLK_ALLOC_QUEUE_EXISTS
-# usage:           1   Kernels that do have blk_alloc_queue
-#                  0   Kernels that don't have blk_alloc_queue
-# kernel_version:  In 5.7 blk_alloc_queue node got removed and introduced block_alloc_queue, which simplifies things
-KFIOC_X_BLK_ALLOC_QUEUE_EXISTS()
-{
-    local test_flag="$1"
-    local test_code='
-#include <linux/blkdev.h>
-void kfioc_check_blk_alloc_queue(void)
-{
-  struct request_queue *rq;
-  int node = 1;
-
-  rq = blk_alloc_queue(node);
-}
-'
-    kfioc_test "$test_code" "$test_flag" 1 -Werror
-}
-
-# flag:            KFIOC_X_BLK_ALLOC_DISK_EXISTS
-# usage:           1   Kernels that do have blk_alloc_queue
-#                  0   Kernels that don't have blk_alloc_queue
-# kernel_version:  In 5.14 blk_alloc_queue got removed and introduced __blk_alloc_disk
-KFIOC_X_BLK_ALLOC_DISK_EXISTS()
-{
-    local test_flag="$1"
-    local test_code='
-#include <linux/blkdev.h>
-void kfioc_check_blk_alloc_disk(void)
-{
-  struct request_queue *rq;
-  int node = 1;
-
-  rq = __blk_alloc_disk(node)->queue;
-}
-'
-    kfioc_test "$test_code" "$test_flag" 1 -Werror
-}
 
 # flag:            KFIOC_X_LINUX_HAS_PART_STAT_H
 # usage:           1   Kernels that have linux/part_stats.h
