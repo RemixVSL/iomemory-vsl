@@ -57,7 +57,7 @@
   #define GET_BDEV bdgrab(disk->gd->part0);
 #else /* KFIOC_X_GENHD_PART0_IS_A_POINTER */
   #define GD_PART0 &gd->part0
-  #define GET_BDEV bdget_disk(disk->gd, 0);
+  #define GET_BDEV disk->gd->part0
 #endif /* KFIOC_X_GENHD_PART0_IS_A_POINTER */
 
 #if KFIOC_X_VOID_ADD_DISK
