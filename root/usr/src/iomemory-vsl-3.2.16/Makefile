@@ -16,7 +16,7 @@ else
 FIOCC=$(CC)
 endif
 
-FIO_DRIVER_NAME ?= $(shell echo `basename ${PWD} | awk -F- '{ print $$1"-"$$2 }'`)
+FIO_DRIVER_NAME ?= $(shell cat dkms.conf | grep BUILT_MODULE_NAME | awk -F= '{ print $$2 }')
 FIO_DRIVER_SUBDIR ?= extra/fio
 FUSION_DEBUG ?= 0
 FIO_SCSI_DEVICE ?= 0
