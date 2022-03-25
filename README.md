@@ -99,7 +99,7 @@ DKMS is recommended, but installation can also be done with the created packages
 ## DKMS
 Dynamic Kernel Module Support automates away the requirement of having to repackage the kernel module with every kernel and headers update that takes place on the system. This mechanism also makes sure that the driver for the new kernel actually works, or if the source needs refreshing.
 
-Try building from `main` first as it works with most modern kernels up to about 5.14:
+Try building from `main` first as it works with most modern kernels up to about 5.16:
 ```
 git clone https://github.com/snuf/iomemory-vsl
 cd iomemory-vsl/
