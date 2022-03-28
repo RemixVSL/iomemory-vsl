@@ -54,10 +54,10 @@
 #endif /* KFIOC_X_HAS_MAKE_REQUEST_FN */
 #if KFIOC_X_GENHD_PART0_IS_A_POINTER
   #define GD_PART0 gd->part0
-  #define GET_BDEV bdgrab(disk->gd->part0);
+  #define GET_BDEV disk->gd->part0
 #else /* KFIOC_X_GENHD_PART0_IS_A_POINTER */
   #define GD_PART0 &gd->part0
-  #define GET_BDEV disk->gd->part0
+  #define GET_BDEV bdgrab(disk->gd->part0);
 #endif /* KFIOC_X_GENHD_PART0_IS_A_POINTER */
 
 #if KFIOC_X_VOID_ADD_DISK
@@ -66,5 +66,10 @@
 #define ADD_DISK if (add_disk(disk->gd)) { infprint("Error while adding disk!"); }
 #endif
 
+#if KFIOC_X_DISK_HAS_OPEN_MUTEX
+#define SHUTDOWN_MUTEX &disk->gd->open_mutex
+#else
+#define SHUTDOWN_MUTEX &linux_bdev->bd_mutex
+#endif
 
 #endif /* __FIO_KBLOCK_META_H__ */
