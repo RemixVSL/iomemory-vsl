@@ -43,7 +43,7 @@ Historically releases were tagged, and were be checked out by their tag. The rel
 ## Important Note for newer Linux Kernels
 Starting with Linux kernel 5.4.0, significant changes to the kernel were made that require additional boot time kernel flags for this driver to work. These affect AMD CPUs starting with 5.4.0, and Intel CPUs after about kernel 5.8.0. 
 
-Add the following to your /etc/default/grub:
+Add the following to your /etc/default/grub by looking for `GRUB_CMDLINE_LINUX_DEFAULT=""` and adding additional parameters inside the quotes.
 For AMD systems:
 ```
 amd_iommu=on iommu=pt
@@ -52,6 +52,9 @@ For Intel system:
 ```
 iommu=pt
 ```
+
+Example:
+```GRUB_CMDLINE_LINUX_DEFAULT="quiet iommu=pt"```
 
 ## Versions
 The driver is derived from the original `iomemory-vsl-3.2.16.1732`, but has several fixes and gone through rigorous cleaning of redundant unused and old code. Active development is done on branches and merged back to `main` (formerly master) when stable.
