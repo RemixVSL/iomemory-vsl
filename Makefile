@@ -13,7 +13,7 @@ dkms: clean
 .PHONY: dpkg
 dpkg: clean patch_module_version
 	# patch fio_version, fio_short_version in debian/fio_values
-	cd ${FIO_DIR}} && \
+	cd ${FIO_DIR} && \
 		dpkg-buildpackage -rfakeroot --no-check-builddeps --no-sign
 
 .PHONY: rpm
