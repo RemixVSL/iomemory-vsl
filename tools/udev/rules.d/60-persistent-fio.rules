@@ -17,6 +17,9 @@ ENV{DEVTYPE}=="partition", \
   IMPORT{parent}="ID_F[!S]*", IMPORT{parent}="ID_F", \
   IMPORT{parent}="ID_FS[!_]*", IMPORT{parent}="ID_FS"
 
+# probe filesystem metadata of disks
+IMPORT{builtin}="blkid"
+
 # by-id
 KERNEL=="fio[a-z]", PROGRAM="/usr/bin/fio-status --field iom.format_uuid /dev/%k", SYMLINK+="disk/by-id/fio-%c"
 KERNEL=="fio[a-z][0-9]*", ENV{DEVTYPE}=="partition", PROGRAM="/usr/bin/fio-status --field iom.format_uuid /dev/%P", SYMLINK+="disk/by-id/fio-%c-part%n"
