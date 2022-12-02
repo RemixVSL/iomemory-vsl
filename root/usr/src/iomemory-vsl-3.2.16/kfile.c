@@ -41,6 +41,7 @@
 #include <linux/proc_fs.h>
 #endif /* KFIOC_X_PROC_CREATE_DATA_WANTS_PROC_OPS */
 #include <fio/port/common-linux/kfile.h>
+#include <kfile_meta.h>
 
 /**
  * @ingroup PORT_COMMON_LINUX
@@ -144,7 +145,7 @@ void noinline kfio_seq_commit(fusion_seq_file *sp, int num)
 */
 void *noinline kfio_inode_data(fusion_inode *ip)
 {
-    return PDE_DATA(ip);
+    return KFIO_PDE_DATA;
 }
 
 /**
