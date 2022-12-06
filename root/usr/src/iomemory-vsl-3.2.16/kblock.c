@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+
 // Copyright (c) 2006-2014, Fusion-io, Inc.(acquired by SanDisk Corp. 2014)
 // Copyright (c) 2014-2015 SanDisk Corp. and/or all its affiliates. All rights reserved.
 //
@@ -429,7 +429,7 @@ void kfio_destroy_disk(kfio_disk_t *disk, destroy_type_t dt)
         }
 
         /* Stop delivery of new io from user. */
-        set_bit(QUEUE_FLAG_DEAD, &disk->rq->queue_flags);
+        set_bit(QUEUE_FLAG_DYING, &disk->rq->queue_flags);
 
         /*
          * Prevent request_fn callback from interfering with
@@ -470,7 +470,7 @@ void kfio_destroy_disk(kfio_disk_t *disk, destroy_type_t dt)
 
     if (disk->rq != NULL)
     {
-        blk_cleanup_queue(disk->rq);
+        // blk_cleanup_queue(disk->rq);
         disk->rq = NULL;
     }
 
