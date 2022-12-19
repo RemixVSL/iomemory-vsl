@@ -64,9 +64,9 @@ KFIO_LIB_CMD ?= kfio/.$(TARGET)_libkfio.o.cmd
 
 NCPUS:=$(shell grep -c ^processor /proc/cpuinfo)
 
-all: fake_license check_n_fix_kfio_ccver modules patch_module_version
+all: fake_license modules patch_module_version
 
-gpl: fake_license check_n_fix_kfio_ccver modules patch_module_version
+gpl: fake_license modules patch_module_version
 
 .PHONY: fake_license
 fake_license:
