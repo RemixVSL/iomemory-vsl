@@ -801,6 +801,7 @@ KFIOC_INVALIDATE_BDEV_REMOVED_DESTROY_DIRTY_BUFFERS()
     local test_flag="$1"
     local test_code='
 #include <linux/buffer_head.h>
+#include <linux/blkdev.h>
 
 void kfioc_test_invalidate_bdev(void) {
     invalidate_bdev(NULL);
