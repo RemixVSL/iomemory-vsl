@@ -76,6 +76,7 @@ KFIOC_X_PROC_CREATE_DATA_WANTS_PROC_OPS
 KFIOC_X_TASK_HAS_CPUS_MASK
 KFIOC_X_LINUX_HAS_PART_STAT_H
 KFIOC_X_BLK_ALLOC_QUEUE_NODE_EXISTS
+KFIOC_X_BLK_ALLOC_QUEUE_EXISTS
 KFIOC_X_BLK_ALLOC_DISK_EXISTS
 KFIOC_X_HAS_MAKE_REQUEST_FN
 KFIOC_X_GENHD_PART0_IS_A_POINTER
@@ -257,7 +258,7 @@ void kfioc_has_make_request_fn(void)
 # usage:           1   Kernels that do have blk_alloc_queue_node
 #                  0   Kernels that don't have blk_alloc_queue_node
 # kernel_version:  In 5.7 blk_alloc_queue_node got removed and introduced block_alloc_queue,
- #                  which simplifies things
+ #                 which simplifies things
 KFIOC_X_BLK_ALLOC_QUEUE_NODE_EXISTS()
 {
     local test_flag="$1"
@@ -274,6 +275,25 @@ void kfioc_check_blk_alloc_queue_node(void)
     kfioc_test "$test_code" "$test_flag" 1 -Werror
 }
 
+# flag:            KFIOC_X_BLK_ALLOC_QUEUE_EXISTS
+# usage:           1   Kernels that do have blk_alloc_queue
+#                  0   Kernels that don't have blk_alloc_queue
+# kernel_version:  In 5.7 blk_alloc_queue node got removed and introduced block_alloc_queue,
+#                  which simplifies things
+KFIOC_X_BLK_ALLOC_QUEUE_EXISTS()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/blkdev.h>
+void kfioc_check_blk_alloc_queue(void)
+{
+  struct request_queue *rq;
+  int node = 1;
+  rq = blk_alloc_queue(node);
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1 -Werror
+}
 
 # flag:            KFIOC_X_LINUX_HAS_PART_STAT_H
 # usage:           1   Kernels that have linux/part_stats.h
@@ -329,11 +349,11 @@ KFIOC_X_PROC_CREATE_DATA_WANTS_PROC_OPS()
 
 void *kfioc_has_proc_create_data(struct inode *inode)
 {
-    const struct proc_ops *pops;
+    const struct proc_ops *pops = NULL;
     return proc_create_data(NULL, 0, NULL, pops, NULL);
 }
 '
-    kfioc_test "$test_code" "$test_flag" 1 -Werror-implicit-function-declaration
+    kfioc_test "$test_code" "$test_flag" 1 "-Werror-implicit-function-declaration -Werror"
 }
 
 #
