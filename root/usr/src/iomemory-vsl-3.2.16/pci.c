@@ -525,7 +525,7 @@ int kfio_pci_request_regions(kfio_pci_dev_t *pdev, const char *res_name)
 
 int kfio_pci_set_dma_mask(kfio_pci_dev_t *pdev, uint64_t mask)
 {
-    return pci_set_dma_mask((struct pci_dev *)pdev, mask);
+    return dma_set_mask(&((struct pci_dev *)pdev)->dev, mask);
 }
 
 void kfio_pci_set_master(kfio_pci_dev_t *pdev)

@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------
+
 // Copyright (c) 2006-2014, Fusion-io, Inc.(acquired by SanDisk Corp. 2014)
 // Copyright (c) 2014-2015 SanDisk Corp. and/or all its affiliates. All rights reserved.
 //
@@ -40,7 +40,6 @@
 #include <fio/port/common-linux/kblock.h>
 #include <fio/port/atomic_list.h>
 #include <linux/blk_types.h>
-#include <linux/genhd.h>
 #include <linux/bio.h>
 #include <linux/blk-mq.h>
 #include <linux/version.h>
@@ -333,7 +332,9 @@ int kfio_create_disk(struct fio_device *dev, kfio_pci_dev_t *pdev, uint32_t sect
 
     if (enable_discard)
     {
-        blk_queue_flag_set(QUEUE_FLAG_DISCARD, rq);
+        // https://lore.kernel.org/linux-btrfs/20220409045043.23593-25-hch@lst.de/
+        SET_QUEUE_FLAG_DISCARD;
+        // blk_queue_flag_set(QUEUE_FLAG_DISCARD, rq);
         // XXXXXXX !!! WARNING - power of two sector sizes only !!! (always true in standard linux)
         blk_queue_max_discard_sectors(rq, (UINT_MAX & ~((unsigned int) sector_size - 1)) >> 9);
         rq->limits.discard_granularity = sector_size;
@@ -367,7 +368,9 @@ int kfio_expose_disk(kfio_disk_t *dp, char *name, int major, int disk_index,
     gd->fops = &fio_bdev_ops;
     gd->queue = dp->rq;
     gd->private_data = dp->dev;
+    #ifndef KFIO_DISABLE_GENHD_FL_EXT_DEVT
     gd->flags = GENHD_FL_EXT_DEVT;
+    #endif
 
     fio_bdev_ops.owner = THIS_MODULE;
 
@@ -426,7 +429,7 @@ void kfio_destroy_disk(kfio_disk_t *disk, destroy_type_t dt)
         }
 
         /* Stop delivery of new io from user. */
-        set_bit(QUEUE_FLAG_DEAD, &disk->rq->queue_flags);
+        set_bit(QUEUE_FLAG_DYING, &disk->rq->queue_flags);
 
         /*
          * Prevent request_fn callback from interfering with
@@ -467,7 +470,7 @@ void kfio_destroy_disk(kfio_disk_t *disk, destroy_type_t dt)
 
     if (disk->rq != NULL)
     {
-        blk_cleanup_queue(disk->rq);
+        // blk_cleanup_queue(disk->rq);
         disk->rq = NULL;
     }
 
@@ -484,11 +487,10 @@ void kfio_destroy_disk(kfio_disk_t *disk, destroy_type_t dt)
 /**
  * @note param duration - in microseconds
  */
-void kfio_disk_stat_write_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t duration)
+void kfio_disk_stat_write_update(kfio_disk_t *disk, uint64_t totalsize, uint64_t duration)
 {
     if (use_workqueue != USE_QUEUE_RQ)
     {
-        struct gendisk *gd = fgd->gd;
         part_stat_lock();
         part_stat_inc(GD_PART0, ios[1]);
         part_stat_add(GD_PART0, sectors[1], totalsize >> 9);
@@ -497,11 +499,10 @@ void kfio_disk_stat_write_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t 
     }
 }
 
-void kfio_disk_stat_read_update(kfio_disk_t *fgd, uint64_t totalsize, uint64_t duration)
+void kfio_disk_stat_read_update(kfio_disk_t *disk, uint64_t totalsize, uint64_t duration)
 {
     if (use_workqueue != USE_QUEUE_RQ)
     {
-        struct gendisk *gd = fgd->gd;
         part_stat_lock();
         part_stat_inc(GD_PART0, ios[0]);
         part_stat_add(GD_PART0, sectors[0], totalsize >> 9);
@@ -941,7 +942,7 @@ static struct request_queue *kfio_alloc_queue(struct kfio_disk *dp,
     if (rq != NULL)
     {
         rq->queuedata = dp;
-#if (KFIOC_X_BLK_ALLOC_QUEUE_NODE_EXISTS) && KFIOC_X_HAS_MAKE_REQUEST_FN
+#if KFIOC_X_HAS_MAKE_REQUEST_FN
         blk_queue_make_request(rq, kfio_make_request);
 #endif
         // TODO:
