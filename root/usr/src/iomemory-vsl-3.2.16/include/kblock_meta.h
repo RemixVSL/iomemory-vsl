@@ -9,10 +9,10 @@
 
 #include <linux/version.h>
 
-#if KFIOC_X_LINUX_HAS_PART_STAT_H
+#if __has_include("linux/part_stat.h")
 #include <linux/part_stat.h>
-#endif /* KFIOC_X_LINUX_HAS_PART_STAT_H */
-
+#endif
+#include <linux/blkdev.h>
 
 #if KFIOC_X_BLK_ALLOC_DISK_EXISTS
   #define BLK_ALLOC_QUEUE dp->gd->queue;
@@ -22,7 +22,7 @@
     #define BLK_ALLOC_QUEUE blk_alloc_queue(node);
   #endif
   #define BLK_ALLOC_DISK alloc_disk
-#endif
+#endif /* KFIOC_X_BLK_ALLOC_DISK_EXISTS */
 
 
 #if KFIOC_X_BIO_HAS_BI_BDEV
@@ -52,9 +52,14 @@
   #else
     #define KFIO_SUBMIT_BIO void kfio_submit_bio(struct bio *bio)
     #define KFIO_SUBMIT_BIO_RC
-  #endif
+  #endif /*KFIOC_X_SUBMIT_BIO_RETURNS_BLK_QC_T */
   KFIO_SUBMIT_BIO;
-  #define BLK_QUEUE_SPLIT blk_queue_split(&bio);
+
+  #if KFIOC_X_BIO_SPLIT_TO_LIMITS
+    #define BLK_QUEUE_SPLIT bio = bio_split_to_limits(bio);
+  #else
+    #define BLK_QUEUE_SPLIT blk_queue_split(&bio);
+  #endif /* KFIOC_X_BIO_SPLIT_TO_LIMITS */
 #endif /* KFIOC_X_HAS_MAKE_REQUEST_FN */
 
 // should check for hd_struct vs gendisk
@@ -79,20 +84,19 @@
 #define SHUTDOWN_MUTEX &linux_bdev->bd_mutex
 #endif /* KFIOC_X_DISK_HAS_OPEN_MUTEX */
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,17,0)
+#if !defined(GENHD_FL_EXT_DEVT)
 // 5.17 moved GD to explicitly do this by default
 #define KFIO_DISABLE_GENHD_FL_EXT_DEVT 1
 #endif
 
-// while (atomic_read(&linux_bdev->bd_openers) > 0 && linux_bdev->bd_disk == disk->gd)
-// 5.19 changed bd_openers from int to atomic_t in kblock.c
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,19,0)
+#if !defined(QUEUE_FLAG_DISCARD)
 #define BD_OPENERS atomic_read(&linux_bdev->bd_openers)
 #define SET_QUEUE_FLAG_DISCARD
 #else
 #define BD_OPENERS linux_bdev->bd_openers
 // https://lore.kernel.org/linux-btrfs/20220409045043.23593-25-hch@lst.de/
 #define SET_QUEUE_FLAG_DISCARD blk_queue_flag_set(QUEUE_FLAG_DISCARD, rq);
-#endif
+#endif /* ! QUEUE_FLAG_DISCARD */
+
 
 #endif /* __FIO_KBLOCK_META_H__ */

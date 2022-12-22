@@ -72,9 +72,9 @@ EX_OSFILE=72
 # architecture.
 
 KFIOC_TEST_LIST="
+KFIOC_X_BIO_SPLIT_TO_LIMITS
 KFIOC_X_PROC_CREATE_DATA_WANTS_PROC_OPS
 KFIOC_X_TASK_HAS_CPUS_MASK
-KFIOC_X_LINUX_HAS_PART_STAT_H
 KFIOC_X_BLK_ALLOC_QUEUE_NODE_EXISTS
 KFIOC_X_BLK_ALLOC_QUEUE_EXISTS
 KFIOC_X_BLK_ALLOC_DISK_EXISTS
@@ -109,9 +109,30 @@ done
 ## to documentation describing the change in the kernel.
 ##
 ####
+# flag:            KFIOC_X_BIO_SPLIT_TO_LIMITS
+# usage:           1   Kernels that return blk_qc_t
+#                  0   Kernels that return nothing
+
+# kernel_version:  6 moves away from bio_blk_split to bio_split_to_limits
+#		   Oddly enough CentOS9 with 5.14 also does...
+KFIOC_X_BIO_SPLIT_TO_LIMITS()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/blkdev.h>
+void kfioc_check_bio_split_to_limits(void)
+{
+  struct bio *bio = NULL;
+  bio = bio_split_to_limits(bio);
+}
+
+'
+    kfioc_test "$test_code" "$test_flag" 1 -Werror
+}
+
 # flag:            KFIOC_X_SUBMIT_BIO_RETURNS_BLK_QC_T
 # usage:           1   Kernels that return blk_qc_t
-#                  0   Kernels that return nothing:w
+#                  0   Kernels that return nothing
 
 # kernel_version:  In 5.16 moves to bio_submit without a return
 KFIOC_X_SUBMIT_BIO_RETURNS_BLK_QC_T()
@@ -290,24 +311,6 @@ void kfioc_check_blk_alloc_queue(void)
   struct request_queue *rq;
   int node = 1;
   rq = blk_alloc_queue(node);
-}
-'
-    kfioc_test "$test_code" "$test_flag" 1 -Werror
-}
-
-# flag:            KFIOC_X_LINUX_HAS_PART_STAT_H
-# usage:           1   Kernels that have linux/part_stats.h
-#                  0   No kernel before 5.7 has linux/part_stat.h
-# kernel_version:  Partition statistics got their own header file in 5.7 and
-#                  onwards
-KFIOC_X_LINUX_HAS_PART_STAT_H()
-{
-    local test_flag="$1"
-    local test_code='
-#include <linux/part_stat.h>
-void kfioc_check_linux_has_part_stats_h(void)
-{
-    part_stat_lock();
 }
 '
     kfioc_test "$test_code" "$test_flag" 1 -Werror

@@ -9,11 +9,11 @@
 
 #include <linux/version.h>
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,17,0)
-#define KFIO_PDE_DATA pde_data(ip)
-#else
+#if defined(PDE_DATA)
 #define KFIO_PDE_DATA PDE_DATA(ip)
-#endif
+#else
+#define KFIO_PDE_DATA pde_data(ip)
+#endif /* PDE_DATA */
 
 #endif /* __FIO_FILE_META_H__ */
 
