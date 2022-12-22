@@ -9,7 +9,7 @@
 
 #include <linux/version.h>
 
-#if defined(PDE_DATA)
+#if KFIOC_X_CAPS_PDE_DATA
 #define KFIO_PDE_DATA PDE_DATA(ip)
 #else
 #define KFIO_PDE_DATA pde_data(ip)
