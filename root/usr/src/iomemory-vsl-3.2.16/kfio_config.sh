@@ -72,6 +72,7 @@ EX_OSFILE=72
 # architecture.
 
 KFIOC_TEST_LIST="
+KFIOC_X_CAPS_PDE_DATA
 KFIOC_X_BIO_SPLIT_TO_LIMITS
 KFIOC_X_PROC_CREATE_DATA_WANTS_PROC_OPS
 KFIOC_X_TASK_HAS_CPUS_MASK
@@ -109,6 +110,26 @@ done
 ## to documentation describing the change in the kernel.
 ##
 ####
+# flag:            KFIOC_X_CAPS_PDE_DATA
+# usage:           1   Kernels that have PDE_DATA
+#                  0   Kernels that have pde_data
+
+# kernel_version:  5.17 renames PDE_DATA to pde_data
+KFIOC_X_CAPS_PDE_DATA()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/proc_fs.h>
+void kfioc_check_caps_pde_data(void)
+{
+  struct inode *i = NULL;
+  PDE_DATA(i);
+}
+
+'
+    kfioc_test "$test_code" "$test_flag" 1 -Werror
+}
+
 # flag:            KFIOC_X_BIO_SPLIT_TO_LIMITS
 # usage:           1   Kernels that return blk_qc_t
 #                  0   Kernels that return nothing
