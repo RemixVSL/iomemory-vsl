@@ -106,7 +106,7 @@ Try building from `main` first as it works with most modern kernels up to about 
 ```
 git clone https://github.com/snuf/iomemory-vsl
 cd iomemory-vsl/
-make dkms
+sudo make dkms
 ```
 
 If you know you need to build a specific branch based on a specific recommendation, use:
@@ -114,7 +114,7 @@ If you know you need to build a specific branch based on a specific recommendati
 git clone https://github.com/snuf/iomemory-vsl
 cd iomemory-vsl/
 git checkout <release-tag>
-make dkms
+sudo make dkms
 ```
 
 # Utils
