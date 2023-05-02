@@ -70,7 +70,9 @@ PRs and commits to `main` have gone through testing with Flexible I/O Tester. Te
 
 ## Building
 
-Note! For many systems, the best option is to use DKMS, using the [instructions below](https://github.com/RemixVSL/iomemory-vsl/blob/main/README.md#dkms). If you prefer to build the module directly, or to create a `dpkg` or `rpm` package, you can proceed with these options:
+Note! For many systems, the best option is to use DKMS, using the [instructions below](https://github.com/RemixVSL/iomemory-vsl/blob/main/README.md#dkms). If you prefer to build the module directly, or to create a `dpkg` or `rpm` package, you can proceed with these options below. 
+
+Please make sure that the required dependencies are installed, as mentioned in this [README](https://github.com/RemixVSL/iomemory-vsl/blob/main/README)
 
 ### Source
 ```
