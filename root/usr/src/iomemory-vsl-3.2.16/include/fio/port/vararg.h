@@ -45,7 +45,7 @@ extern "C" {
 
 #else
 #include <linux/version.h>
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,16,0)
+#if __has_include("linux/stdarg.h")
 #include <linux/stdarg.h>
 #else
 #include "stdarg.h"
