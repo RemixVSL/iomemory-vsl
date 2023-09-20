@@ -20,7 +20,7 @@
 This is an unsupported update of the original driver source for FusionIO cards. It comes with no warranty, it may cause DATA LOSS or CORRUPTION. It is designed for "VSL3" i.e. the first few generations of cards. Newer cards would require VSL4 (see below). You cannot use VSL4 on the older cards, and vice versa.
 
 # IOMemory-VSL4 (Driver version 4.x)
-For the iomemory-vsl4 driver please go to the [iomemory-vsl4](https://github.com/snuf/iomemory-vsl4) repo.
+For the iomemory-vsl4 driver please go to the [iomemory-vsl4](https://github.com/RemixVSL/iomemory-vsl4) repo.
 
 # How to Identify your Fusion-io Card (including VSL version)
  Please refer to the [Fusion-io and OEM Part Numbers Matrix](https://docs.google.com/spreadsheets/d/e/2PACX-1vQMd40liekOCeftUYQx6GeofHgjU5SSDT-jHWid03JCfswQxHAhVee3rW-04baqKg1qN2fp7wEzuFm6/pubhtml).
@@ -76,7 +76,7 @@ Please make sure that the required dependencies are installed, as mentioned in t
 
 ### Source
 ```
-git clone https://github.com/snuf/iomemory-vsl
+git clone https://github.com/RemixVSL/iomemory-vsl
 cd iomemory-vsl/
 git checkout <release-tag>
 make module
@@ -84,7 +84,7 @@ sudo insmod root/usr/src/iomemory-vsl-3.2.16/iomemory-vsl.ko
 ```
 ### .deb Ubuntu / Debian
 ```
-git clone https://github.com/snuf/iomemory-vsl
+git clone https://github.com/RemixVSL/iomemory-vsl
 cd iomemory-vsl
 git checkout <release-tag>
 make dpkg
@@ -92,7 +92,7 @@ make dpkg
 
 ### .rpm CentOS / RHEL
 ```
-git clone https://github.com/snuf/iomemory-vsl
+git clone https://github.com/RemixVSL/iomemory-vsl
 cd iomemory-vsl/
 git checkout <release-tag>
 make rpm
@@ -106,14 +106,14 @@ Dynamic Kernel Module Support automates away the requirement of having to repack
 
 Try building from `main` first as it works with most modern kernels up to about 5.16:
 ```
-git clone https://github.com/snuf/iomemory-vsl
+git clone https://github.com/RemixVSL/iomemory-vsl
 cd iomemory-vsl/
 sudo make dkms
 ```
 
 If you know you need to build a specific branch based on a specific recommendation, use:
 ```
-git clone https://github.com/snuf/iomemory-vsl
+git clone https://github.com/RemixVSL/iomemory-vsl
 cd iomemory-vsl/
 git checkout <release-tag>
 sudo make dkms
