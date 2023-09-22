@@ -72,6 +72,8 @@ EX_OSFILE=72
 # architecture.
 
 KFIOC_TEST_LIST="
+KFIOC_X_BDOPS_OPEN_GENDISK_AND_BLK_MODE_T
+KFIOC_X_BDOPS_RELEASE_1_ARG
 KFIOC_X_CAPS_PDE_DATA
 KFIOC_X_BIO_SPLIT_TO_LIMITS
 KFIOC_X_PROC_CREATE_DATA_WANTS_PROC_OPS
@@ -110,10 +112,54 @@ done
 ## to documentation describing the change in the kernel.
 ##
 ####
+# flag:            KFIOC_X_BDOPS_OPEN_GENDISK_AND_BLK_MODE_T
+# usage:           1   Kernels that pass gendisk and blk_mode_t to open for block_device_operations
+#                  0   Kernels that pass block_device and mode_t to open for block_device_operations
+# kernel_version:  6.5
+KFIOC_X_BDOPS_OPEN_GENDISK_AND_BLK_MODE_T()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/blkdev.h>
+void kfioc_check_bdops_open_is_disk(void)
+{
+  struct block_device_operations *bops = NULL;
+  struct gendisk *gd = NULL;
+  blk_mode_t mode = BLK_OPEN_EXCL;
+  int x = 0;
+  x = bops->open(gd, mode);
+}
+
+'
+    kfioc_test "$test_code" "$test_flag" 1 -Werror
+}
+
+
+# OR check blk_mode_t
+# flag:            KFIOC_X_BDOPS_RELEASE_1_ARG
+# usage:           1   Kernels that pass only 1 argument to release for block_device_operations
+#                  0   Kernels that pass needs more or no argument?
+# kernel_version:  6.5
+KFIOC_X_BDOPS_RELEASE_1_ARG()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/blkdev.h>
+void kfioc_check_bdops(void)
+{
+  struct block_device_operations *bops = NULL;
+  struct gendisk *gd = NULL;
+  bops->release(gd);
+}
+
+'
+    kfioc_test "$test_code" "$test_flag" 1 -Werror
+}
+
+
 # flag:            KFIOC_X_CAPS_PDE_DATA
 # usage:           1   Kernels that have PDE_DATA
 #                  0   Kernels that have pde_data
-
 # kernel_version:  5.17 renames PDE_DATA to pde_data
 KFIOC_X_CAPS_PDE_DATA()
 {
@@ -133,9 +179,8 @@ void kfioc_check_caps_pde_data(void)
 # flag:            KFIOC_X_BIO_SPLIT_TO_LIMITS
 # usage:           1   Kernels that return blk_qc_t
 #                  0   Kernels that return nothing
-
 # kernel_version:  6 moves away from bio_blk_split to bio_split_to_limits
-#		   Oddly enough CentOS9 with 5.14 also does...
+#		           Oddly enough CentOS9 with 5.14 also does...
 KFIOC_X_BIO_SPLIT_TO_LIMITS()
 {
     local test_flag="$1"
@@ -154,7 +199,6 @@ void kfioc_check_bio_split_to_limits(void)
 # flag:            KFIOC_X_SUBMIT_BIO_RETURNS_BLK_QC_T
 # usage:           1   Kernels that return blk_qc_t
 #                  0   Kernels that return nothing
-
 # kernel_version:  In 5.16 moves to bio_submit without a return
 KFIOC_X_SUBMIT_BIO_RETURNS_BLK_QC_T()
 {
@@ -300,7 +344,7 @@ void kfioc_has_make_request_fn(void)
 # usage:           1   Kernels that do have blk_alloc_queue_node
 #                  0   Kernels that don't have blk_alloc_queue_node
 # kernel_version:  In 5.7 blk_alloc_queue_node got removed and introduced block_alloc_queue,
- #                 which simplifies things
+#                  which simplifies things
 KFIOC_X_BLK_ALLOC_QUEUE_NODE_EXISTS()
 {
     local test_flag="$1"

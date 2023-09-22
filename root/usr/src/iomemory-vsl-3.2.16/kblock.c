@@ -156,15 +156,25 @@ static inline int fbio_need_dma_map(kfio_bio_t *fbio)
 
 static kfio_bio_t *kfio_convert_bio(struct request_queue *queue, struct bio *bio);
 
+#if KFIOC_X_BDOPS_OPEN_GENDISK_AND_BLK_MODE_T
+static int kfio_open(struct gendisk *gd, blk_mode_t mode)
+{
+    struct fio_device *dev = gd->private_data;
+#else
 static int kfio_open(struct block_device *bdev, fmode_t mode)
 {
     struct fio_device *dev = bdev->bd_disk->private_data;
-
+#endif
     return fio_open(dev);
 }
 
+#if KFIOC_X_BDOPS_RELEASE_1_ARG
+static void kfio_release(struct gendisk *gd)
+{
+#else
 static void kfio_release(struct gendisk *gd, fmode_t mode)
 {
+#endif
     struct fio_device *dev = gd->private_data;
 
     fio_release(dev);
