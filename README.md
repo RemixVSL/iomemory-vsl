@@ -78,7 +78,9 @@ Please make sure that the required dependencies are installed, as mentioned in t
 ```
 git clone https://github.com/RemixVSL/iomemory-vsl
 cd iomemory-vsl/
-git checkout <release-tag>
+# OPTIONAL: Checkout a specific release. Usually using main branch is correct.
+# DO THIS ONLY IF YOU'VE BEEN TOLD IT'S REQUIRED!
+# git checkout <release-tag>
 make module
 sudo insmod root/usr/src/iomemory-vsl-3.2.16/iomemory-vsl.ko
 ```
@@ -86,7 +88,9 @@ sudo insmod root/usr/src/iomemory-vsl-3.2.16/iomemory-vsl.ko
 ```
 git clone https://github.com/RemixVSL/iomemory-vsl
 cd iomemory-vsl
-git checkout <release-tag>
+# OPTIONAL: Checkout a specific release. Usually using main branch is correct.
+# DO THIS ONLY IF YOU'VE BEEN TOLD IT'S REQUIRED!
+# git checkout <release-tag>
 make dpkg
 ```
 
@@ -94,7 +98,9 @@ make dpkg
 ```
 git clone https://github.com/RemixVSL/iomemory-vsl
 cd iomemory-vsl/
-git checkout <release-tag>
+# OPTIONAL: Checkout a specific release. Usually using main branch is correct.
+# DO THIS ONLY IF YOU'VE BEEN TOLD IT'S REQUIRED!
+# git checkout <release-tag>
 make rpm
 ```
 
