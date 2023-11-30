@@ -72,6 +72,7 @@ EX_OSFILE=72
 # architecture.
 
 KFIOC_TEST_LIST="
+KFIOC_X_HANDLE_SYSRQ_IS_U8
 KFIOC_X_BDOPS_OPEN_GENDISK_AND_BLK_MODE_T
 KFIOC_X_BDOPS_RELEASE_1_ARG
 KFIOC_X_CAPS_PDE_DATA
@@ -112,6 +113,33 @@ done
 ## to documentation describing the change in the kernel.
 ##
 ####
+# flag:            KFIOC_X_HANDLE_SYSRQ_IS_U8
+# usage:           1   Kernels that use u8 or unsigned char for sysrq_handle
+#                  0   Kernels that use int for the above
+# kernel_version:  6.6
+KFIOC_X_HANDLE_SYSRQ_IS_U8()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/sysrq.h>
+
+void kfioc_check_handle_sysrq_is_u8(void)
+{
+    void t_handle_sysreq(u8 key) {};
+    struct sysrq_key_op t_key_op = {
+        .handler = t_handle_sysreq,
+        .help_msg = "ioDrive CSR (z)",
+        .action_msg = "ioDrive CSR status:",
+        .enable_mask = 0,
+    };
+    u8 key = 2;
+    register_sysrq_key(key, &t_key_op);
+    unregister_sysrq_key(key, &t_key_op);
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1 -Werror
+}
+
 # flag:            KFIOC_X_BDOPS_OPEN_GENDISK_AND_BLK_MODE_T
 # usage:           1   Kernels that pass gendisk and blk_mode_t to open for block_device_operations
 #                  0   Kernels that pass block_device and mode_t to open for block_device_operations
