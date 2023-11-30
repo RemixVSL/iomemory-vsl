@@ -29,7 +29,7 @@ For the iomemory-vsl4 driver please go to the [iomemory-vsl4](https://github.com
 Driver support for FusionIO cards has been lagging behind kernel releases, effectively making these cards an expensive paperweight when running a distribution like Ubuntu / Arch / Fedora / ProxMox which all supply newer kernels than supported by the original drivers.
 
 ## Releases
-We've abandoned the notion of releases, Generally `main` should be checked out. `main` is completely backwards compatible for all **5**, and **6** kernels. The latest working tested kernel is **6.5**.
+We've abandoned the notion of releases, Generally `main` should be checked out. `main` is completely backwards compatible for all **5**, and **6** kernels. The latest working tested kernel is **6.6**.
 
 Historically releases were tagged, and were be checked out by their tag. The release tags follow Linux Kernel versions. E.g. **v5.12.1 (A Fine Boi)** will work on all 5.x kernels that are 5.12 and lower, but is not guaranteed to work on 5.13. **v4.20.2 - Grey Dawn** supports most kernels that pre-date 5.0. Again this way of following kernel releases has been abandoned. Please follow **main**.
 
