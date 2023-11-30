@@ -255,7 +255,9 @@ Source to build driver for SanDisk Fusion ioMemory devices
 /usr/src/iomemory-vsl-3.2.16/sched.c
 /usr/src/iomemory-vsl-3.2.16/state.c
 /usr/src/iomemory-vsl-3.2.16/sysrq.c
-/usr/src/iomemory-vsl4-4.3.7/include/kblock_meta.h
+/usr/src/iomemory-vsl-3.2.16/include/kblock_meta.h
+/usr/src/iomemory-vsl-3.2.16/include/kfile_meta.h
+/usr/src/iomemory-vsl-3.2.16/include/sysrq_meta.h
 /usr/src/iomemory-vsl-3.2.16/include/fio/port/arch/bits.h
 /usr/src/iomemory-vsl-3.2.16/include/fio/port/arch/mips_atomic.h
 /usr/src/iomemory-vsl-3.2.16/include/fio/port/arch/mips_cache.h
@@ -338,7 +340,7 @@ Source to build driver for SanDisk Fusion ioMemory devices
 %changelog
 
 
-* Mon Apr 10 2017 18:04:35 +0000  Support <support@fusionio.com> 
+* Mon Apr 10 2017 18:04:35 +0000  Support <support@fusionio.com>
 
 SanDisk VSL Pinnacles 3.2.4 to 3.2.14 Change Log
 

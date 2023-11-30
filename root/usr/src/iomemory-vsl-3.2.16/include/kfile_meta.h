@@ -15,5 +15,5 @@
 #define KFIO_PDE_DATA pde_data(ip)
 #endif /* PDE_DATA */
 
-#endif /* __FIO_FILE_META_H__ */
+#endif /* __FIO_KFILE_META_H__ */
 
