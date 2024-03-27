@@ -35,9 +35,7 @@ KERNEL_SRC = /lib/modules/$(KERNELVER)/source
 
 # Set PORT_NO_WERROR=0 to compile without -Werror compilation flag
 ifneq ($(PORT_NO_WERROR),1)
-    ifeq ($(FIO_DRIVER_NAME), iomemory-vsl)
-        CFLAGS += -Werror
-    endif
+    CFLAGS += -Werror
 endif
 
 # Set FUSION_DEBUG=0 to compile without debugging symbols
@@ -91,7 +89,7 @@ clean modules_clean:
 		EXTRA_CFLAGS+="$(CFLAGS)" \
 		KFIO_LIB=$(KFIO_LIB) \
 		clean
-	rm -rf include/fio/port/linux/kfio_config.h kfio_config license.c
+	rm -rf include/fio/port/linux/kfio_config.h kfio_config
 
 include/fio/port/linux/kfio_config.h: kfio_config.sh
 	./$< -a $(FIOARCH) -o $@ -k $(KERNEL_BUILD) -p -d $(CURDIR)/kfio_config -l $(FUSION_DEBUG) -s $(KERNEL_SRC)

@@ -35,6 +35,10 @@
 #include <fio/port/dbgset.h>
 #include <sysrq_meta.h>
 
+void iodrive_handle_sysrq(HANDLE_SYSRQ_TYPE key);
+void kfio_iodrive_sysrq_keys(void);
+void kfio_iodrive_unreg_sysrq_keys(void);
+
 /**
  * @ingroup PORT_COMMON_LINUX
  * @{
