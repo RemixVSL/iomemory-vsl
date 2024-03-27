@@ -30,9 +30,6 @@
 #include <fio/port/state.h>
 #include <fio/port/dbgset.h>
 
-void fio_state_up(fio_state_t *s);
-void fio_state_down(fio_state_t *s);
-
 /**
  * @brief __fio_state_in_one_of_locked -  compare -- lock must be held by caller
  */
