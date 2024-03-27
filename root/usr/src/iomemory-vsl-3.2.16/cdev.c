@@ -38,6 +38,9 @@
 #include <linux/miscdevice.h>
 #include <linux/poll.h>
 
+int fusion_create_control_device(struct fusion_nand_device *nand_dev);
+int fusion_destroy_control_device(struct fusion_nand_device *nand_dev);
+
 /**
  * @ingroup PORT_COMMON_LINUX
  * @{

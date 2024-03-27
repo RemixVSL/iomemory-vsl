@@ -33,6 +33,9 @@
 #include <fio/port/ktime.h>
 #include <linux/version.h>
 
+int kfio_sgl_map_bio(kfio_sg_list_t *sgl, struct bio *pbio);
+void *kfio_sgl_get_byte_pointer(kfio_sg_list_t *sgl, uint32_t offset);
+
 #ifndef MIN
 #define MIN(a, b)   (((a) < (b)) ? (a) : (b))
 #endif

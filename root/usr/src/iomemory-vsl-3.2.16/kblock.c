@@ -48,6 +48,15 @@
 #include <linux/buffer_head.h>
 #include <kblock_meta.h>
 
+kfio_bio_t *kfio_fetch_next_bio(struct kfio_disk *disk);
+int kfio_vectored_atomic(struct block_device *bdev,
+                         const struct kfio_iovec *iov,
+                         uint32_t iovcnt,
+                         bool user_pages);
+int kfio_count_sectors_inuse(struct block_device *bdev,
+                             uint64_t base,
+                             uint64_t length,
+                             uint64_t *count);
 extern int use_workqueue;
 static int fio_major;
 
