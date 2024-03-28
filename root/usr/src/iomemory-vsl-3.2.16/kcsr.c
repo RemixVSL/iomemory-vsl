@@ -28,7 +28,14 @@
 #if defined(__KERNEL__)
 #include "port-internal.h"
 #include <asm/io.h>
-#else
+
+uint32_t kfio_csr_read_direct(volatile void *addr, void *hdl);   
+uint64_t kfio_csr_read_direct_64(volatile void *addr, void *hdl);
+void kfio_csr_write_nobarrier(uint32_t val, volatile void *addr, void *hdl);
+void kfio_csr_write(uint32_t val, volatile void *addr, void *hdl);
+void kfio_csr_write_64(uint64_t val, volatile void *addr, void *hdl);
+
+#else /* not defined __KERNEL */
 #include <fio/port/utypes.h>
 #include <fio/port/ufio.h>
 

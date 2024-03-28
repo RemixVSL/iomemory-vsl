@@ -50,6 +50,9 @@ typedef struct
 #endif
 } fio_state_t;
 
+void fio_state_up(fio_state_t *s);
+void fio_state_down(fio_state_t *s);
+
 #define FIO_STATE_INVALID           0
 
 #ifndef FIO_DEFINE_STATE_NAMES

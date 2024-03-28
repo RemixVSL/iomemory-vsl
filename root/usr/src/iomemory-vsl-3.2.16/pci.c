@@ -41,6 +41,17 @@
 #include <fio/port/kfio.h>
 #include <fio/port/kpci.h>
 
+irqreturn_t kfio_handle_irq_wrapper(int irq, void *dev_id);
+irqreturn_t kfio_handle_irqx_wrapper(int irq, void *dev_id);
+void kfio_pci_disable_device(kfio_pci_dev_t *pdev);
+int kfio_pci_enable_device(kfio_pci_dev_t *pdev);
+void kfio_pci_release_regions(kfio_pci_dev_t *pdev);
+int kfio_pci_request_regions(kfio_pci_dev_t *pdev, const char *res_name);
+int kfio_pci_set_dma_mask(kfio_pci_dev_t *pdev, uint64_t mask);
+void kfio_pci_set_master(kfio_pci_dev_t *pdev);
+int kfio_pci_register_driver(void);
+void kfio_pci_unregister_driver(void);
+
 /*************************************************************************************/
 /*   Legacy and MSI interrupts.                                                      */
 /*************************************************************************************/

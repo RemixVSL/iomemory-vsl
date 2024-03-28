@@ -64,6 +64,8 @@
 #define FIO_CONFIG_MACRO(dbgf) [_DF_ ## dbgf] = { .name = #dbgf, .mode = S_IRUGO | S_IWUSR, .value = dbgf },
 #endif
 
+void __exit exit_fio_driver(void);
+
 /**
  * @ingroup PORT_COMMON_LINUX
  * @{
