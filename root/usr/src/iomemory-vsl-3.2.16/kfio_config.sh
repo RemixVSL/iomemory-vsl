@@ -114,9 +114,10 @@ done
 ## to documentation describing the change in the kernel.
 ##
 ####
-# We should merge the following two, there should be no reason on exists without the other..
 # flag:            KFIOC_X_BLK_ALLOC_DISK_HAS_QUEUE_LIMITS
-# usage:           1   Kernels where blk_alloc_disk has a queue_limits argyment
+# usage:           1   Kernels where blk_alloc_disk has a queue_limits argument,
+#                      which implies it also haa blk_mq_alloc_disk.
+#                      blk_mq_init_queue was also swapped out for blk_mq_alloc_queue.
 #                  0   Kernels that use int for the above
 # kernel_version:  6.9
 KFIOC_X_BLK_ALLOC_DISK_HAS_QUEUE_LIMITS()
