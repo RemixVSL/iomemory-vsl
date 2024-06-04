@@ -326,7 +326,7 @@ int kfio_create_disk(struct fio_device *dev, kfio_pci_dev_t *pdev, uint32_t sect
 
     if (!dp->gd) {
         /* this is a somewhat strange condition, or is it */
-        dp->gd = BLK_ALLOC_DISK(FIO_NUM_MINORS);
+        dp->gd = BLK_ALLOC_DISK
     }
 
     if (use_workqueue != USE_QUEUE_RQ)

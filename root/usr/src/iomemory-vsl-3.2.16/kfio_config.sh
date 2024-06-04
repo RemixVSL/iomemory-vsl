@@ -82,6 +82,7 @@ KFIOC_X_TASK_HAS_CPUS_MASK
 KFIOC_X_BLK_ALLOC_QUEUE_NODE_EXISTS
 KFIOC_X_BLK_ALLOC_QUEUE_EXISTS
 KFIOC_X_BLK_ALLOC_DISK_EXISTS
+KFIOC_X_BLK_ALLOC_DISK_HAS_QUEUE_LIMITS
 KFIOC_X_HAS_MAKE_REQUEST_FN
 KFIOC_X_GENHD_PART0_IS_A_POINTER
 KFIOC_X_BIO_HAS_BI_BDEV
@@ -113,6 +114,31 @@ done
 ## to documentation describing the change in the kernel.
 ##
 ####
+# flag:            KFIOC_X_BLK_ALLOC_DISK_HAS_QUEUE_LIMITS
+# usage:           1   Kernels where blk_alloc_disk has a queue_limits argument,
+#                      which implies it also haa blk_mq_alloc_disk.
+#                      blk_mq_init_queue was also swapped out for blk_mq_alloc_queue.
+#                  0   Kernels that use int for the above
+# kernel_version:  6.9
+KFIOC_X_BLK_ALLOC_DISK_HAS_QUEUE_LIMITS()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/blkdev.h>
+
+void kfioc_check_blk_alloc_disk_has_queue_limits(void);
+void kfioc_check_blk_alloc_disk_has_queue_limits(void)
+{
+    struct queue_limits *lim = NULL;
+    struct gendisk *gd;
+    int node_id = 16;
+
+    gd = blk_alloc_disk(lim, node_id);
+}
+'
+    kfioc_test "$test_code" "$test_flag" 1 -Werror
+}
+
 # flag:            KFIOC_X_HANDLE_SYSRQ_IS_U8
 # usage:           1   Kernels that use u8 or unsigned char for sysrq_handle
 #                  0   Kernels that use int for the above
