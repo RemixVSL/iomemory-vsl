@@ -59,7 +59,7 @@ Example:
 ```GRUB_CMDLINE_LINUX_DEFAULT="quiet iommu=pt"```
 
 ### Systemd-boot
-When using `systemd-boot` add the above options to the `options` section of the `.conf` file you're using as your loader. Typically the loader root will be `/EFI`, `/efi`, or `/boot`. Which will have a `loader/entries/` directory that contains your specific configuration files. Use your favourite editor.
+When using `systemd-boot` add the above options to the `options` section of the `.conf` file you're using as your loader. Typically the loader root will be `/EFI`, `/efi`, or `/boot`. Which will have a `loader/entries/` directory that contains your specific configuration files. Use your favourite editor. More information on `systemd-boot` can be found [here](https://wiki.archlinux.org/title/systemd-boot#Adding_loaders).
 
 ## Versions
 The driver is derived from the original `iomemory-vsl-3.2.16.1732`, but has several fixes and gone through rigorous cleaning of redundant unused and old code. Active development is done on branches and merged back to `main` (formerly master) when stable.
