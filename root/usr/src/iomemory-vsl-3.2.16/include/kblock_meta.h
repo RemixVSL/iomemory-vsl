@@ -27,7 +27,8 @@
   #if KFIOC_X_HAS_MAKE_REQUEST_FN != 1
     #define BLK_ALLOC_QUEUE blk_alloc_queue(node);
   #endif /* KFIOC_X_HAS_MAKE_REQUEST_FN */
-  #define BLK_ALLOC_DISK alloc_disk
+  #define BLK_ALLOC_DISK alloc_disk(FIO_NUM_MINORS);
+  #define BLK_MQ_ALLOC_QUEUE blk_mq_init_queue(&disk->tag_set);
 #endif /* KFIOC_X_BLK_ALLOC_DISK_EXISTS */
 
 
