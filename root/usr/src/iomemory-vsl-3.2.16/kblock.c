@@ -342,12 +342,12 @@ int kfio_create_disk(struct fio_device *dev, kfio_pci_dev_t *pdev, uint32_t sect
 
     rq = dp->rq;
 
-    blk_limits_io_min(&rq->limits, sector_size);
-    blk_limits_io_opt(&rq->limits, fio_dev_optimal_blk_size);
-    blk_queue_max_hw_sectors(rq, max_sectors_per_request);
-    blk_queue_max_segments(rq, max_sg_elements_per_request);
-    blk_queue_max_segment_size(rq, PAGE_SIZE);
-    blk_queue_logical_block_size(rq, sector_size);
+    rq->limits.io_min = sector_size;
+    rq->limits.io_opt = fio_dev_optimal_blk_size;
+    rq->limits.max_segment_size = max_sectors_per_request;
+    rq->limits.max_segments = max_sg_elements_per_request;
+    rq->limits.max_hw_sectors = PAGE_SIZE;
+    rq->limits.logical_block_size = sector_size;
 
     if (enable_discard)
     {
@@ -355,7 +355,7 @@ int kfio_create_disk(struct fio_device *dev, kfio_pci_dev_t *pdev, uint32_t sect
         SET_QUEUE_FLAG_DISCARD;
         // blk_queue_flag_set(QUEUE_FLAG_DISCARD, rq);
         // XXXXXXX !!! WARNING - power of two sector sizes only !!! (always true in standard linux)
-        blk_queue_max_discard_sectors(rq, (UINT_MAX & ~((unsigned int) sector_size - 1)) >> 9);
+        rq->limits.max_discard_sectors = (UINT_MAX & ~((unsigned int) sector_size - 1)) >> 9;
         rq->limits.discard_granularity = sector_size;
     }
 
