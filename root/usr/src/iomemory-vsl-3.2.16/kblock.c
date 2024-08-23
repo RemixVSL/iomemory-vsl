@@ -342,12 +342,13 @@ int kfio_create_disk(struct fio_device *dev, kfio_pci_dev_t *pdev, uint32_t sect
 
     rq = dp->rq;
 
-    rq->limits.io_min = sector_size;
-    rq->limits.io_opt = fio_dev_optimal_blk_size;
-    rq->limits.max_segment_size = max_sectors_per_request;
-    rq->limits.max_segments = max_sg_elements_per_request;
-    rq->limits.max_hw_sectors = PAGE_SIZE;
-    rq->limits.logical_block_size = sector_size;
+     blk_limits_io_min(&rq->limits, sector_size);
+     rq->limits.io_opt = fio_dev_optimal_blk_size;
+     rq->limits.max_hw_sectors = max_sectors_per_request;
+     rq->limits.max_segments = max_sg_elements_per_request;
+     rq->limits.max_segment_size = PAGE_SIZE;
+     blk_queue_logical_block_size(rq, sector_size);
+
 
     if (enable_discard)
     {
