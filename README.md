@@ -17,7 +17,7 @@
 </p>
 
 # IOMemory-VSL (Driver version 3.x)
-This is an unsupported update of the original driver source for FusionIO cards. It comes with no warranty, it may cause DATA LOSS or CORRUPTION. It is designed for "VSL3" i.e. the first few generations of cards. Newer cards would require VSL4 (see below). You cannot use VSL4 on the older cards, and vice versa.
+This is an unsupported update of the original driver source for FusionIO cards. It comes with no warranty, it may cause DATA LOSS or CORRUPTION. It is designed for "VSL3" i.e. the first few generations of cards. Newer cards would require VSL4 (see below). You cannot use VSL4 on the older cards, and vice versa. 
 
 # IOMemory-VSL4 (Driver version 4.x)
 For the iomemory-vsl4 driver please go to the [iomemory-vsl4](https://github.com/RemixVSL/iomemory-vsl4) repo.
@@ -43,7 +43,9 @@ Historically releases were tagged, and were be checked out by their tag. The rel
 ## Important Note for newer Linux Kernels
 Starting with Linux kernel 5.4.0, significant changes to the kernel were made that require additional boot time kernel flags for this driver to work. These affect AMD CPUs starting with 5.4.0, and Intel CPUs after about kernel 5.8.0. 
 
-Add the following to your /etc/default/grub by looking for `GRUB_CMDLINE_LINUX_DEFAULT=""` and adding additional parameters inside the quotes.
+### Grub
+When using grub as your boot loader, add the following to your /etc/default/grub by looking for `GRUB_CMDLINE_LINUX_DEFAULT=""` and adding additional parameters inside the quotes.
+
 For AMD systems:
 ```
 amd_iommu=on iommu=pt
@@ -55,6 +57,9 @@ iommu=pt
 
 Example:
 ```GRUB_CMDLINE_LINUX_DEFAULT="quiet iommu=pt"```
+
+### Systemd-boot
+When using `systemd-boot` add the above options to the `options` section of the `.conf` file you're using as your loader. Typically the loader root will be `/EFI`, `/efi`, or `/boot`. Which will have a `loader/entries/` directory that contains your specific configuration files. Use your favourite editor. More information on `systemd-boot` can be found [here](https://wiki.archlinux.org/title/systemd-boot#Adding_loaders).
 
 ## Versions
 The driver is derived from the original `iomemory-vsl-3.2.16.1732`, but has several fixes and gone through rigorous cleaning of redundant unused and old code. Active development is done on branches and merged back to `main` (formerly master) when stable.
@@ -69,10 +74,32 @@ The modified source fixes several known bugs in the driver:
 PRs and commits to `main` have gone through testing with Flexible I/O Tester. Testing for page_cache errors, and generic FIO checksumming on read and write and different block sizes. Non `main` branches are often in process of verification and under active development, and guaranteed not stable.
 
 ## Building
-
-Note! For many systems, the best option is to use DKMS, using the [instructions below](https://github.com/RemixVSL/iomemory-vsl/blob/main/README.md#dkms). If you prefer to build the module directly, or to create a `dpkg` or `rpm` package, you can proceed with these options below. 
+Note! For many systems, **the best option is to use DKMS**, using the [instructions below](https://github.com/RemixVSL/iomemory-vsl/blob/main/README.md#dkms). If you prefer to build the module directly, or to create a `dpkg` or `rpm` package, you can proceed with these options below. 
 
 Please make sure that the required dependencies are installed, as mentioned in this [README](https://github.com/RemixVSL/iomemory-vsl/blob/main/README)
+
+## Installation
+DKMS is recommended, but installation can also be done with packages or from source.
+
+### DKMS
+Dynamic Kernel Module Support automates away the requirement of having to repackage the kernel module with every kernel and headers update that takes place on the system. This mechanism also makes sure that the driver for the new kernel actually works, or if the source needs refreshing.
+
+Try building from `main` first as it works with most modern kernels:
+```
+git clone https://github.com/RemixVSL/iomemory-vsl
+cd iomemory-vsl/
+sudo make dkms
+```
+
+If you know you need to build a specific branch based on a specific recommendation, use:
+```
+git clone https://github.com/RemixVSL/iomemory-vsl
+cd iomemory-vsl/
+# OPTIONAL: Checkout a specific release. Usually using main branch is correct.
+# DO THIS ONLY IF YOU'VE BEEN TOLD IT'S REQUIRED!
+git checkout <release-tag>
+sudo make dkms
+```
 
 ### Source
 ```
@@ -104,29 +131,10 @@ cd iomemory-vsl/
 make rpm
 ```
 
-## Installation
-DKMS is recommended, but installation can also be done with the created packages.
-
-## DKMS
-Dynamic Kernel Module Support automates away the requirement of having to repackage the kernel module with every kernel and headers update that takes place on the system. This mechanism also makes sure that the driver for the new kernel actually works, or if the source needs refreshing.
-
-Try building from `main` first as it works with most modern kernels up to about 5.16:
-```
-git clone https://github.com/RemixVSL/iomemory-vsl
-cd iomemory-vsl/
-sudo make dkms
-```
-
-If you know you need to build a specific branch based on a specific recommendation, use:
-```
-git clone https://github.com/RemixVSL/iomemory-vsl
-cd iomemory-vsl/
-git checkout <release-tag>
-sudo make dkms
-```
-
 # Utils
-With fio-utils installed and passing a single device through to a VM you should see someting similair to the following...:
+The utilities to query and manage the drive(s) can be found in the [vsl_downloads](https://github.com/RemixVSL/vsl_downloads) repo.
+
+After installing the utilities and using `fio-status -a` something as follows should be printed:
 ```
 Found 1 ioMemory device in this system
 Driver version: 3.2.16 build 1731
