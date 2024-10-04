@@ -98,9 +98,9 @@ patchFile() {
             newVer="$tag-${mod_ver}"
             origVer=$(perl -sne 'print $1."\n" if /($tag)/' -- -tag=$newVer $fileToPatch | head -1)
             if [ "$origVer" == "$newVer" ]; then
-                echo "Ok: $fileTAlready already patched with $newVer"
+                echo "Ok: $fileToPatch already already patched with $newVer"
             else
-                echo "Warning:  $fileTAlready patched with $origVer not $newVer"
+                echo "Ok: $fileToPatch has no version"
             fi
         fi
     else

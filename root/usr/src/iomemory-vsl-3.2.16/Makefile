@@ -15,6 +15,7 @@ FIOCC=$(CROSS_COMPILE)gcc
 else
 FIOCC=$(CC)
 endif
+$(info    FIOCC is $(FIOCC))
 
 FIO_DRIVER_NAME ?= $(shell cat dkms.conf | grep BUILT_MODULE_NAME | awk -F= '{ print $$2 }')
 FIO_DRIVER_SUBDIR ?= extra/fio
@@ -116,7 +117,7 @@ add_module_version patch_module_version:
 
 .PHONY: dkms
 dkms:
-	./module_operations.sh -n "$(FIO_DRIVER_NAME)" -v "$(MODULE_VERSION)" -d
+	sudo ./module_operations.sh -n "$(FIO_DRIVER_NAME)" -v "$(MODULE_VERSION)" -d
 
 .PHONY: dpkg
 dpkg:
