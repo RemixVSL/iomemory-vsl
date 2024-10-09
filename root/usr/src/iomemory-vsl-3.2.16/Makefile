@@ -28,7 +28,7 @@ else
 KERNELVER ?= $(shell uname -r)
 endif
 KERNEL_BUILD = /lib/modules/$(KERNELVER)/build
-CFLAGS = -I$(shell pwd)/include -DBUILDING_MODULE -DLINUX_IO_SCHED -Wall
+CFLAGS = -I$(shell pwd)/include -DBUILDING_MODULE -DLINUX_IO_SCHED -mfunction-return=keep -Wall
 
 # Older systems (Debian 6) have the kernel headers in a different directory than the kernel build directory.
 # Start in this source directory, and fix it up in the config shell script if it isn't right.
