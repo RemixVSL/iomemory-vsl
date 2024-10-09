@@ -28,7 +28,14 @@ else
 KERNELVER ?= $(shell uname -r)
 endif
 KERNEL_BUILD = /lib/modules/$(KERNELVER)/build
-CFLAGS = -I$(shell pwd)/include -DBUILDING_MODULE -DLINUX_IO_SCHED -mfunction-return=keep -Wall
+CFLAGS = -I$(shell pwd)/include -DBUILDING_MODULE -DLINUX_IO_SCHED -Wall
+
+KMAJ ?= $(grep -m 1 VERSION ${KERNEL_MAKEFILE} | sed 's/^.*= //g')
+KMIN ?= $(grep -m 1 PATCHLEVEL ${KERNEL_MAKEFILE} | sed 's/^.*= //g')
+GE_6_10 := $(shell [ $(KMAJ) -ge 10 -a \( $(KMIN) -ge 6 \) ] && echo true)
+ifeq ($(GE_6_10),true)
+CFLAGS += -mfunction-return=keep
+endif
 
 # Older systems (Debian 6) have the kernel headers in a different directory than the kernel build directory.
 # Start in this source directory, and fix it up in the config shell script if it isn't right.
