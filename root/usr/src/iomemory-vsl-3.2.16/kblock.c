@@ -368,6 +368,8 @@ int kfio_create_disk(struct fio_device *dev, kfio_pci_dev_t *pdev, uint32_t sect
 
 #ifdef QUEUE_FLAG_NONROT
     blk_queue_flag_set(QUEUE_FLAG_NONROT, rq);
+#else
+    rq->limits.features |= BLK_FEAT_WRITE_CACHE;
 #endif
 
 #ifdef QUEUE_FLAG_ADD_RANDOM
