@@ -13,7 +13,9 @@
 #include <linux/part_stat.h>
 #endif
 #include <linux/blkdev.h>
-#include <kblock_meta.h>
+#if __has_include("linux/bio-integrity.h") /* added 6.11 */
+#include <linux/bio-integrity.h>
+#endif
 
 #if KFIOC_X_BLK_ALLOC_DISK_EXISTS
   #define BLK_ALLOC_QUEUE dp->gd->queue;
