@@ -1,4 +1,3 @@
-
 // Copyright (c) 2006-2014, Fusion-io, Inc.(acquired by SanDisk Corp. 2014)
 // Copyright (c) 2014-2015 SanDisk Corp. and/or all its affiliates. All rights reserved.
 //
@@ -364,16 +363,20 @@ int kfio_create_disk(struct fio_device *dev, kfio_pci_dev_t *pdev, uint32_t sect
 
 #ifdef QUEUE_FLAG_WC
     blk_queue_flag_set(QUEUE_FLAG_WC, rq);
+#else
+    blk_queue_flag_set(BLK_FEAT_WRITE_CACHE, rq)
 #endif
 
 #ifdef QUEUE_FLAG_NONROT
     blk_queue_flag_set(QUEUE_FLAG_NONROT, rq);
 #else
-    rq->limits.features |= BLK_FEAT_WRITE_CACHE;
+    blk_queue_flag_clear(BLK_FEAT_ROTATIONAL, rq);
 #endif
 
 #ifdef QUEUE_FLAG_ADD_RANDOM
     blk_queue_flag_clear(QUEUE_FLAG_ADD_RANDOM, rq);
+#else
+     blk_queue_flag_clear(BLK_FEAT_ADD_RANDOM, rq)
 #endif
 
     *diskp = dp;

@@ -30,7 +30,7 @@ endif
 KERNEL_BUILD = /lib/modules/$(KERNELVER)/build
 CFLAGS = -I$(shell pwd)/include -DBUILDING_MODULE -DLINUX_IO_SCHED -Wall
 
-# Older systems (Debian 6) have the kernel headers in a different direct`ory than the kernel build directory.
+# Older systems (Debian 6) have the kernel headers in a different directory than the kernel build directory.
 # Start in this source directory, and fix it up in the config shell script if it isn't right.
 KERNEL_SRC = /lib/modules/$(KERNELVER)/source
 
