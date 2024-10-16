@@ -165,3 +165,8 @@ void of_iodrive_clear_all_pci_errors(kfio_pci_dev_t *pci_dev);
 void of_iodrive_clear_pci_errors(kfio_pci_dev_t *pci_dev);
 #endif
 
+uint32_t of_fio_detach_devices(void);
+uint32_t of_kfio_csr_read(csr_addr_t *csr,uint64_t index,bool indirect);
+void if_iodrive_pci_attach_nand_clear(fusion_nand_device *nand_dev, iodrive_dev_t *iodrive_dev, int32_t nr);
+int32_t if_iodrive_pci_attach_failed(kfio_pci_dev_t *pci_dev);
+int32_t if_iodrive_pci_attach_nand(iodrive_dev_t *iodrive_dev, int32_t dev_num, int32_t nr, kfio_numa_node_t numa_node);
