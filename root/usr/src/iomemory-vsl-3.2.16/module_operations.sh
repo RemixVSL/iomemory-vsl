@@ -6,8 +6,8 @@
 set -e
 
 dkms_ver() {
-    local name=$1
-    local ver=$(dkms status | grep "$name " | grep -v added | cut -d, -f2 | sed -e s/\ //)
+    name=$1
+    ver=$(dkms status | grep "$name " | grep -v added | cut -d, -f2 | sed -e s/\ //)
     if [ "$?" != "0" ]; then
         echo "DKMS problem"
         exit 1
@@ -16,15 +16,15 @@ dkms_ver() {
 }
 
 dkms_remove() {
-    local name=$1
-    local ver=$2
+    name=$1
+    ver=$2
     echo "Removing $name/$ver from DKMS"
     dkms remove $name/$ver --all
 }
 
 dkms_install() {
-    local name=$1
-    local ver=$2
+    name=$1
+    ver=$2
     echo "Adding, buidling and installing $name/$ver with DKMS"
 
     if [ "$(dkms status | grep $name | grep added)" == "" ]; then
@@ -35,9 +35,9 @@ dkms_install() {
 }
 
 get_rel_ver() {
-    local version=$1
-    local kname=$(uname -r)
-    local release=$(git describe --tag)
+    version=$1
+    kname=$(uname -r)
+    release=$(git describe --tag)
     if [ "$version" == "" ]; then
         tag=$(git rev-parse --short HEAD)
     fi
@@ -61,9 +61,9 @@ check_root() {
 }
 
 patchFile() {
-    local fileToPatch=$1
-    local tag=$2
-    local mod_ver=$3
+    fileToPatch=$1
+    tag=$2
+    mod_ver=$3
 
     if [ -f "$fileToPatch" ]; then
         origVer=$(perl -ne 'print $1."\n" if /(\d.\d.\d+.\d+ \w+@[\w\d]+)/' $fileToPatch | head -1)
@@ -98,9 +98,9 @@ patchFile() {
             newVer="$tag-${mod_ver}"
             origVer=$(perl -sne 'print $1."\n" if /($tag)/' -- -tag=$newVer $fileToPatch | head -1)
             if [ "$origVer" == "$newVer" ]; then
-                echo "Ok: $fileTAlready already patched with $newVer"
+                echo "Ok: $fileToPatch already already patched with $newVer"
             else
-                echo "Warning: $fileTAlready patched with $origVer not $newVer"
+                echo "Ok: $fileToPatch has no version"
             fi
         fi
     else
@@ -110,8 +110,8 @@ patchFile() {
 }
 
 patchLicenseVersion() {
-    local tag=$1
-    local src=license.c
+    tag=$1
+    src=license.c
     echo "Adding module version $tag to source $src"
     set +e
     grep -q MODULE_VERSION $src
@@ -134,7 +134,7 @@ sanity_check() {
 }
 
 install_libvsl() {
-    local target_dir="/usr/lib/fio"
+    target_dir="/usr/lib/fio"
     mkdir -p $target_dir
     src_dir=$(git rev-parse --show-toplevel)
     libvsl=$(find ${src_dir}/root/usr/lib/fio -type f| grep libvsl)
@@ -145,8 +145,8 @@ usage() {
     echo "${0##*/}:
   -n <module name>
   -v <version>
-  -l <object library file>
-  -p flag: Patch module, files and license
+  -l <library file to patch>
+  -p flag: Patch module, files, license etc
   -d flag: Install module through DKMS
   -h flag: this help
   -D flag: Debug, set -x
@@ -155,12 +155,12 @@ usage() {
 
 PATCH=0
 DKMS=0
-VERSION=""
-while getopts ":n:v:l:pdhD" opt; do
+LIBRARY_FILE=""
+while getopts ":l:n:v:pdhD" opt; do
     case ${opt} in
       l )
-        KFIO_LIB=$OPTARG
-        ;;
+	LIBRARY_FILE=$OPTARG
+	;;
       n )
         MODULE_NAME=$OPTARG
         ;;
@@ -193,14 +193,6 @@ sanity_check
 MODULE_DIR=${PWD##*/}
 MODULE_VER=${MODULE_DIR##*-}
 MODULE_FILE=${MODULE_NAME}.ko
-# Workaround nasty deb stuff
-if [ "$MODULE_DIR" == "driver_source" ]; then
-    MODULE_DIR=$(ls -1 ../root/usr/src | grep $MODULE_NAME)
-    MODULE_VER=${MODULE_DIR##*-}
-elif [ "$MODULE_DIR" == "iomemory-vsl" ]; then
-    MODULE_DIR=$(ls -1 root/usr/src | grep $MODULE_NAME)
-    MODULE_VER=${MODULE_DIR##*-}
-fi
 RELEASE_VER=$(get_rel_ver $VERSION)
 
 if [ "$MODULE_NAME" == "" ]; then
@@ -208,8 +200,16 @@ if [ "$MODULE_NAME" == "" ]; then
     exit 1
 fi
 
-# Primarily check DKMS
-if [ "$DKMS" == "1" ]; then
+# where does this go?
+
+# old behaviour
+if [ "$DKMS" == "0" -a "$PATCH" == "0" ]; then
+    if [ -f "$MODULE_FILE" ]; then
+        patchFile $MODULE_FILE $RELEASE_VER
+    else
+        patchLicenseVersion ${RELEASE_VER}-${MODULE_VER}
+    fi
+elif [ "$DKMS" == "1" ]; then
     check_root
     DKMS_DIR="/usr/src/${MODULE_NAME}-${RELEASE_VER}"
     DKMS_VER=$(dkms_ver $MODULE_NAME)
@@ -224,13 +224,11 @@ if [ "$DKMS" == "1" ]; then
         cp -r ${PWD} $DKMS_DIR
     fi
     # For DKMS we patch all the library files prior to making/linking
-    patchFile ${KFIO_LIB} $RELEASE_VER $MODULE_VER
+    if [ "${LIBRARY_FILE}" != "" -a -f "${DKMS_DIR}/kfio/${LIBRARY_FILE}" ]; then
+        patchFile $DKMS_DIR/kfio/$LIBRARY_FILE $RELEASE_VER $MODULE_VER
+    else
+        echo "No Library file to patch provided: $LIBRARY_FILE"
+    fi
     dkms_install $MODULE_NAME $RELEASE_VER
     install_libvsl $MODULE_NAME
-elif [ "$DKMS" == "0" -a "$PATCH" == "0" ]; then
-    if [ -f "$MODULE_FILE" ]; then
-        patchFile ${KFIO_LIB} $MODULE_FILE $RELEASE_VER
-    else
-        patchLicenseVersion ${RELEASE_VER}-${MODULE_VER}
-    fi
 fi
