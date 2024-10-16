@@ -89,7 +89,8 @@ clean modules_clean:
 		EXTRA_CFLAGS+="$(CFLAGS)" \
 		KFIO_LIB=$(KFIO_LIB) \
 		clean
-	rm -rf include/fio/port/linux/kfio_config.h kfio_config && rm ${KFIO_LIB}
+	rm -rf include/fio/port/linux/kfio_config.h kfio_config
+	rm -f ${KFIO_LIB}
 
 include/fio/port/linux/kfio_config.h: kfio_config.sh
 	./$< -a $(FIOARCH) -o $@ -k $(KERNEL_BUILD) -p -d $(CURDIR)/kfio_config -l $(FUSION_DEBUG) -s $(KERNEL_SRC)
