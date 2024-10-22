@@ -37,7 +37,7 @@ Information about the system the module is used on
 1. Linux kernel compiled against (uname -a)
 2. The C compiler version used (gcc --version)
 3. distribution, and version (cat /etc/os-release)
-4. Tag or Branch of iomemory-vsl that is being compiled
+4. The hash. tag and/or Branch of iomemory-vsl that is being compiled (`git branch -v`)
 5. FIO device used, if applicable
    * fio-status
    * lspci -b -nn
