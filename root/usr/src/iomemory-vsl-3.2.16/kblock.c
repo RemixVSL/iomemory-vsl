@@ -342,7 +342,7 @@ int kfio_create_disk(struct fio_device *dev, kfio_pci_dev_t *pdev, uint32_t sect
     rq = dp->rq;
 
     /* in vsl4 bdev->bdev_block_size is used where sector_size is used here... */
-    blk_limits_io_min(&rq->limits, sector_size);
+    rq->limits.io_min = sector_size;
     rq->limits.io_opt = fio_dev_optimal_blk_size;
     rq->limits.max_hw_sectors = max_sectors_per_request;
     rq->limits.max_segments = max_sg_elements_per_request;
