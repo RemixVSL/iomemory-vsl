@@ -118,13 +118,13 @@ int fiocfg_set(fusion_config_set_t * const set_p);
 int fiocfg_get(fusion_config_get_t * const get_p);
 int fiocfg_enumerate(uint32_t *enum_table_size_p, char* const multi_string_table_p);
 int fiocfg_enum_get_size(fusion_config_enum_size_t * const enum_size_p);
-extern unsigned int config_table_count;
+extern unsigned int g_config_table_count;
 
 KFIO_EXPORT_SYMBOL(fiocfg_set);
 KFIO_EXPORT_SYMBOL(fiocfg_get);
 KFIO_EXPORT_SYMBOL(fiocfg_enumerate);
 KFIO_EXPORT_SYMBOL(fiocfg_enum_get_size);
-KFIO_EXPORT_SYMBOL(config_table_count);
+KFIO_EXPORT_SYMBOL(g_config_table_count);
 
 KFIO_EXPORT_SYMBOL(kfio_bio_submit);
 KFIO_EXPORT_SYMBOL(kfio_bio_submit_handle_retryable);

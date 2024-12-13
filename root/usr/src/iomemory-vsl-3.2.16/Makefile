@@ -57,9 +57,9 @@ MODULE_VERSION ?= $(shell git rev-parse --short HEAD)
 
 TARGET ?= $(FIOARCH)_cc$(CCMAJOR)$(CCMINOR)
 
-KFIO_LIB ?= kfio/$(TARGET)_libkfio.o_shipped
-LAST_KFIO_LIB := $(shell ls -1 kfio | grep $(LAST_CCVER) | sort | tail -1)
-KFIO_LIB_CMD ?= kfio/.$(TARGET)_libkfio.o.cmd
+KFIO_REMIX_LIB ?= kfio/x86_64_remix_libkfio.o_shipped
+KFIO_LIB ?= kfio/$(TARGET)_latest_libkfio.o_shipped
+KFIO_LIB_CMD ?= kfio/.$(TARGET)_latest_libkfio.o.cmd
 
 NCPUS:=$(shell grep -c ^processor /proc/cpuinfo)
 
@@ -73,10 +73,8 @@ fake_license:
 
 .PHONY: check_n_fix_kfio_ccver
 check_n_fix_kfio_ccver:
-	if [ "${CCVER}" -gt "${LAST_CCVER}" ];then \
-		if [ ! -f "${KFIO_LIB}" ];then \
-			cp kfio/${LAST_KFIO_LIB} ${KFIO_LIB}; \
-		fi \
+	if [ ! -f "${KFIO_LIB}" ];then \
+		cp ${KFIO_REMIX_LIB} ${KFIO_LIB}; \
 	fi
 	$(shell touch ${KFIO_LIB_CMD})
 
@@ -90,7 +88,7 @@ clean modules_clean:
 		EXTRA_CFLAGS+="$(CFLAGS)" \
 		KFIO_LIB=$(KFIO_LIB) \
 		clean
-	rm -rf include/fio/port/linux/kfio_config.h kfio_config
+	rm -rf include/fio/port/linux/kfio_config.h kfio_config $(KFIO_LIB)
 
 include/fio/port/linux/kfio_config.h: kfio_config.sh
 	./$< -a $(FIOARCH) -o $@ -k $(KERNEL_BUILD) -p -d $(CURDIR)/kfio_config -l $(FUSION_DEBUG) -s $(KERNEL_SRC)
