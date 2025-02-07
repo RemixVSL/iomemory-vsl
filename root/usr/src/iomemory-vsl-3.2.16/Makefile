@@ -58,7 +58,7 @@ MODULE_VERSION ?= $(shell git rev-parse --short HEAD)
 TARGET ?= $(FIOARCH)_cc$(CCMAJOR)$(CCMINOR)
 
 KFIO_LIB ?= kfio/$(TARGET)_libkfio.o_shipped
-LAST_KFIO_LIB := $(shell ls -1 kfio | grep $(LAST_CCVER) | sort | tail -1)
+LAST_KFIO_LIB := x86_64_latest_libkfio.o_shipped
 KFIO_LIB_CMD ?= kfio/.$(TARGET)_libkfio.o.cmd
 
 NCPUS:=$(shell grep -c ^processor /proc/cpuinfo)
@@ -73,16 +73,15 @@ fake_license:
 
 .PHONY: check_n_fix_kfio_ccver
 check_n_fix_kfio_ccver:
-	if [ "${CCVER}" -gt "${LAST_CCVER}" ];then \
-		if [ ! -f "${KFIO_LIB}" ];then \
-			cp kfio/${LAST_KFIO_LIB} ${KFIO_LIB}; \
-		fi \
-	fi
+	if [ ! -f "${KFIO_LIB}" ];then \
+		cp kfio/${LAST_KFIO_LIB} ${KFIO_LIB}; \
+	fi \
 	$(shell touch ${KFIO_LIB_CMD})
+
 
 clean modules_clean:
 	$(MAKE) \
-        -j$(NCPUS) \
+		-j$(NCPUS) \
 		-C $(KERNEL_BUILD) \
 		FIO_DRIVER_NAME=$(FIO_DRIVER_NAME) \
 		FUSION_DRIVER_DIR=$(shell pwd) \
@@ -91,6 +90,7 @@ clean modules_clean:
 		KFIO_LIB=$(KFIO_LIB) \
 		clean
 	rm -rf include/fio/port/linux/kfio_config.h kfio_config
+#	rm -f ${KFIO_LIB}
 
 include/fio/port/linux/kfio_config.h: kfio_config.sh
 	./$< -a $(FIOARCH) -o $@ -k $(KERNEL_BUILD) -p -d $(CURDIR)/kfio_config -l $(FUSION_DEBUG) -s $(KERNEL_SRC)
@@ -117,7 +117,7 @@ add_module_version patch_module_version:
 
 .PHONY: dkms
 dkms:
-	sudo ./module_operations.sh -n "$(FIO_DRIVER_NAME)" -v "$(MODULE_VERSION)" -d
+	sudo ./module_operations.sh -n "$(FIO_DRIVER_NAME)" -v "$(MODULE_VERSION)" -l ${LAST_KFIO_LIB} -d
 
 .PHONY: dpkg
 dpkg:
@@ -127,13 +127,13 @@ dpkg:
 
 .PHONY: dpkg
 rpm:
-		# patch fio_version, fio_short_version in debian/fio_values
-		cd $(shell git rev-parse --show-toplevel) && \
+	# patch fio_version, fio_short_version in debian/fio_values
+	cd $(shell git rev-parse --show-toplevel) && \
 			$(MAKE) rpm
 
 modules modules_install: check_target_kernel check_n_fix_kfio_ccver include/fio/port/linux/kfio_config.h add_module_version
 	$(MAKE) \
-    -j$(NCPUS) \
+	-j$(NCPUS) \
 	-C $(KERNEL_BUILD) \
 	FIO_DRIVER_NAME=$(FIO_DRIVER_NAME) \
 	FUSION_DRIVER_DIR=$(shell pwd) \

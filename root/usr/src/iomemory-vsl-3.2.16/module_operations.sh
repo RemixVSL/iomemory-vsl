@@ -145,6 +145,7 @@ usage() {
     echo "${0##*/}:
   -n <module name>
   -v <version>
+  -l <library file to patch>
   -p flag: Patch module, files, license etc
   -d flag: Install module through DKMS
   -h flag: this help
@@ -154,8 +155,12 @@ usage() {
 
 PATCH=0
 DKMS=0
-while getopts ":n:v:pdhD" opt; do
+LIBRARY_FILE=""
+while getopts ":l:n:v:pdhD" opt; do
     case ${opt} in
+      l )
+	LIBRARY_FILE=$OPTARG
+	;;
       n )
         MODULE_NAME=$OPTARG
         ;;
@@ -219,10 +224,11 @@ elif [ "$DKMS" == "1" ]; then
         cp -r ${PWD} $DKMS_DIR
     fi
     # For DKMS we patch all the library files prior to making/linking
-    LIBS=$(ls -1 ${DKMS_DIR}/kfio)
-    for LIB in $LIBS; do
-        patchFile $DKMS_DIR/kfio/$LIB $RELEASE_VER $MODULE_VER
-    done
+    if [ "${LIBRARY_FILE}" != "" -a -f "${DKMS_DIR}/kfio/${LIBRARY_FILE}" ]; then
+        patchFile $DKMS_DIR/kfio/$LIBRARY_FILE $RELEASE_VER $MODULE_VER
+    else
+        echo "No Library file to patch provided: $LIBRARY_FILE"
+    fi
     dkms_install $MODULE_NAME $RELEASE_VER
     install_libvsl $MODULE_NAME
 fi
