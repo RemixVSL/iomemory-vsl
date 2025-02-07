@@ -57,7 +57,7 @@ MODULE_VERSION ?= $(shell git rev-parse --short HEAD)
 
 TARGET ?= $(FIOARCH)_cc$(CCMAJOR)$(CCMINOR)
 
-KFIO_LIB ?= kfio/$(TARGET)_libkfio.o_shipped
+KFIO_LIB ?= kfio/$(TARGET)_libkfio.o
 LAST_KFIO_LIB := x86_64_latest_libkfio.o_shipped
 KFIO_LIB_CMD ?= kfio/.$(TARGET)_libkfio.o.cmd
 
@@ -90,7 +90,6 @@ clean modules_clean:
 		KFIO_LIB=$(KFIO_LIB) \
 		clean
 	rm -rf include/fio/port/linux/kfio_config.h kfio_config
-#	rm -f ${KFIO_LIB}
 
 include/fio/port/linux/kfio_config.h: kfio_config.sh
 	./$< -a $(FIOARCH) -o $@ -k $(KERNEL_BUILD) -p -d $(CURDIR)/kfio_config -l $(FUSION_DEBUG) -s $(KERNEL_SRC)
