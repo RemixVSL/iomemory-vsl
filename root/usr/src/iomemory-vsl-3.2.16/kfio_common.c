@@ -247,7 +247,7 @@ int kfio_copy_from_user(void *to, const void *from, unsigned len)
         return -EINVAL;
     }
     if (len == 3960) {
-        infprint("hit the weird one");
+        infprint("the copy that is triggered by fusion_pcie_get_dynamic_info");
         return -EINVAL;
     }
     int result = copy_from_user(to, from, len);
