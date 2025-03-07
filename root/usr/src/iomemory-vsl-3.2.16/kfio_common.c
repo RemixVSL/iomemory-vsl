@@ -232,25 +232,29 @@ void fusion_create_kthread(fusion_kthread_func_t func, void *data, void *fusion_
 /*
  8140 - 8170 is also valid.... if we deny the 8140 fio-sure-erase bombs on
  not being able to backup the lebmap...
+ fusion_user_ll_request of size 3960 triggers this, which routes into fusion_pcie_get_dynamic_info
+ */
 
-*/
 #define MAX_USER_BUFFER_SIZE 9216
 int kfio_copy_from_user(void *to, const void *from, unsigned len)
 {
+    int result = -EINVAL;
+
     infprint("Copying %u bytes from user space to kernel space\n", len);
     if (!from || !to) {
         infprint("NULL pointer passed to kfio_copy_from_user\n");
-      return -EINVAL;
+      return result;
     }
     if (len > MAX_USER_BUFFER_SIZE) {
         infprint("Invalid user buffer size: %u\n", len);
-        return -EINVAL;
+        return result;
     }
     if (len == 3960) {
-        infprint("the copy that is triggered by fusion_pcie_get_dynamic_info");
-        return -EINVAL;
+        infprint("the copy that is triggered by fusion_pcie_get_dynamic_info: %p", from);
+        return result;
     }
-    int result = copy_from_user(to, from, len);
+    // kmem_cache_create_usercopy
+    result = copy_from_user(to, from, len);
     if (result) {
         infprint("Failed to copy %u bytes from user space, %d bytes not copied\n", len, result);
         return -EFAULT;
@@ -262,16 +266,18 @@ KFIO_EXPORT_SYMBOL(kfio_copy_from_user);
 
 int kfio_copy_to_user(void *to, const void *from, unsigned len)
 {
+    int result = -EINVAL;
+
     infprint("Copying %u bytes to user space from kernel space\n", len);
     if (!from || !to) {
         infprint("NULL pointer passed to kfio_copy_from_user\n");
-      return -EINVAL;
+      return result;
     }
     if (len > MAX_USER_BUFFER_SIZE) {
         infprint("Invalid user buffer size: %u\n", len);
-        return -EINVAL;
+        return result;
     }
-    int result = copy_to_user(to, from, len);
+    result = copy_to_user(to, from, len);
     if (result) {
         infprint("Failed to copy %u bytes from user space, %d bytes not copied\n", len, result);
         return -EFAULT;

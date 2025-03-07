@@ -130,6 +130,10 @@ rpm:
 	cd $(shell git rev-parse --show-toplevel) && \
 			$(MAKE) rpm
 
+.PHONY: config
+config: check_target_kernel include/fio/port/linux/kfio_config.h
+
+.PHONY: modules
 modules modules_install: check_target_kernel check_n_fix_kfio_ccver include/fio/port/linux/kfio_config.h add_module_version
 	$(MAKE) \
 	-j$(NCPUS) \

@@ -27,9 +27,13 @@ rpm: clean patch_module_version
 			rpmbuild -ba fio-driver.spec
 
 .PHONY: module
-module: clean
+module:
 	cd ${FIO_SRC_DIR} && \
   		$(MAKE) gpl
+
+config:
+	cd ${FIO_SRC_DIR} && \
+		$(MAKE) config
 
 clean:
 	cd ${FIO_SRC_DIR} && \

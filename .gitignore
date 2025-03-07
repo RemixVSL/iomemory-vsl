@@ -2,3 +2,4 @@
 ioMemory-vsl*
 root/.vs
 **/license.c
+**/kfio_config
