@@ -36,7 +36,6 @@ usr/src/iomemory-vsl-3.2.16/kscsi_host.c
 usr/src/iomemory-vsl-3.2.16/dkms.conf
 usr/src/iomemory-vsl-3.2.16/kfio
 usr/src/iomemory-vsl-3.2.16/kfio/x86_64_cc49_libkfio.o_shipped
-usr/src/iomemory-vsl-3.2.16/kfio/x86_64_cc74_libkfio.o_shipped
 usr/src/iomemory-vsl-3.2.16/kfio/x86_64_cc41_libkfio.o_shipped
 usr/src/iomemory-vsl-3.2.16/kfio/x86_64_cc44_libkfio.o_shipped
 usr/src/iomemory-vsl-3.2.16/kfio/x86_64_cc48_libkfio.o_shipped
@@ -44,6 +43,7 @@ usr/src/iomemory-vsl-3.2.16/kfio/x86_64_cc54_libkfio.o_shipped
 usr/src/iomemory-vsl-3.2.16/kfio/x86_64_cc53_libkfio.o_shipped
 usr/src/iomemory-vsl-3.2.16/kfio/x86_64_cc63_libkfio.o_shipped
 usr/src/iomemory-vsl-3.2.16/kfio/x86_64_cc43_libkfio.o_shipped
+usr/src/iomemory-vsl-3.2.16/kfio/x86_64_latest_libkfio.o_shipped
 usr/src/iomemory-vsl-3.2.16/kscsi.c
 usr/src/iomemory-vsl-3.2.16/kblock.c
 usr/src/iomemory-vsl-3.2.16/license.c
