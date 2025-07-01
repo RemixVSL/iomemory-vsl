@@ -86,6 +86,7 @@ clean modules_clean:
 		FIO_DRIVER_NAME=$(FIO_DRIVER_NAME) \
 		FUSION_DRIVER_DIR=$(shell pwd) \
 		M=$(shell pwd) \
+		ccflags-y+="$(CFLAGS)" \
 		EXTRA_CFLAGS+="$(CFLAGS)" \
 		KFIO_LIB=$(KFIO_LIB) \
 		clean
@@ -138,9 +139,11 @@ modules modules_install: check_target_kernel check_n_fix_kfio_ccver include/fio/
 	FUSION_DRIVER_DIR=$(shell pwd) \
 	M=$(shell pwd) \
 	EXTRA_CFLAGS+="$(CFLAGS)" \
+	ccflags-y+="$(CFLAGS)" \
 	INSTALL_MOD_DIR=$(FIO_DRIVER_SUBDIR) \
 	INSTALL_MOD_PATH=$(INSTALL_ROOT) \
 	KFIO_LIB=$(KFIO_LIB) \
+	objtool=$(PWD)/objtool_wrapper \
 	$@
 
 endif

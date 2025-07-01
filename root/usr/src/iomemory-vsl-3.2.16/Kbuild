@@ -15,6 +15,7 @@ obj-m := $(FIO_DRIVER_NAME).o
 
 $(FIO_DRIVER_NAME)-y := main.o
 $(FIO_DRIVER_NAME)-y += license.o
+$(FIO_DRIVER_NAME)-y += mod.o
 $(FIO_DRIVER_NAME)-y += pci.o
 $(FIO_DRIVER_NAME)-y += sysrq.o
 $(FIO_DRIVER_NAME)-y += driver_init.o

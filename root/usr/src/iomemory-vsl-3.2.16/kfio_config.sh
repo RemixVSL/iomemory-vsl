@@ -89,6 +89,7 @@ KFIOC_X_BIO_HAS_BI_BDEV
 KFIOC_X_SUBMIT_BIO_RETURNS_BLK_QC_T
 KFIOC_X_VOID_ADD_DISK
 KFIOC_X_DISK_HAS_OPEN_MUTEX
+KFIOC_X_BLK_MQ_F_SHOULD_MERGE
 "
 
 
@@ -114,6 +115,27 @@ done
 ## to documentation describing the change in the kernel.
 ##
 ####
+# flag:            KFIOC_X_BLK_MQ_F_SHOULD_MERGE
+# usage:           1   Kernels that have BLK_MQ_F_SHOULD_MERGE as an option
+#                  0   Kernels that don't have BLK_MQ_F_SHOULD_MERGE, and default to it
+# kernel_version:  6.14
+KFIOC_X_BLK_MQ_F_SHOULD_MERGE()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/blkdev.h>
+#include <linux/blk-mq.h>
+void kfioc_blk_mq_f_should_merge(void);
+void kfioc_blk_mq_f_should_merge(void)
+{
+    struct blk_mq_tag_set tag_set;
+    tag_set.flags = BLK_MQ_F_SHOULD_MERGE;
+}
+
+'
+    kfioc_test "$test_code" "$test_flag" 1 -Werror
+}
+
 # flag:            KFIOC_X_BLK_ALLOC_DISK_HAS_QUEUE_LIMITS
 # usage:           1   Kernels where blk_alloc_disk has a queue_limits argument,
 #                      which implies it also haa blk_mq_alloc_disk.
@@ -285,11 +307,11 @@ KFIOC_X_VOID_ADD_DISK()
     local test_flag="$1"
     local test_code='
 #include <linux/blkdev.h>
-void kfioc_check_void_add_disk(void);
-void kfioc_check_void_add_disk(void)
+int kfioc_check_void_add_disk(void);
+int kfioc_check_void_add_disk(void)
 {
   struct gendisk *gd = NULL;
-  add_disk(gd);
+  return add_disk(gd)
 }
 
 '

@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+KERNEL_BUILD=$objtree
+[ -z "$KERNEL_BUILD" ] && echo "we need KERNEL_BUILD set: $KERNEL_BUILD" && exit 1
+objtool="$KERNEL_BUILD/tools/objtool/objtool"
+
+args=$(echo "$*" | sed s/--werror//)
+if [ -z "$objtool" ]; then
+    echo "$(basename "$0"): No objtool?" 1>&2
+    exit 255;
+fi
+[ "$DEBUG" != "" ] && echo "Running objtool $objtool $args"
+$objtool --sec-address $args
+rc=$?
+[ "$DEBUG" != "" ] && echo "objtool returned $rc"
+exit 0
+
