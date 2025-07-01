@@ -17,6 +17,12 @@
 #include <linux/bio-integrity.h>
 #endif
 
+#if KFIOC_X_BLK_MQ_F_SHOULD_MERGE
+  #define SET_MQ_F_SHOULD_MERGE disk->tag_set.flags = BLK_MQ_F_SHOULD_MERGE;
+#else
+  #define SET_MQ_F_SHOULD_MERGE
+#endif
+
 #if KFIOC_X_BLK_ALLOC_DISK_EXISTS
   #define BLK_ALLOC_QUEUE dp->gd->queue;
   #define BLK_ALLOC_DISK blk_alloc_disk(FIO_NUM_MINORS);

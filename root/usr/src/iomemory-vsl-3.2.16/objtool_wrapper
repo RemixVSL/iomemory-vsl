@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-KERNEL_BUILD="/usr/src/kernels/6.15.4-200.fc42.x86_64"
 KERNEL_BUILD=$objtree
 [ -z "$KERNEL_BUILD" ] && echo "we need KERNEL_BUILD set: $KERNEL_BUILD" && exit 1
 objtool="$KERNEL_BUILD/tools/objtool/objtool"
