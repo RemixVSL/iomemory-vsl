@@ -22,6 +22,7 @@ usr/src/iomemory-vsl-3.2.16/errno.c
 usr/src/iomemory-vsl-3.2.16/kcondvar.c
 usr/src/iomemory-vsl-3.2.16/ktime.c
 usr/src/iomemory-vsl-3.2.16/module_operations.sh
+usr/src/iomemory-vsl-3.2.16/objtool_wrapper
 usr/src/iomemory-vsl-3.2.16/Makefile
 usr/src/iomemory-vsl-3.2.16/kfio_common.c
 usr/src/iomemory-vsl-3.2.16/sysrq.c

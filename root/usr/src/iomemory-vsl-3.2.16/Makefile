@@ -143,7 +143,7 @@ modules modules_install: check_target_kernel check_n_fix_kfio_ccver include/fio/
 	INSTALL_MOD_DIR=$(FIO_DRIVER_SUBDIR) \
 	INSTALL_MOD_PATH=$(INSTALL_ROOT) \
 	KFIO_LIB=$(KFIO_LIB) \
-	objtool=$(PWD)/objtool_wrapper \
+	objtool=$(shell pwd)/objtool_wrapper \
 	$@
 
 endif
