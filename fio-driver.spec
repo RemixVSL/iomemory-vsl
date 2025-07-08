@@ -225,6 +225,7 @@ Source to build driver for SanDisk Fusion ioMemory devices
 /usr/src/iomemory-vsl-3.2.16/driver_init.c
 /usr/src/iomemory-vsl-3.2.16/check_target_kernel.sh
 /usr/src/iomemory-vsl-3.2.16/module_operations.sh
+/usr/src/iomemory-vsl-3.2.16/objtool_wrapper
 %ghost /usr/src/iomemory-vsl-3.2.16/check_target_kernel.conf
 /usr/src/iomemory-vsl-3.2.16/errno.c
 %ghost /usr/src/iomemory-vsl-3.2.16/iomemory-vsl.ko
