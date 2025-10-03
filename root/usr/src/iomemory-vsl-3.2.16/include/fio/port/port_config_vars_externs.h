@@ -50,7 +50,6 @@ typedef struct _int_array_s_
 #endif // not defined INT_ARRAY_MAX_ELEMENTS  
 
 #if defined(__KERNEL__)
-
 extern int auto_attach ; //AUTO_ATTACH
 extern int compaction_timeout_ms ; //COMPACTION_TIMEOUT_MS
 extern int strict_sync ; //STRICT_SYNC
