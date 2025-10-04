@@ -242,7 +242,6 @@ int kfio_copy_from_user(void *to, const void *from, unsigned len)
         return copy_from_user(to, from, len);
     }
     int result = -EINVAL;
-    infprint("sure_erase_mode: Copying %u bytes from user space to kernel space\n", len);
     if (!from || !to) {
         errprint("sure_erase_mode: NULL pointer passed to kfio_copy_from_user\n");
         return result;
@@ -271,8 +270,6 @@ int kfio_copy_to_user(void *to, const void *from, unsigned len)
         return copy_to_user(to, from, len);
     }
     int result = -EINVAL;
-
-    infprint("sure_erase_mode: Copying %u bytes to user space from kernel space\n", len);
     if (!from || !to) {
         errprint("sure_erase_mode: NULL pointer passed to kfio_copy_from_user\n");
         return result;
@@ -283,7 +280,7 @@ int kfio_copy_to_user(void *to, const void *from, unsigned len)
     }
     result = copy_to_user(to, from, len);
     if (result) {
-        errprint("sure_erase_mode: Failed to copy %u bytes from user space, %d bytes not copied\n", len, result);
+        errprint("sure_erase_mode: Failed to copy %u bytes to user space, %d bytes not copied\n", len, result);
         return -EFAULT;
     }
     return result;

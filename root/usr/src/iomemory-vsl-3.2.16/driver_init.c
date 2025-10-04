@@ -52,10 +52,9 @@ KFIO_MODULE_PARAM_ARRAY(numa_node_override, charp, &num_numa_node_override, S_IR
 
 int         sure_erase_mode = FIO_SURE_ERASE_MODE_DEFAULT;
 KFIO_MODULE_PARAM(sure_erase_mode, int, S_IRUGO | S_IWUSR);
-KFIO_MODULE_PARAM_DESC(sure_erase_mode, "Make the driver ignore calls that disturb fio-sure-erase with kernels that have protected user mode copy.");
+KFIO_MODULE_PARAM_DESC(sure_erase_mode, "Ignore calls that disturb fio-sure-erase with secure kernels, disables auto_attach.");
 
 int use_workqueue = USE_QUEUE_NONE;
-
 KFIO_MODULE_PARAM(use_workqueue, int, S_IRUGO | S_IWUSR);
 
 /**
