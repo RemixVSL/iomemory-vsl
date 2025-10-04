@@ -43,6 +43,15 @@ Historically releases were tagged, and were be checked out by their tag. The rel
 ## Important Note for newer Linux Kernels
 Starting with Linux kernel 5.4.0, significant changes to the kernel were made that require additional boot time kernel flags for this driver to work. These affect AMD CPUs starting with 5.4.0, and Intel CPUs after about kernel 5.8.0. 
 
+### Sure Erase Mode
+Kernels that have `CONFIG_HARDENED_USERCOPY` enabled will cause `fio-sure-erase` to fail with a [[BUG] Kernel memory overwrite attempt detected to SLUB object 'fusion_user_ll_request'](https://github.com/RemixVSL/iomemory-vsl/issues/115). For this reason the kernel module parameter `sure_erase_mode` has been added, which defaults 0.
+
+Loading the module with `sure_erase_mode=1` enables `sure_erase_mode`, and disables auto attach for the drive(s). Enabling `sure_erase_mode` allows `fio-sure-erase` to function as it should. After having done a `fio-sure-erase` the module should be unloaded and loaded as normal.
+
+An example of loading the module is `sudo insmod ./iomemory-vsl.ko sure_erase_mode=1`, make sure to unload the module prior to loading it. When `sure_erase_mode` is enabled a log message will appear in dmesg that states `fioinf sure_erase_mode enabled, disabling auto_attach`. Besides this one off message a message will be generated for every time the criteria are met that break `fio-sure-erase`.
+
+Though only the control channel is impacted by this change it is advisable to not run the module in `fio_sure_erase` mode permanently, but only with the goal of running `fio-sure-erase`.
+
 ### Grub
 When using grub as your boot loader, add the following to your /etc/default/grub by looking for `GRUB_CMDLINE_LINUX_DEFAULT=""` and adding additional parameters inside the quotes.
 
