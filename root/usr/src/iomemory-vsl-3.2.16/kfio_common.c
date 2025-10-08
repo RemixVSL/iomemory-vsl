@@ -41,6 +41,7 @@
  * @ingroup PORT_LINUX
  * @{
  */
+extern int sure_erase_mode;
 
 void
 __kassert_fail (const char *expr, const char *file, int line,
@@ -229,15 +230,60 @@ void fusion_create_kthread(fusion_kthread_func_t func, void *data, void *fusion_
  * XXX: all the kfio_[put\get]_user_*() routines are superfluous
  * and ought be replaced with kfio_copy_[to|from]_user()
  */
+/*
+ 8140 - 8170 is also valid.... if we deny the 8140 fio-sure-erase bombs on
+ not being able to backup the lebmap...
+ fusion_user_ll_request of size 3960 triggers this, which routes into fusion_pcie_get_dynamic_info
+ */
+#define MAX_USER_BUFFER_SIZE 9216
 int kfio_copy_from_user(void *to, const void *from, unsigned len)
 {
-    return copy_from_user(to, from, len);
+    if (sure_erase_mode == 0) {
+        return copy_from_user(to, from, len);
+    }
+    int result = -EINVAL;
+    if (!from || !to) {
+        errprint("sure_erase_mode: NULL pointer passed to kfio_copy_from_user\n");
+        return result;
+    }
+    if (len > MAX_USER_BUFFER_SIZE) {
+        errprint("sure_erase_mode: Invalid user buffer size: %u\n", len);
+        return result;
+    }
+    if (len == 3960) {
+        infprint("sure_erase_mode: the copy that is triggered by fusion_pcie_get_dynamic_info: %p", from);
+        return result;
+    }
+    // kmem_cache_create_usercopy
+    result = copy_from_user(to, from, len);
+    if (result) {
+        errprint("sure_erase_mode: Failed to copy %u bytes from user space, %d bytes not copied\n", len, result);
+        return -EFAULT;
+    }
+    return result;
 }
 KFIO_EXPORT_SYMBOL(kfio_copy_from_user);
 
 int kfio_copy_to_user(void *to, const void *from, unsigned len)
 {
-    return copy_to_user(to, from, len);
+    if (sure_erase_mode == 0) {
+        return copy_to_user(to, from, len);
+    }
+    int result = -EINVAL;
+    if (!from || !to) {
+        errprint("sure_erase_mode: NULL pointer passed to kfio_copy_from_user\n");
+        return result;
+    }
+    if (len > MAX_USER_BUFFER_SIZE) {
+        errprint("sure_erase_mode: Invalid user buffer size: %u\n", len);
+        return result;
+    }
+    result = copy_to_user(to, from, len);
+    if (result) {
+        errprint("sure_erase_mode: Failed to copy %u bytes to user space, %d bytes not copied\n", len, result);
+        return -EFAULT;
+    }
+    return result;
 }
 KFIO_EXPORT_SYMBOL(kfio_copy_to_user);
 

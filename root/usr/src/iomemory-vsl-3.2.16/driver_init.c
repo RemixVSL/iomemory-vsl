@@ -32,6 +32,7 @@
 #include "fio/port/kfio.h"
 
 #define AUTO_ATTACH_DEFAULT 1
+#define FIO_SURE_ERASE_MODE_DEFAULT 0
 
 /**
  * @ingroup PORT_COMMON_LINUX
@@ -49,8 +50,11 @@ KFIO_MODULE_PARAM_DESC(numa_node_forced_local, "Only schedule fio-wq completion 
 KFIO_MODULE_PARAM_DESC(numa_node_override, "Override device to NUMA node binding");
 KFIO_MODULE_PARAM_ARRAY(numa_node_override, charp, &num_numa_node_override, S_IRUGO | S_IWUSR);
 
-int use_workqueue = USE_QUEUE_NONE;
+int         sure_erase_mode = FIO_SURE_ERASE_MODE_DEFAULT;
+KFIO_MODULE_PARAM(sure_erase_mode, int, S_IRUGO | S_IWUSR);
+KFIO_MODULE_PARAM_DESC(sure_erase_mode, "Ignore calls that disturb fio-sure-erase with secure kernels, disables auto_attach.");
 
+int use_workqueue = USE_QUEUE_NONE;
 KFIO_MODULE_PARAM(use_workqueue, int, S_IRUGO | S_IWUSR);
 
 /**

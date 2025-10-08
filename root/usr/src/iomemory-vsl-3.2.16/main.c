@@ -71,6 +71,7 @@ void __exit exit_fio_driver(void);
  * @{
  */
 extern int use_workqueue;
+extern int sure_erase_mode;
 
 static struct dbgflag _dbgflags[] = {
 /// @cond GENERATED_CODE
@@ -177,6 +178,12 @@ static int __init init_fio_driver(void)
 #if (FUSION_STATIC_KERNEL==1)
     auto_attach = 0;
 #endif
+
+    if(sure_erase_mode == 1)
+    {
+      infprint("sure_erase_mode enabled, disabling auto_attach\n");
+      auto_attach = 0;
+    }
 
     if(use_workqueue == USE_QUEUE_RQ)
     {
