@@ -238,10 +238,10 @@ void fusion_create_kthread(fusion_kthread_func_t func, void *data, void *fusion_
 #define MAX_USER_BUFFER_SIZE 9216
 int kfio_copy_from_user(void *to, const void *from, unsigned len)
 {
+    int result = -EINVAL;
     if (sure_erase_mode == 0) {
         return copy_from_user(to, from, len);
     }
-    int result = -EINVAL;
     if (!from || !to) {
         errprint("sure_erase_mode: NULL pointer passed to kfio_copy_from_user\n");
         return result;
