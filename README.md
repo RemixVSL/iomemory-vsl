@@ -199,6 +199,8 @@ Where `dmesg` contains the actual driver version tag of the running driver
 vagrant@fio:~/iomemory-vsl/root/usr/src/iomemory-vsl-3.2.16$ dmesg | grep "ioDrive driver"
 [    3.122269] <6>fioinf ioDrive driver 5.11.10-b29020f-3.2.16.1731        loading...
 ```
+## TrueNAS Support
+See [this document](https://github.com/RemixVSL/iomemory-vsl/blob/main/TrueNAS.md) for information on how to install on TrueNAS. These steps were developed by a community contribution, and aren't generally tested with new versions of RemixVSL or TrueNAS.
 
 # How to Get Help
 - Open an issue in this Github repo
