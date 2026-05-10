@@ -26,19 +26,10 @@ For the iomemory-vsl4 driver please go to the [iomemory-vsl4](https://github.com
  Please refer to the [Fusion-io and OEM Part Numbers Matrix](https://docs.google.com/spreadsheets/d/e/2PACX-1vQMd40liekOCeftUYQx6GeofHgjU5SSDT-jHWid03JCfswQxHAhVee3rW-04baqKg1qN2fp7wEzuFm6/pubhtml).
 
 ## Background
-Driver support for FusionIO cards has been lagging behind kernel releases, effectively making these cards an expensive paperweight when running a distribution like Ubuntu / Arch / Fedora / ProxMox which all supply newer kernels than supported by the original drivers.
+Driver support for FusionIO cards had been lagging behind kernel releases, effectively making these cards an expensive paperweight when running a distribution like Ubuntu / Arch / Fedora / ProxMox which all supply newer kernels than supported by the original drivers.
 
 ## Releases
-We've abandoned the notion of releases, Generally `main` should be checked out. `main` is completely backwards compatible for all **5**, and **6** kernels. The latest working tested kernel is **6.11.2**.
-
-Historically releases were tagged, and were be checked out by their tag. The release tags follow Linux Kernel versions. E.g. **v5.12.1 (A Fine Boi)** will work on all 5.x kernels that are 5.12 and lower, but is not guaranteed to work on 5.13. **v4.20.2 - Grey Dawn** supports most kernels that pre-date 5.0. Again this way of following kernel releases has been abandoned. Please follow **main**.
-
-| Tag | Codename |
-| --- | --- |
-| v5.12.1 | [A Fine Boi](https://i.imgur.com/SrtYVIr.jpeg) |
-| v5.10.0 | [Fatto Catto](https://www.youtube.com/watch?v=1S69FTdTS8g) |
-| v5.6.0 | [MEGACHONKER](https://www.reddit.com/r/Chonkers/) |
-| v4.20.3 | [Grey Dawn](https://southpark.cc.com/clips/154175/crazy-old-drivers) |
+We've abandoned the notion of releases, Generally `main` should be checked out. `main` is completely backwards compatible for all **5**, **6** and **7** kernels. The latest working tested kernel is **7.0.4**.
 
 ## Important Note for newer Linux Kernels
 Starting with Linux kernel 5.4.0, significant changes to the kernel were made that require additional boot time kernel flags for this driver to work. These affect AMD CPUs starting with 5.4.0, and Intel CPUs after about kernel 5.8.0. 
