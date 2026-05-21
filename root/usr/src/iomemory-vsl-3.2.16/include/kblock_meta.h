@@ -50,7 +50,8 @@
 #if KFIOC_X_HAS_MAKE_REQUEST_FN
   static unsigned int kfio_make_request(struct request_queue *queue, struct bio *bio);
   #define KFIO_SUBMIT_BIO_RC return FIO_MFN_RET;
-  #define BLK_QUEUE_SPLIT blk_queue_split(queue, &bio);
+  #define KFIO_BIO_SPLIT_TO_LIMITS_OR_RETURN \
+    do { blk_queue_split(queue, &bio); } while (0)
 
   #if KFIOC_X_BLK_ALLOC_QUEUE_NODE_EXISTS
     #define BLK_ALLOC_QUEUE blk_alloc_queue_node(GFP_NOIO, node);
@@ -66,14 +67,20 @@
     #define KFIO_SUBMIT_BIO_RC return FIO_MFN_RET;
   #else
     #define KFIO_SUBMIT_BIO void kfio_submit_bio(struct bio *bio)
-    #define KFIO_SUBMIT_BIO_RC
+    #define KFIO_SUBMIT_BIO_RC return;
   #endif /*KFIOC_X_SUBMIT_BIO_RETURNS_BLK_QC_T */
   KFIO_SUBMIT_BIO;
 
   #if KFIOC_X_BIO_SPLIT_TO_LIMITS
-    #define BLK_QUEUE_SPLIT bio = bio_split_to_limits(bio);
+    #define KFIO_BIO_SPLIT_TO_LIMITS_OR_RETURN \
+      do {                                     \
+        bio = bio_split_to_limits(bio);        \
+        if (!bio)                              \
+          KFIO_SUBMIT_BIO_RC                   \
+      } while (0)
   #else
-    #define BLK_QUEUE_SPLIT blk_queue_split(&bio);
+    #define KFIO_BIO_SPLIT_TO_LIMITS_OR_RETURN \
+      do { blk_queue_split(&bio); } while (0)
   #endif /* KFIOC_X_BIO_SPLIT_TO_LIMITS */
 #endif /* KFIOC_X_HAS_MAKE_REQUEST_FN */
 
