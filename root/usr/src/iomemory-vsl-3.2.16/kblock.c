@@ -1139,15 +1139,14 @@ KFIO_SUBMIT_BIO
     struct kfio_disk *disk = queue->queuedata;
     void *plug_data;
 
+    KFIO_BIO_SPLIT_TO_LIMITS_OR_RETURN;
+
     if (bio_data_dir(bio) == WRITE && !holdoff_writes_under_pressure(disk))
     {
         kassert_once(!"timed out waiting for queue to unstall.");
         __kfio_bio_complete(bio, 0, -EIO);
 	KFIO_SUBMIT_BIO_RC
     }
-
-    if (bio_segments(bio) >= queue_max_segments(queue))
-        BLK_QUEUE_SPLIT;
 
     // iomemory-vsl4 has atom bio here
 
