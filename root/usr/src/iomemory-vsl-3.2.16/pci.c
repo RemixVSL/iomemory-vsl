@@ -536,7 +536,11 @@ int kfio_pci_request_regions(kfio_pci_dev_t *pdev, const char *res_name)
 
 int kfio_pci_set_dma_mask(kfio_pci_dev_t *pdev, uint64_t mask)
 {
-    return dma_set_mask(&((struct pci_dev *)pdev)->dev, mask);
+    int ret;
+    /* Force 32-bit DMA mask - ioDrive2 cannot DMA above 4GB on dual-EPYC */
+    ret = dma_set_mask(&((struct pci_dev *)pdev)->dev, DMA_BIT_MASK(32));
+    dma_set_coherent_mask(&((struct pci_dev *)pdev)->dev, DMA_BIT_MASK(32));
+    return ret;
 }
 
 void kfio_pci_set_master(kfio_pci_dev_t *pdev)
@@ -569,10 +573,38 @@ void *kfio_pci_get_drvdata(kfio_pci_dev_t *pdev)
 void noinline *kfio_dma_alloc_coherent(kfio_pci_dev_t *pdev, unsigned int size,
                                        struct fusion_dma_t *dma_handle)
 {
+    /* _fio_dma32_pin: ioDrive2 is 32-bit DMA; on dual-EPYC the socket-1 NUMA node has
+     * no sub-4GB (DMA32) memory, and dma_alloc_coherent's dma_direct path adds
+     * __GFP_THISNODE -> never falls back to node-0 DMA32 -> buffer lands >4GB,
+     * unreachable by the card -> attach EINVAL. Hard-pin to node-0 ZONE_DMA32. */
+    struct device *_d = &((struct pci_dev *)pdev)->dev;
+    unsigned int _order = get_order(size);
+    struct page *_pg;
+    void *_v;
+    dma_addr_t _da;
+
     FUSION_ALLOCATION_TRIPWIRE_TEST();
 
-    return dma_alloc_coherent(&((struct pci_dev *)pdev)->dev, size,
-                              (dma_addr_t *) &dma_handle->phys_addr, GFP_KERNEL);
+    _pg = alloc_pages_node(0, GFP_KERNEL | __GFP_DMA32 | __GFP_ZERO | __GFP_NOWARN, _order);
+    if (!_pg)
+        return NULL;
+    _v = page_address(_pg);
+    _da = dma_map_page(_d, _pg, 0, size, DMA_BIDIRECTIONAL);
+    if (dma_mapping_error(_d, _da)) {
+        __free_pages(_pg, _order);
+        return NULL;
+    }
+    if (_da > DMA_BIT_MASK(32)) {
+        printk(KERN_WARNING "fio _fio_dma32_pin: %s phys=%llx STILL >4GB\n",
+               pci_name((struct pci_dev *)pdev), (unsigned long long)_da);
+        dma_unmap_page(_d, _da, size, DMA_BIDIRECTIONAL);
+        __free_pages(_pg, _order);
+        return NULL;
+    }
+    printk(KERN_INFO "fio _fio_dma32_pin: %s node=%d size=%u phys=%llx\n",
+           pci_name((struct pci_dev *)pdev), dev_to_node(_d), size, (unsigned long long)_da);
+    dma_handle->phys_addr = _da;
+    return _v;
 }
 
 /**
@@ -581,8 +613,9 @@ void noinline *kfio_dma_alloc_coherent(kfio_pci_dev_t *pdev, unsigned int size,
 void noinline kfio_dma_free_coherent(kfio_pci_dev_t *pdev, unsigned int size,
                                      void *vaddr, struct fusion_dma_t *dma_handle)
 {
-    dma_free_coherent(&((struct pci_dev *)pdev)->dev, size, vaddr,
-                      (dma_addr_t) dma_handle->phys_addr);
+    struct device *_d = &((struct pci_dev *)pdev)->dev;
+    dma_unmap_page(_d, (dma_addr_t) dma_handle->phys_addr, size, DMA_BIDIRECTIONAL);
+    __free_pages(virt_to_page(vaddr), get_order(size));
 }
 
 /*
