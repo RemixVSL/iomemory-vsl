@@ -135,8 +135,8 @@ static int fio_shost_host_reset(struct scsi_cmnd *);
 static struct scsi_host_template fio_templ =
 {
     .module = THIS_MODULE,
-    .name = "fio",
-    .proc_name = "fio",
+    .name = "fio3",
+    .proc_name = "fio3",
     .queuecommand = fio_shost_queuecommand,       ///< Call this to send us a SCSI command
     .eh_abort_handler = fio_shost_abort,          ///< Call this to abort an outstanding command
     .eh_device_reset_handler = fio_shost_device_reset,

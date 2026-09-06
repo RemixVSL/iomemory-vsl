@@ -36,7 +36,7 @@
 
 # define UFIO_CONTROL_DEVICE_PATH "/dev/"
 
-# define UFIO_KINFO_ROOT "fusion"
+# define UFIO_KINFO_ROOT "fusion3"
 
 # define UFIO_MODPARAMS_DIR "/sys/module/" FIO_DRIVER_NAME "/parameters"
 

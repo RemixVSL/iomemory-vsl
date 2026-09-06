@@ -128,14 +128,14 @@ int kfio_register_blkdev_pre_init(kfio_pci_dev_t *pdev)
 
 int kfio_init_storage_interface(void)
 {
-    fio_major = register_blkdev(0, "fio");
+    fio_major = register_blkdev(0, "fi3");
     return fio_major <= 0 ? -EBUSY : 0;
 }
 
 
 int kfio_teardown_storage_interface(void)
 {
-    unregister_blkdev(fio_major, "fio");
+    unregister_blkdev(fio_major, "fi3");
     return 0;
 }
 

@@ -57,17 +57,17 @@
 
 #define UFIO_CONTROL_DEVICE_PATH       "/dev/"
 #define UFIO_CONTROL_DEVICE_COMMON_PATH UFIO_CONTROL_DEVICE_PATH
-#define UFIO_CONTROL_DEVICE_PREFIX     "fct"
+#define UFIO_CONTROL_DEVICE_PREFIX     "fct3"
 #if (KFIO_SCSI_DEVICE==1)
-#define UFIO_BLOCK_DEVICE_PREFIX             "scsi"
+#define UFIO_BLOCK_DEVICE_PREFIX             "scsi3"
 #else
-#define UFIO_BLOCK_DEVICE_PREFIX             "fio"
+#define UFIO_BLOCK_DEVICE_PREFIX             "fio3"
 #endif
 #define UFIO_CONTROL_DEVICE_BASE       UFIO_CONTROL_DEVICE_PATH UFIO_CONTROL_DEVICE_PREFIX
 
 // Add 10 to ensure that we have sufficient padding in the device name
 // which will either be "fct" or "fio" plus the identifier.
-#define UFIO_DEVICE_FILE_MAX_LEN       sizeof(UFIO_CONTROL_DEVICE_PATH) + 10
+#define UFIO_DEVICE_FILE_MAX_LEN       sizeof(UFIO_CONTROL_DEVICE_PATH) + 12
 
 #endif // __FUSION_LINUX_COMMONTYPES_H__
 
