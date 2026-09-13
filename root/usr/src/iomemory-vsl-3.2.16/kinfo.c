@@ -32,6 +32,7 @@
 #include <fio/port/fio-port.h>
 #include <fio/port/kinfo.h>
 #include <fio/port/common-linux/kfile.h>
+#include <fio/port/common-linux/kenum.h>
 
 /**
  * @ingroup PORT_LINUX
@@ -42,6 +43,19 @@ static fusion_file_operations_t kfio_info_type_fops;
 static fusion_file_operations_t kfio_info_text_fops;
 static fusion_file_operations_t kfio_info_seqf_fops;
 static fusion_seq_operations_t  kfio_info_linux_seq_ops;
+
+/*
+ * The top level directory carries the same name in every generation of this
+ * driver, so only the first one to load can create it.  When it is already
+ * there we borrow it instead of failing to attach.  procfs has no way to look
+ * up a directory this module did not create, so entries below a borrowed one
+ * are created by path with a NULL parent, which resolves the existing
+ * directory.  This marks the node that is in that state.
+ */
+#define FIO_PROC_ROOT_SHARED   ((fusion_proc_dir_entry *)1UL)
+
+static kfio_info_node_t *fio_proc_root_node;
+static char              fio_proc_root_name[FIO_ENUM_NAME_MAX];
 
 static fio_ssize_t fio_proc_read_buffer(const char *local_buf, fio_ssize_t len,
                                         char __user *user_buf, fio_size_t count,
@@ -429,8 +443,12 @@ int kfio_info_os_create_node(kfio_info_node_t *parent, kfio_info_node_t *nodep)
     fusion_proc_dir_entry *parent_dir;
     fusion_proc_dir_entry *node_entry;
     const char *node_name;
+    const char *create_name;
+    char        name_buf[FIO_ENUM_NAME_MAX];
+    char        path_buf[FIO_ENUM_NAME_MAX * 2];
     fio_mode_t  node_mode;
     int         node_type;
+    int         shared_parent = 0;
 
     node_name  = kfio_info_node_get_name(nodep);
     node_mode  = kfio_info_node_get_mode(nodep);
@@ -453,6 +471,24 @@ int kfio_info_os_create_node(kfio_info_node_t *parent, kfio_info_node_t *nodep)
         {
             return -EIO;
         }
+
+        fio_proc_root_node = nodep;
+        snprintf(fio_proc_root_name, sizeof(fio_proc_root_name), "%s", node_name);
+
+        snprintf(path_buf, sizeof(path_buf), "/proc/%s", fio_proc_root_name);
+        if (fio_enum_path_exists(path_buf))
+        {
+            /*
+             * Another ioMemory driver is loaded and owns the directory.  Every
+             * device number in it is one of its own, because none of ours have
+             * registered yet, so enumerate past them and share the directory.
+             */
+            fio_enum_resolve_base(fio_proc_root_name, 1);
+            kfio_info_node_set_os_private(nodep, FIO_PROC_ROOT_SHARED);
+            return 0;
+        }
+
+        fio_enum_resolve_base(fio_proc_root_name, 0);
     }
     else
     {
@@ -461,31 +497,56 @@ int kfio_info_os_create_node(kfio_info_node_t *parent, kfio_info_node_t *nodep)
         {
             return -EIO;
         }
+
+        if (parent_dir == FIO_PROC_ROOT_SHARED)
+        {
+            parent_dir    = NULL;
+            shared_parent = 1;
+        }
+    }
+
+    /*
+     * Entries of the top level directory are the only ones named after a
+     * device number, and so the only ones that can collide with another
+     * driver's.  Everything below them is already inside a directory of ours.
+     */
+    create_name = node_name;
+
+    if (parent != NULL && parent == fio_proc_root_node)
+    {
+        create_name = fio_enum_proc_name(node_name, name_buf, sizeof(name_buf));
+    }
+
+    if (shared_parent)
+    {
+        snprintf(path_buf, sizeof(path_buf), "%s/%s", fio_proc_root_name,
+                 create_name);
+        create_name = path_buf;
     }
 
     node_entry = NULL;
 
     if (node_type == KFIO_INFO_DIR)
     {
-        node_entry = kfio_proc_mkdir(node_name, parent_dir);
+        node_entry = kfio_proc_mkdir(create_name, parent_dir);
     }
 
     if (node_type == KFIO_INFO_UINT32 || node_type == KFIO_INFO_UINT64 ||
         node_type == KFIO_INFO_STRING || node_type == KFIO_INFO_INT32)
     {
-        node_entry = kfio_create_proc_fops_entry(node_name, node_mode, parent_dir,
+        node_entry = kfio_create_proc_fops_entry(create_name, node_mode, parent_dir,
                                                  &kfio_info_type_fops, nodep);
     }
 
     if (node_type == KFIO_INFO_TEXT)
     {
-        node_entry = kfio_create_proc_fops_entry(node_name, node_mode, parent_dir,
+        node_entry = kfio_create_proc_fops_entry(create_name, node_mode, parent_dir,
                                                  &kfio_info_text_fops, nodep);
     }
 
     if (node_type == KFIO_INFO_SEQFILE)
     {
-        node_entry = kfio_create_proc_fops_entry(node_name, node_mode, parent_dir,
+        node_entry = kfio_create_proc_fops_entry(create_name, node_mode, parent_dir,
                                                  &kfio_info_seqf_fops, nodep);
     }
 
@@ -503,7 +564,11 @@ void kfio_info_os_remove_node(kfio_info_node_t *parent, kfio_info_node_t *nodep)
     fusion_proc_dir_entry *parent_dir;
     fusion_proc_dir_entry *node_entry;
     const char *node_name;
+    const char *remove_name;
+    char        name_buf[FIO_ENUM_NAME_MAX];
+    char        path_buf[FIO_ENUM_NAME_MAX * 2];
     int         node_type;
+    int         shared_parent = 0;
 
     node_name  = kfio_info_node_get_name(nodep);
     node_type  = kfio_info_node_get_type(nodep);
@@ -527,13 +592,47 @@ void kfio_info_os_remove_node(kfio_info_node_t *parent, kfio_info_node_t *nodep)
     {
         parent_dir = NULL;
         kassert (node_type == KFIO_INFO_DIR);
+
+        /*
+         * A directory we only borrowed belongs to the driver that created it
+         * and is still using it.  Leave it alone; our own entries below it
+         * have already been removed by path.
+         */
+        if (node_entry == FIO_PROC_ROOT_SHARED)
+        {
+            fio_proc_root_node = NULL;
+            return;
+        }
+
+        fio_proc_root_node = NULL;
     }
     else
     {
         parent_dir = kfio_info_node_get_os_private(parent);
         kassert (parent_dir != NULL);
+
+        if (parent_dir == FIO_PROC_ROOT_SHARED)
+        {
+            parent_dir    = NULL;
+            shared_parent = 1;
+        }
     }
-    kfio_remove_proc_entry(node_name, parent_dir);
+
+    remove_name = node_name;
+
+    if (parent != NULL && parent == fio_proc_root_node)
+    {
+        remove_name = fio_enum_proc_name(node_name, name_buf, sizeof(name_buf));
+    }
+
+    if (shared_parent)
+    {
+        snprintf(path_buf, sizeof(path_buf), "%s/%s", fio_proc_root_name,
+                 remove_name);
+        remove_name = path_buf;
+    }
+
+    kfio_remove_proc_entry(remove_name, parent_dir);
 }
 
 KFIO_EXPORT_SYMBOL(kfio_info_create_seqf);

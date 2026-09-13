@@ -38,6 +38,7 @@
 #include <fio/port/sched.h>
 #include <fio/port/bitops.h>
 #include <fio/port/common-linux/kblock.h>
+#include <fio/port/common-linux/kenum.h>
 #include <fio/port/atomic_list.h>
 #include <linux/blk_types.h>
 #include <linux/bio.h>
@@ -391,6 +392,8 @@ int kfio_expose_disk(kfio_disk_t *dp, char *name, int major, int disk_index,
 {
     struct kfio_blk_add_disk_param param;
     struct gendisk *gd;
+    const char *disk_name;
+    char name_buf[FIO_ENUM_NAME_MAX];
 
     gd = dp->gd;
 
@@ -411,7 +414,10 @@ int kfio_expose_disk(kfio_disk_t *dp, char *name, int major, int disk_index,
 
     fio_bdev_ops.owner = THIS_MODULE;
 
-    KFIO_STRSCPY_PAD(gd->disk_name, name, 32);
+    /* Same name unless this driver is sharing the namespace with another. */
+    disk_name = fio_enum_block_name(disk_index, name, name_buf, sizeof(name_buf));
+
+    KFIO_STRSCPY_PAD(gd->disk_name, disk_name, 32);
 
     set_capacity(gd, reported_capacity * sector_size / KERNEL_SECTOR_SIZE);
 

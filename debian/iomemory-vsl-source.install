@@ -48,6 +48,7 @@ usr/src/iomemory-vsl-3.2.16/kfio/x86_64_latest_libkfio.o_shipped
 usr/src/iomemory-vsl-3.2.16/kscsi.c
 usr/src/iomemory-vsl-3.2.16/kblock.c
 usr/src/iomemory-vsl-3.2.16/license.c
+usr/src/iomemory-vsl-3.2.16/kenum.c
 usr/src/iomemory-vsl-3.2.16/kexports.c
 usr/src/iomemory-vsl-3.2.16/pci.c
 usr/src/iomemory-vsl-3.2.16/include
@@ -83,6 +84,7 @@ usr/src/iomemory-vsl-3.2.16/include/fio/port/common-linux/kassert.h
 usr/src/iomemory-vsl-3.2.16/include/fio/port/common-linux/stdint.h
 usr/src/iomemory-vsl-3.2.16/include/fio/port/common-linux/ufio.h
 usr/src/iomemory-vsl-3.2.16/include/fio/port/common-linux/kblock.h
+usr/src/iomemory-vsl-3.2.16/include/fio/port/common-linux/kenum.h
 usr/src/iomemory-vsl-3.2.16/include/fio/port/common-linux/kfile.h
 usr/src/iomemory-vsl-3.2.16/include/fio/port/common-linux/kpci.h
 usr/src/iomemory-vsl-3.2.16/include/fio/port/common-linux/kscsi_host.h

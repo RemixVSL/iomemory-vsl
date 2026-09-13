@@ -31,6 +31,7 @@ $(FIO_DRIVER_NAME)-y += kscatter.o
 $(FIO_DRIVER_NAME)-y += ktime.o
 $(FIO_DRIVER_NAME)-y += sched.o
 $(FIO_DRIVER_NAME)-y += cdev.o
+$(FIO_DRIVER_NAME)-y += kenum.o
 
 ifeq ($(FIO_SCSI_DEVICE),True)
 $(FIO_DRIVER_NAME)-y += kscsi.o
