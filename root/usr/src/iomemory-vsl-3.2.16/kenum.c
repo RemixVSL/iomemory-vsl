@@ -19,6 +19,8 @@
 #include <linux/kernel.h>
 #include <linux/namei.h>
 #include <linux/string.h>
+#include <linux/fs.h>
+#include <linux/version.h>
 #if __has_include(<linux/kstrtox.h>)  /* split out of linux/kernel.h in 5.18 */
 #include <linux/kstrtox.h>
 #endif
@@ -58,6 +60,106 @@ int fio_enum_path_exists(const char *path)
 
     path_put(&p);
     return 1;
+}
+
+/*
+ * filldir_t returned int until 6.1 and bool from 6.1 on.
+ */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
+# define FIO_FILLDIR_RET   bool
+# define FIO_FILLDIR_CONT  true
+#else
+# define FIO_FILLDIR_RET   int
+# define FIO_FILLDIR_CONT  0
+#endif
+
+struct fio_enum_dir_count
+{
+    struct dir_context ctx;
+    int                entries;
+};
+
+static FIO_FILLDIR_RET fio_enum_count_one(struct dir_context *ctx, const char *name,
+                                          int len, loff_t off, u64 ino,
+                                          unsigned int d_type)
+{
+    struct fio_enum_dir_count *c = container_of(ctx, struct fio_enum_dir_count, ctx);
+
+    (void)off; (void)ino; (void)d_type;
+
+    if (!(len == 1 && name[0] == '.') &&
+        !(len == 2 && name[0] == '.' && name[1] == '.'))
+    {
+        c->entries++;
+    }
+    return FIO_FILLDIR_CONT;
+}
+
+/**
+ * @brief 1 if @path is an empty directory, 0 if it has entries, -1 if unknown.
+ *
+ * procfs children exist as proc_dir_entry objects whether or not a dentry has
+ * been instantiated, so this reads the directory rather than inspecting
+ * dentries — which would wrongly report empty.
+ */
+int fio_enum_dir_is_empty(const char *path)
+{
+    struct fio_enum_dir_count c;
+    struct file *fp;
+    int rc;
+
+    memset(&c, 0, sizeof(c));
+    c.ctx.actor = fio_enum_count_one;
+    c.ctx.pos   = 0;
+    c.entries   = 0;
+
+    fp = filp_open(path, O_RDONLY | O_DIRECTORY, 0);
+    if (IS_ERR(fp))
+    {
+        return -1;
+    }
+
+    rc = iterate_dir(fp, &c.ctx);
+    filp_close(fp, NULL);
+
+    if (rc < 0)
+    {
+        return -1;
+    }
+
+    return c.entries == 0 ? 1 : 0;
+}
+
+int fio_enum_root_removable(const char *proc_root)
+{
+    char path[FIO_ENUM_NAME_MAX * 2];
+    int  empty;
+
+    snprintf(path, sizeof(path), "/proc/%s", proc_root);
+    empty = fio_enum_dir_is_empty(path);
+
+    if (empty == 1)
+    {
+        return 1;
+    }
+
+    /*
+     * ⛔ Removing a non-empty procfs directory leaks its children ("removing
+     * non-empty directory ... leaking at least ...") and the next load then
+     * collides creating it again.  When in doubt, leave it: an empty directory
+     * left behind is harmless, and a later load simply shares it.
+     */
+    if (empty == 0)
+    {
+        infprint("leaving /proc/%s in place: another ioMemory driver still has"
+                 " entries there\n", proc_root);
+    }
+    else
+    {
+        infprint("cannot determine whether /proc/%s is empty; leaving it in"
+                 " place\n", proc_root);
+    }
+    return 0;
 }
 
 /**

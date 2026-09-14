@@ -48,6 +48,19 @@ int fio_enum_get_base(void);
 /** @brief True if @path resolves, used to find occupied names. */
 int fio_enum_path_exists(const char *path);
 
+/** @brief 1 if @path is an empty directory, 0 if it has entries, -1 if unknown. */
+int fio_enum_dir_is_empty(const char *path);
+
+/**
+ * @brief True only if /proc/<proc_root> can safely be removed, i.e. it is
+ *        provably empty.
+ *
+ * Removing a non-empty procfs directory leaks its children and makes the next
+ * load collide when it recreates the directory, so anything other than a
+ * definite "empty" answer means leave it in place.
+ */
+int fio_enum_root_removable(const char *proc_root);
+
 /**
  * @brief Renumber a control device name ("fct0").
  *

@@ -605,6 +605,18 @@ void kfio_info_os_remove_node(kfio_info_node_t *parent, kfio_info_node_t *nodep)
         }
 
         fio_proc_root_node = NULL;
+
+        /*
+         * We created the directory, but another generation of the driver may
+         * have borrowed it since, and it may still have entries in it.
+         * Removing a non-empty procfs directory leaks its children and the
+         * next load then collides recreating it, so only remove it when it is
+         * provably empty.
+         */
+        if (!fio_enum_root_removable(fio_proc_root_name))
+        {
+            return;
+        }
     }
     else
     {
