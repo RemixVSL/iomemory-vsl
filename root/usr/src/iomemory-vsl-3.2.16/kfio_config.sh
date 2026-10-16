@@ -619,22 +619,9 @@ kfioc_close_config()
     cat <<EOF >> "${TMP_OUTPUTFILE}"
 #include <linux/slab.h>
 #include <linux/gfp.h>
-#include <linux/string.h>
 
 #ifndef GFP_NOWAIT
 #define GFP_NOWAIT  (GFP_ATOMIC & ~__GFP_HIGH)
-#endif
-
-/*
- * kfio_strscpy_pad() - copy a string into a sized buffer, NULL-padding the
- * tail. Uses strscpy_pad() where available (5.2+); falls back to strncpy()
- * on older kernels, which has the same padding semantics and is still
- * present there (it was only removed in 7.2).
- */
-#if KFIOC_X_HAVE_STRSCPY_PAD
-#define kfio_strscpy_pad(dst, src, count) strscpy_pad((dst), (src), (count))
-#else
-#define kfio_strscpy_pad(dst, src, count) strncpy((dst), (src), (count))
 #endif
 
 #endif /* _FIO_PORT_LINUX_KFIO_CONFIG_H_ */

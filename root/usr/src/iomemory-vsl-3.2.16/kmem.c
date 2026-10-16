@@ -34,7 +34,6 @@
 #include <fio/port/kfio_config.h>
 #include <fio/port/ktypes.h>
 #include <fio/port/dbgset.h>
-#include <linux/string.h>
 #include <linux/vmalloc.h>
 #include <linux/version.h>
 

@@ -33,7 +33,6 @@
 #include <linux/module.h>
 #include <linux/reboot.h>
 #include <linux/acpi.h>
-#include <linux/string.h>
 #include <fio/port/fio-port.h>
 #include <fio/port/pci.h>
 #include <fio/port/kfio_config.h>
