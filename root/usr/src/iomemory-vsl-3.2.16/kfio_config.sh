@@ -334,11 +334,11 @@ KFIOC_X_VOID_ADD_DISK()
     local test_flag="$1"
     local test_code='
 #include <linux/blkdev.h>
-int kfioc_check_void_add_disk(void);
-int kfioc_check_void_add_disk(void)
+void kfioc_check_void_add_disk(void);
+void kfioc_check_void_add_disk(void)
 {
   struct gendisk *gd = NULL;
-  return add_disk(gd)
+  add_disk(gd);
 }
 
 '
@@ -695,7 +695,7 @@ else
 all: modules
 
 modules clean:
-	\$(MAKE) -C \$(KERNEL_SRC) M=\$(CURDIR) EXTRA_CFLAGS='-Wall ${extra_cflags}' \$@
+	\$(MAKE) -C \$(KERNEL_SRC) M=\$(CURDIR) ccflags-y+='-Wall ${extra_cflags}' \$@
 
 endif
 
