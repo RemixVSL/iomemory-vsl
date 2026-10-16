@@ -90,6 +90,7 @@ KFIOC_X_SUBMIT_BIO_RETURNS_BLK_QC_T
 KFIOC_X_VOID_ADD_DISK
 KFIOC_X_DISK_HAS_OPEN_MUTEX
 KFIOC_X_BLK_MQ_F_SHOULD_MERGE
+KFIOC_X_HAVE_STRSCPY_PAD
 "
 
 
@@ -130,6 +131,32 @@ void kfioc_blk_mq_f_should_merge(void)
 {
     struct blk_mq_tag_set tag_set;
     tag_set.flags = BLK_MQ_F_SHOULD_MERGE;
+}
+
+'
+    kfioc_test "$test_code" "$test_flag" 1 -Werror
+}
+
+# flag:            KFIOC_X_HAVE_STRSCPY_PAD
+# usage:           1   Kernels that have strscpy_pad()
+#                  0   Kernels that don't have strscpy_pad(), use strncpy()
+# kernel_version:  5.2
+#                  strscpy_pad() was added in 5.2 (commit 458a3bf82df4,
+#                  "lib/string: Add strscpy_pad() function").
+#                  Note: strncpy() was removed from the kernel in 7.2
+#                  (commit 079a028d6327, "string: Remove strncpy() from the
+#                  kernel"), so on kernels where this test fails strncpy()
+#                  is still available as a fallback.
+KFIOC_X_HAVE_STRSCPY_PAD()
+{
+    local test_flag="$1"
+    local test_code='
+#include <linux/string.h>
+void kfioc_have_strscpy_pad(void);
+void kfioc_have_strscpy_pad(void)
+{
+    char dst[8];
+    strscpy_pad(dst, "test", sizeof(dst));
 }
 
 '

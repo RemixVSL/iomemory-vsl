@@ -33,6 +33,7 @@
 #include <fio/port/kfio.h>
 #include <fio/port/ktime.h>
 #include <fio/port/kblock.h>
+#include <linux/string.h>
 #include <fio/port/kscsi.h>
 #include <fio/port/sched.h>
 #include <fio/port/bitops.h>
@@ -46,6 +47,7 @@
 #include <fio/port/cdev.h>
 #include <linux/buffer_head.h>
 #include <kblock_meta.h>
+#include <kfio_meta.h>
 
 kfio_bio_t *kfio_fetch_next_bio(struct kfio_disk *disk);
 int kfio_vectored_atomic(struct block_device *bdev,
@@ -409,7 +411,7 @@ int kfio_expose_disk(kfio_disk_t *dp, char *name, int major, int disk_index,
 
     fio_bdev_ops.owner = THIS_MODULE;
 
-    strncpy(gd->disk_name, name, 32);
+    KFIO_STRSCPY_PAD(gd->disk_name, name, 32);
 
     set_capacity(gd, reported_capacity * sector_size / KERNEL_SECTOR_SIZE);
 

@@ -81,7 +81,6 @@
 #define kfio_memset(x, y, z)  memset(x, y, z)
 #define kfio_memcmp(x, y, z)  memcmp(x, y, z)
 #define kfio_memmove(x, y, z) memmove(x, y, z)
-#define kfio_strncpy(x, y, z) strncpy(x, y, z)
 #define kfio_strtoul(x, y, z) strtoul(x, y, z)
 #define kfio_strlen(x)        strlen(x)
 #define kfio_print(fmt, ...)        printf(fmt, ##__VA_ARGS__)
