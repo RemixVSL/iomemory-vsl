@@ -54,6 +54,14 @@ static void *__kfio_malloc(fio_size_t size, gfp_t gfp, kfio_numa_node_t node)
 {
     // This has been determined to be a place to put this injector agent, but there are compile problems.
     // Apparently fio-port.ko cannot find the error_injection_agents.o file.
+    // task-10911: NUMA1 ioScale2 cards require DMA32 (<4GB) buffers. kmalloc ignores
+    // __GFP_DMA32 (no dma32 slab cache); the page allocator honors it. Allocate via
+    // alloc_pages_node(__GFP_DMA32), stash the page order in an 8-byte header (keeps
+    // the payload >=8B aligned for DMA) so kfio_free can release the exact pages.
+    struct page *_pg;
+    unsigned int *_hdr;
+    unsigned int _order;
+
 #if 0   //ENABLE_ERROR_INJECTION
     if(inject_hard_alloc_error())
         return NULL;
@@ -61,7 +69,15 @@ static void *__kfio_malloc(fio_size_t size, gfp_t gfp, kfio_numa_node_t node)
 
     FUSION_ALLOCATION_TRIPWIRE_TEST();
 
-    return kmalloc(size, gfp);
+    _order = get_order(size + 8);
+    _pg = alloc_pages_node(node == -1 ? 0 : node,
+                           gfp | __GFP_DMA32 | __GFP_ZERO | __GFP_NOWARN,
+                           _order);
+    if (!_pg)
+        return NULL;
+    _hdr = (unsigned int *)page_address(_pg);
+    *_hdr = _order;
+    return (void *)((char *)_hdr + 8);
 }
 
 /**
@@ -103,9 +119,13 @@ void *kfio_malloc_atomic_node(fio_size_t size, kfio_numa_node_t node)
  */
 void noinline kfio_free(void *ptr, fio_size_t size)
 {
+    unsigned int *_hdr;
     (void) size;
 
-    kfree(ptr);
+    if (!ptr)
+        return;
+    _hdr = (unsigned int *)((char *)ptr - 8);
+    __free_pages(virt_to_page(_hdr), *_hdr);
 }
 KFIO_EXPORT_SYMBOL(kfio_free);
 
