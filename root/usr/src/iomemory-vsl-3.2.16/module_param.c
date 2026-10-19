@@ -30,6 +30,7 @@
 #include <fio/port/kfio_config.h>
 
 #include "fio/port/kfio.h"
+#include "fio/port/common-linux/kenum.h"
 
 KFIO_MODULE_PARAM(strict_sync, int, S_IRUGO | S_IWUSR);
 KFIO_MODULE_PARAM_DESC(strict_sync, "Force strict write flushing on early non-powercut safe cards. (1=enable, 0=disable, -1=auto) Do not change for newer cards.");
@@ -119,3 +120,8 @@ KFIO_MODULE_PARAM(disable_msi, int, S_IRUGO | S_IWUSR);
 KFIO_MODULE_PARAM_DESC(disable_msi, "N/A");
 KFIO_MODULE_PARAM(scsi_queue_depth, int, S_IRUGO | S_IWUSR);
 KFIO_MODULE_PARAM_DESC(scsi_queue_depth, "The queue depth that is advertised to the OS SCSI interface.");
+
+// Owned by the porting layer rather than by the driver object, and only read
+// while the first device is enumerated, so it is not writable after load.
+KFIO_MODULE_PARAM(fio_dev_index_base, int, S_IRUGO);
+KFIO_MODULE_PARAM_DESC(fio_dev_index_base, "First device number to use, for sharing the ioMemory namespace with another generation of the driver. -1 detects the first free number at load time, 0 always enumerates from fct0.");

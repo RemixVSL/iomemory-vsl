@@ -30,6 +30,7 @@
 #include <fio/port/dbgset.h>
 #include <fio/port/cdev.h>
 #include <fio/port/common-linux/kfile.h>
+#include <fio/port/common-linux/kenum.h>
 
 #if !defined (__linux__)
 #error This file supports linux only
@@ -176,7 +177,7 @@ void kfio_poll_wake(kfio_poll_struct *p)
 /**
 * @brief OS-specific char device initialization.
 */
-static void misc_dev_init(struct miscdevice *md, char *dev_name)
+static void misc_dev_init(struct miscdevice *md, const char *dev_name)
 {
     fusion_control_ops.owner = THIS_MODULE;
     kfio_memset(md, 0, sizeof(*md));
@@ -189,23 +190,28 @@ static void misc_dev_init(struct miscdevice *md, char *dev_name)
 int fusion_create_control_device(struct fusion_nand_device *nand_dev)
 {
     struct miscdevice *misc;
+    const char *dev_name;
     int result;
 
     misc = (struct miscdevice *)fusion_nand_get_miscdev(nand_dev);
 
-    misc_dev_init(misc, fusion_nand_get_dev_name(nand_dev));
+    /* Same name unless this driver is sharing the namespace with another. */
+    dev_name = fio_enum_control_name(fusion_nand_get_devnum(nand_dev),
+                                     fusion_nand_get_dev_name(nand_dev));
+
+    misc_dev_init(misc, dev_name);
 
     result = misc_register(misc);
     if(result < 0)
     {
         errprint("%s Unable to initialize misc device '%s'\n",
                 fusion_nand_get_bus_name(nand_dev),
-                fusion_nand_get_dev_name(nand_dev));
+                dev_name);
     }
 
 // TODO: TENCENT_KERNEL heh
 #if !defined(__TENCENT_KERNEL__)
-    fio_wait_for_dev(fusion_nand_get_dev_name(nand_dev));
+    fio_wait_for_dev(dev_name);
 #endif
 
     return result;

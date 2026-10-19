@@ -237,6 +237,7 @@ Source to build driver for SanDisk Fusion ioMemory devices
 /usr/src/iomemory-vsl-3.2.16/kcondvar.c
 /usr/src/iomemory-vsl-3.2.16/kcpu.c
 /usr/src/iomemory-vsl-3.2.16/kcsr.c
+/usr/src/iomemory-vsl-3.2.16/kenum.c
 /usr/src/iomemory-vsl-3.2.16/kexports.c
 /usr/src/iomemory-vsl-3.2.16/kfile.c
 /usr/src/iomemory-vsl-3.2.16/kfio.c
@@ -324,6 +325,7 @@ Source to build driver for SanDisk Fusion ioMemory devices
 /usr/src/iomemory-vsl-3.2.16/include/fio/port/common-linux/kassert.h
 /usr/src/iomemory-vsl-3.2.16/include/fio/port/common-linux/kblock.h
 /usr/src/iomemory-vsl-3.2.16/include/fio/port/common-linux/kcondvar.h
+/usr/src/iomemory-vsl-3.2.16/include/fio/port/common-linux/kenum.h
 /usr/src/iomemory-vsl-3.2.16/include/fio/port/common-linux/kfile.h
 /usr/src/iomemory-vsl-3.2.16/include/fio/port/common-linux/kfio.h
 /usr/src/iomemory-vsl-3.2.16/include/fio/port/common-linux/kpci.h
