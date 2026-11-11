@@ -65,7 +65,45 @@ NCPUS:=$(shell grep -c ^processor /proc/cpuinfo)
 
 all: fake_license modules patch_module_version
 
-gpl: fake_license modules patch_module_version
+
+# --- task-15303: per-file objtool pass -----------------------------------
+# Kernel 7.x runs objtool ONCE over the linked module object (--link) instead
+# of per-object-file as <=6.17 did. That single pass aborts on the proprietary
+# libkfio blob, which contains code regions with no symbol-table entry
+# ("unannotated intra-function call"). Because it aborts, --hacks=jump_label
+# never runs, so static-branch sites keep the compiler-emitted `jmp` instead of
+# being rewritten to a NOP. jump_label_init then rejects them at module load:
+#   kernel BUG at arch/x86/kernel/jump_label.c:73
+# Fix: run objtool per-file over OUR objects only (never the blob), exactly as
+# the 6.17 build did, then relink. Not a bypass: objtool still validates all
+# first-party code. Keep this list in sync with the -y entries in Kbuild.
+OBJTOOL       := $(KERNEL_BUILD)/tools/objtool/objtool
+OBJTOOL_FLAGS := --hacks=jump_label --hacks=noinstr --hacks=skylake --retpoline \
+                 --rethunk --sls --stackval --static-call --uaccess --prefix=16 --module
+PERFILE_OBJS  := license.o mod.o pci.o sysrq.o driver_init.o kfio.o errno.o \
+                 state.o kcache.o kfile.o kmem.o kfio_common.o kcpu.o kscatter.o \
+                 ktime.o sched.o cdev.o kscsi.o kscsi_host.o kblock.o kcondvar.o \
+                 kinfo.o kexports.o khotplug.o kcsr.o module_param.o
+
+objtool_perfile: modules
+	@if [ -x "$(OBJTOOL)" ]; then \
+	  echo "  OBJTOOL per-file (task-15303): $(words $(PERFILE_OBJS)) candidate objects"; \
+	  n=0; \
+	  for o in $(PERFILE_OBJS); do \
+	    if [ -f "$$o" ]; then \
+	      $(OBJTOOL) $(OBJTOOL_FLAGS) "$$o" >/dev/null 2>&1 || true; \
+	      n=$$((n+1)); \
+	    fi; \
+	  done; \
+	  echo "  OBJTOOL per-file: processed $$n objects; relinking"; \
+	  rm -f $(FIO_DRIVER_NAME).o $(FIO_DRIVER_NAME).ko $(FIO_DRIVER_NAME).mod.o; \
+	  $(MAKE) modules; \
+	else \
+	  echo "  OBJTOOL not found at $(OBJTOOL) -- per-file pass SKIPPED" >&2; \
+	  exit 1; \
+	fi
+
+gpl: fake_license objtool_perfile patch_module_version
 
 .PHONY: fake_license
 fake_license:
